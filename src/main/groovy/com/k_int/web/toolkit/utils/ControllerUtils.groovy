@@ -25,7 +25,7 @@ public class ControllerUtils {
       methods : [] as List
     ]
     
-    UrlCreator uriC = grailsUrlMappingsHolder.getReverseMappingNoDefault(gcc.logicalPropertyName, actionName, null)
+    UrlCreator uriC = grailsUrlMappingsHolder.getReverseMapping(gcc.logicalPropertyName, actionName, null)
     String uri = uriC ? uriC.createRelativeURL(gcc.logicalPropertyName, actionName, null, null) : null
     
     def methods = uri ? grailsUrlMappingsHolder.allowedMethods("${uri}/${id}") : null
@@ -91,7 +91,11 @@ public class ControllerUtils {
   
   @Memoized(maxCacheSize=200)
   public static String getControllerDefaultUri (GrailsControllerClass gcc, UrlMappingsHolder grailsUrlMappingsHolder) {
-    UrlCreator entryPoint = grailsUrlMappingsHolder.getReverseMappingNoDefault(gcc.logicalPropertyName, null, null)
+    UrlCreator entryPoint
+    for (int i=0; entryPoint == null && i<(httpMethods.size() - 1); i++) {
+      entryPoint = grailsUrlMappingsHolder.getReverseMapping(gcc.logicalPropertyName, null, null, null, httpMethods[i].toString(), null)
+    }
+    
     entryPoint?.createRelativeURL(gcc.logicalPropertyName, null, null, null)
   }
   
@@ -104,8 +108,8 @@ public class ControllerUtils {
     String ctrlName = "${gcc.logicalPropertyName}"
 
     if (!baseUri) {
-      UrlCreator entryPoint = grailsUrlMappingsHolder.getReverseMappingNoDefault(ctrlName, null, null, null, HttpMethod.GET.toString(), null)
-      baseUri = entryPoint.createRelativeURL(ctrlName, null, null, null)
+      UrlCreator entryPoint = grailsUrlMappingsHolder.getReverseMapping(ctrlName, null, null, null, HttpMethod.GET.toString(), null)
+      baseUri = entryPoint?.createRelativeURL(ctrlName, null, null, null)
     }
 
     if (baseUri) {

@@ -12,6 +12,7 @@ import grails.core.GrailsApplication
 import grails.core.GrailsControllerClass
 import grails.core.GrailsDomainClass
 import grails.rest.Resource
+import grails.web.mapping.LinkGenerator
 import grails.web.mapping.UrlMappingsHolder
 
 class RestfulResourceService {
@@ -23,6 +24,9 @@ class RestfulResourceService {
   
   @Autowired(required=true)
   UrlMappingsHolder grailsUrlMappingsHolder
+  
+  @Autowired(required=true)
+  LinkGenerator grailsLinkGenerator
   
   public Boolean isResource ( final def domainTarget ) {
     def dc = DomainUtils.resolveDomainClass (domainTarget)
@@ -64,9 +68,9 @@ class RestfulResourceService {
           
           // If the resource is present then we can grab the uri here unless the extra info is required.
           def details
-          if (rann && !extendedInfo) {
+          if (!extendedInfo && rann) {
             // URI ?
-            def uri = rann.uri() ?: ControllerUtils.getControllerDefaultUri(ctrl, grailsUrlMappingsHolder)
+            def uri = rann.uri() ?: ControllerUtils.getControllerDefaultUri(ctrl, grailsUrlMappingsHolder) ?: grailsLinkGenerator.link(controller: ctrl.logicalPropertyName)?.toLowerCase()?.replaceAll("\\/${ctrl.defaultAction.toLowerCase()}(\\/?)\$", '')
             if (uri) {
               details = ['baseUri' : uri]
             }
@@ -74,9 +78,9 @@ class RestfulResourceService {
             
             // Either no annotation, or we need more info.
             // Grab the restful controller details if this is a restful type controller.
-            details = ControllerUtils.getRestfulDetails(ctrl, grailsUrlMappingsHolder, rann?.uri())
+            details = ControllerUtils.getRestfulDetails(ctrl, grailsUrlMappingsHolder, rann?.uri() ?: grailsLinkGenerator.link(controller: ctrl.logicalPropertyName)?.toLowerCase()?.replaceAll("\\/${ctrl.defaultAction.toLowerCase()}(\\/?)\$", ''))
             
-            if (!extendedInfo) {
+            if (details && !extendedInfo) {
               // Discard the extras.
               details = [ baseUri: details['baseUri'] ]
             }

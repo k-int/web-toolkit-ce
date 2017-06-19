@@ -15,7 +15,7 @@ class ConfigController {
   def resources () {    
     render ([
       resources : restfulResourceService.resourceInfo
-    ]) as JSON
+    ] as JSON )
   }
   
   def schemaEmbedded (String type) {
