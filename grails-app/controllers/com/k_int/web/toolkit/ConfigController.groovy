@@ -22,7 +22,7 @@ class ConfigController {
   
   def schemaEmbedded (String type) {
 
-    String theUri = request.forwardURI.replaceAll("${type}\\\$", "")
+    String theUri = request.forwardURI.toLowerCase().replaceAll("${type.toLowerCase()}(\\/?)\$", "")
     
     def schema = JsonSchemaUtils.jsonSchema(type, grailsLinkGenerator.link(absolute: true, uri: theUri), true)
     render schema as JSON
@@ -31,7 +31,7 @@ class ConfigController {
   
   def schema (String type) {
 
-    String theUri = request.forwardURI.replaceAll("${type}\\\$", "")
+    String theUri = request.forwardURI.toLowerCase().replaceAll("${type.toLowerCase()}(\\/?)\$", "")
     def schema = JsonSchemaUtils.jsonSchema(type, grailsLinkGenerator.link(absolute: true, uri: theUri) ,false)
     render schema as JSON
   }
