@@ -16,7 +16,7 @@ class JsonSchemaUtils {
     type.simpleName
   }
   
-  public static Map<String, ?> jsonSchema ( final def obj, String linkPrefix = '', boolean embedReferences = false, Map<String, Map> existingSchemas = [:]) {
+  public static Map<String, ?> jsonSchema ( final def obj, String linkPrefix = '', boolean embedReferences = false) {
     
     // Add the schema line.
     def schema = ['$schema': 'http://json-schema.org/schema#'] + buildJsonSchema(obj, linkPrefix, embedReferences)

@@ -22,14 +22,13 @@ class ConfigController {
   
   def schemaEmbedded (String type) {
 
-    def schema = JsonSchemaUtils.jsonSchema(type, grailsLinkGenerator.link(absolute: true, action: 'schemaEmbeeded'), true)
+    def schema = JsonSchemaUtils.jsonSchema(type, grailsLinkGenerator.link(absolute: true, uri: '/config/schema'), true)
     render schema as JSON
   }
   
   
-  private static final Map<String, Map> existingSchemas = [:]
   def schema (String type) {
-    def schema = JsonSchemaUtils.jsonSchema(type, grailsLinkGenerator.link(absolute: true, action: 'schema') ,false, existingSchemas)
+    def schema = JsonSchemaUtils.jsonSchema(type, grailsLinkGenerator.link(absolute: true, uri: '/config/schema') ,false)
     render schema as JSON
   }
 }
