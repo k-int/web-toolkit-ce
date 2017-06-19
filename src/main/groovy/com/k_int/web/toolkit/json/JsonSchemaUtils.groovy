@@ -6,15 +6,8 @@ import grails.core.GrailsDomainClass
 import grails.core.GrailsDomainClassProperty
 import grails.util.GrailsNameUtils
 import grails.validation.ConstrainedProperty
-import grails.validation.Constraint
 import groovy.transform.CompileStatic
-
-import java.util.Collection
-
-import org.grails.core.DefaultGrailsDomainClassProperty
-import org.grails.validation.MaxConstraint
-import org.grails.validation.RangeConstraint
-
+import org.apache.commons.lang.ClassUtils
 
 class JsonSchemaUtils {
   
@@ -88,9 +81,8 @@ class JsonSchemaUtils {
   
   private static Map<String, ?> buildChildren (final def obj, String idPrefix, Map<String, Map> existingSchemas) {
     
-    final Map<String, ?> json = [
-      properties : [:]
-    ]
+    final Map<String, ?> json = [:]
+    final Map<String, ?> properties = [:]
     
     Map<String, ?> conMap = [:]
     
@@ -114,17 +106,11 @@ class JsonSchemaUtils {
             // Let's generate
             
             // Add the title.
-            val = ['title' : GrailsNameUtils.getNaturalName(schemaName)]
+            val = [:]//['title' : GrailsNameUtils.getNaturalName(schemaName)]
             
             // Get the type of this object.
             String type = jsonType(prop.referencedPropertyType)
             val['type'] = type
-                
-            // Examine any constraints.
-            ConstrainedProperty con = constraints[prop.name]
-            if (con) {
-              Map<String, ?> cMap = examineContraints(con, type, [prop: [:], owner: conMap ])
-            }
             
             // Only objects need expanding.
             if (type == 'object') {
@@ -150,6 +136,13 @@ class JsonSchemaUtils {
                 val = existingSchemas[schemaName]['ref']
               }
             }
+            
+            
+            // Examine any constraints.
+            ConstrainedProperty con = constraints[prop.name]
+            if (con) {
+              val = examineContraints(con, type, [prop: val, owner: conMap ]).get('prop')
+            }
           }
           
           // Get the actual type in case of collection. 
@@ -164,7 +157,7 @@ class JsonSchemaUtils {
           }
           
           // Add to the JSON output.
-          json['properties'][prop.name] = val
+          properties[prop.name] = val
         }
       }
     } else {
@@ -191,41 +184,100 @@ class JsonSchemaUtils {
           }
         }
         
-        json['properties'][prop.name] = val
+        properties[prop.name] = val
       }
+    }
+    
+    if (properties) {
+      json ['properties'] = properties
     }
     
     json
   }
   
+  @CompileStatic
   private static Map<String, ?> examineContraints (final ConstrainedProperty con, final String jsonType, final Map<String, ?> props) {
+    
     // Constraints.
     // Props map should contain a prop key and an owner key.
-    Collection<Constraint> allConstraints = con.appliedConstraints
+    def p = props['prop']
+    def o = props['owner']
     
+    if (!con.nullable) {
+      // Required exists on the object that declares the property and not on the property definition itself.
+      Set<String> required = (Set<String>)o['required']
+      if (!o['required']) {
+        required = [] as Set<String>
+        // initialise as set.
+        o['required'] = required
+      }
+      
+      // Add the property.
+      required << con.propertyName
+    } else {
+      // Can be either the declared type or null.
+      Map<String,?> anyOf = [anyOf : [p, [ "type": "null" ]]]
+      
+      // Replace in the original map, but do not change the reference above.
+      props['prop'] = anyOf
+    }
+    
+    // Type specifics.
     if (con && jsonType && props) {
       switch (jsonType) {
         case 'number' :
           // Numbers can have max, min and a scale constraint in JSON.
           if (con.scale != null) {
-            props['prop']['multipleOf'] = Math.pow(10d, (-con.scale) as double)
+            p['multipleOf'] = Math.pow(10d, (con.scale * -1) as double)
           }
         case 'integer' :
           // Max and min with no scale as integers are whole.
           def etremity = con.max
           if (etremity != null) {
-            props['prop']['maximum'] = etremity
+            p['maximum'] = etremity
           }
           
           etremity = con.min
           if (etremity != null) {
-            props['prop']['minimum'] = etremity
+            p['minimum'] = etremity
           }
           break
         case 'string' :
+          def etremity = con.maxSize
+          if (etremity != null) {
+            p['maxLength'] = etremity
+          }
+          
+          etremity = con.minSize
+          if (etremity != null) {
+            p['minLength'] = etremity
+          } else {
+            // Check if blank is allowed. we can then infer the minimum.
+            if (con.blank) {
+              p['minLength'] = 0
+            } else {
+              // None-Blank string has to be greater than 1 character. 
+              p['minLength'] = 1
+            }
+          }
+          break
+          
+        case 'array' :
+          def etremity = con.maxSize
+          if (etremity != null) {
+            p['maxItems'] = etremity
+          }
+          
+          etremity = con.minSize
+          if (etremity != null) {
+            p['minItems'] = etremity
+          }
           break
       }
     }
+    
+    // Return the map. It has possibly been mutated and the return value may differ from the original.
+    props
   }
   
   @CompileStatic
@@ -236,12 +288,17 @@ class JsonSchemaUtils {
     } else {
       
       // We need the class.
-      Class theClass = (propertyType instanceof Class) ? propertyType : propertyType.class 
+      Class theClass = (propertyType instanceof Class) ? propertyType : propertyType.class
+      
+      // Run the class through the spring ClassUtils to get wrapper types for primitives.
+      if (theClass.isPrimitive()) {
+        theClass = ClassUtils.primitiveToWrapper(theClass)
+      }
       
       switch (theClass) {
         
         case {Number.isAssignableFrom(theClass)} :
-          type = jsonNumberSpec (theClass)
+          type = jsonNumberSpec (theClass as Class<Number>)
           break
         
         case {String.isAssignableFrom(theClass)} :
