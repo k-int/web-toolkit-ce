@@ -1,6 +1,6 @@
 package com.k_int.web.tools
 
-import com.k_int.grails.tools.utils.DomainUtils
+import com.k_int.web.toolkit.utils.DomainUtils
 import grails.transaction.Transactional
 import groovy.util.logging.Log4j
 
@@ -421,7 +421,7 @@ class SimpleLookupService {
 
   private synchronized def doMethod (final Class c, final String method, final Map methodPars = null, final Closure crit) {
     final Closure newCrit = {
-      Closure base = null //GrailsClassUtils.getStaticPropertyValue(c, "lookupBase")
+      Closure base = GrailsClassUtils.getStaticPropertyValue(c, "lookupBase")
       base?.rehydrate(delegate, base?.owner, base?.thisObject)?.call()
 
       crit.setDelegate(delegate)

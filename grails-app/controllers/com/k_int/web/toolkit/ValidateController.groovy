@@ -1,19 +1,10 @@
-package web.toolkit
+package com.k_int.web.toolkit
 
-import org.grails.core.DefaultGrailsDomainClass
-
-import grails.core.GrailsApplication
-
-import grails.core.GrailsApplication
-import grails.transaction.Transactional
-import grails.util.GrailsClassUtils
-import grails.util.GrailsNameUtils
-
-import org.grails.core.DefaultGrailsDomainClass
-import org.grails.core.artefact.DomainClassArtefactHandler
-
-import com.k_int.grails.tools.refdata.RefdataValue
 import static org.springframework.http.HttpStatus.*
+
+import org.grails.core.DefaultGrailsDomainClass
+
+import grails.core.GrailsApplication
 
 
 class ValidateController {

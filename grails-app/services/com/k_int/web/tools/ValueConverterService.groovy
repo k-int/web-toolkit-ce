@@ -1,6 +1,6 @@
 package com.k_int.web.tools
 
-import com.k_int.grails.tools.databinding.ExtendedWebDataBinder
+import com.k_int.web.toolkit.databinding.ExtendedWebDataBinder
 
 class ValueConverterService {
   ExtendedWebDataBinder grailsWebDataBinder

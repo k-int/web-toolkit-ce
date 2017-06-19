@@ -1,17 +1,14 @@
-package web.toolkit
+package com.k_int.web.toolkit
 
 import static org.springframework.http.HttpStatus.*
-import grails.core.GrailsApplication
-import grails.transaction.Transactional
-import grails.util.GrailsClassUtils
-import grails.util.GrailsNameUtils
 
 import org.grails.core.DefaultGrailsDomainClass
 
-import com.k_int.grails.tools.refdata.RefdataValue
-import com.k_int.grails.tools.rules.RulePropertySource
-import com.k_int.grails.tools.rules.RulesService
-import com.k_int.grails.tools.utils.DomainUtils
+import com.k_int.web.toolkit.utils.DomainUtils
+import com.k_int.web.tools.SimpleLookupService
+
+import grails.core.GrailsApplication
+import grails.transaction.Transactional
 
 
 class RefController {
@@ -19,24 +16,7 @@ class RefController {
   static responseFormats = ['json', 'xml']
 
   GrailsApplication grailsApplication
-  RulesService rulesService
   SimpleLookupService simpleLookupService
-  
-  @Transactional(readOnly = true)
-  def checkRules (String domain, long id, String ruleType) {
-
-    // Try and locate the Domain class.
-    DefaultGrailsDomainClass target = DomainUtils.findDomainClass (domain)
-
-    if (!(target && id && ruleType )) {
-      return notFound()
-    }
-
-    RulePropertySource source = target.clazz.read(id)
-
-    // Run the rules.
-    respond  (source ? rulesService.runRules(ruleType, source) :  [:] )
-  }
 
   @Transactional(readOnly = true)
   def get (String domain, String prop, String search) {
@@ -57,11 +37,11 @@ class RefController {
     
     Set vals = []
     switch ( propDef['type'] ) {
-      case {GrailsClassUtils.isAssignableOrConvertibleFrom(RefdataValue.class, it)} :
-      // Refdata have a special method bolted onto the class.
-        String upperName = GrailsNameUtils.getClassName(propDef['prop'])
-        vals = propDef['owner']."all${upperName}Values" () as Set
-        break
+//      case {GrailsClassUtils.isAssignableOrConvertibleFrom(RefdataValue.class, it)} :
+//      // Refdata have a special method bolted onto the class.
+//        String upperName = GrailsNameUtils.getClassName(propDef['prop'])
+//        vals = propDef['owner']."all${upperName}Values" () as Set
+//        break
 
       default:
         vals = lookup ( propDef['type'], search ) as Set

@@ -10,6 +10,12 @@ class WebToolkitGrailsPlugin extends Plugin {
     def pluginExcludes = [
         "grails-app/views/error.gsp"
     ]
+    def loadAfter = [
+      'hibernate',
+      'controllers',
+      'dataBinding',
+      'dataBindingGrails'
+    ]
 
     // TODO Fill in these fields
     def title = "Web Toolkit" // Headline display name of the plugin
