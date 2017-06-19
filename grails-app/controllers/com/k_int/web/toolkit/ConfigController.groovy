@@ -12,9 +12,12 @@ class ConfigController {
   static responseFormats = ['json']
   RestfulResourceService restfulResourceService
   
-  def resources () {    
+  def resources () {
+    
+    boolean extended = params.get('extended') == 'extended'
+        
     render ([
-      resources : restfulResourceService.resourceInfo
+      resources : restfulResourceService.getResourceInfo (extended)
     ] as JSON )
   }
   
