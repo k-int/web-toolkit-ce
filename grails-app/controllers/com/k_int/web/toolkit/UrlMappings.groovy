@@ -5,5 +5,6 @@ class UrlMappings {
   static mappings = {
     "/config" (controller: 'config' , action: "resources")
     "/config/schema/$type" (controller: 'config' , action: "schema")
+    "/config/schema/embedded/$type" (controller: 'config' , action: "schemaEmbedded")
   }
 }

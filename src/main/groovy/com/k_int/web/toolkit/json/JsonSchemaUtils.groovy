@@ -16,21 +16,21 @@ class JsonSchemaUtils {
     type.simpleName
   }
   
-  public static Map<String, ?> jsonSchema ( final def obj, String linkPrefix = '') {
+  public static Map<String, ?> jsonSchema ( final def obj, String linkPrefix = '', boolean embedReferences = false, Map<String, Map> existingSchemas = [:]) {
     
     // Add the schema line.
-    def schema = ['$schema': 'http://json-schema.org/schema#'] + buildJsonSchema(obj, linkPrefix)
+    def schema = ['$schema': 'http://json-schema.org/schema#'] + buildJsonSchema(obj, linkPrefix, embedReferences)
     schema  
   }
   
-  private static Map<String, ?> buildJsonSchema ( final def obj, String idPrefix = '', Map<String, Map> existingSchemas = [:]) {
+  private static Map<String, ?> buildJsonSchema ( final def obj, String linkPrefix, boolean embedReferences, Map<String, Map> existingSchemas = [:]) {
     
     // Sort out the ID link prefix.
-    if (idPrefix) {
-      idPrefix = idPrefix.endsWith('/') ? idPrefix : "${idPrefix}/"
+    if (linkPrefix) {
+      linkPrefix = linkPrefix.endsWith('/') ? linkPrefix : "${linkPrefix}/"
     } else {
       // Ensure blank string.
-      idPrefix = ''
+      linkPrefix = ''
     }
     
     // Lets resolve to a Grails domain if possible.
@@ -40,7 +40,7 @@ class JsonSchemaUtils {
     String schemaName = resolveSimpleName(target ?: obj)
     
     // The map to hold our json representation. Initialise with ID.
-    Map<String, ?> json = ['id' : "${idPrefix}${schemaName}" as String]
+    Map<String, ?> json = ['id' : "${linkPrefix}${schemaName}" as String]
     
     // The title.
     json['title'] = GrailsNameUtils.getNaturalName(schemaName)
@@ -62,16 +62,17 @@ class JsonSchemaUtils {
         existingSchemas[schemaName] = [
           ref : ['$ref' : '#/']
         ]
-        
-        // Add it to this root schema.
-        json['references'] = existingSchemas
       
         // Lets take a look at the properties now.
-        json.putAll(buildChildren (target ?: obj, '#/references/', existingSchemas))
+        json.putAll(buildChildren (target ?: obj, embedReferences ? '#/references/' : "${linkPrefix.length() < 1 ? '/' : linkPrefix}" , existingSchemas))
         
         // References now need to be filtered.
-        json['references'] = existingSchemas.collectEntries { entry -> 
-          entry.value?.schema != null ? [(entry.key) : entry.value.schema] : [:]
+        if (embedReferences) {
+          json['references'] = existingSchemas.collectEntries { entry -> 
+            entry.value?.schema != null ? [(entry.key) : entry.value.schema] : [:]
+          }
+        } else {
+          json.remove('references')
         }
       }
     }
