@@ -92,7 +92,7 @@ public class ControllerUtils {
   @Memoized(maxCacheSize=200)
   public static String getControllerDefaultUri (GrailsControllerClass gcc, UrlMappingsHolder grailsUrlMappingsHolder) {
     UrlCreator entryPoint = grailsUrlMappingsHolder.getReverseMappingNoDefault(gcc.logicalPropertyName, null, null)
-    entryPoint.createRelativeURL(gcc.logicalPropertyName, null, null, null)
+    entryPoint?.createRelativeURL(gcc.logicalPropertyName, null, null, null)
   }
   
   @Memoized(maxCacheSize=200)

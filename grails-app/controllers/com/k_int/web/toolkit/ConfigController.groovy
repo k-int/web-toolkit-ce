@@ -12,8 +12,6 @@ class ConfigController {
   static responseFormats = ['json']
   RestfulResourceService restfulResourceService
   
-  
-  
   def resources () {    
     render ([
       resources : restfulResourceService.resourceInfo
