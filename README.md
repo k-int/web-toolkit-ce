@@ -2,7 +2,7 @@
 Toolkit and value-add module for grails 3.2.x and beyond
 
 # installation
-Currently the only way to run the module is to include it as part of a multi-project Gradle build. To do that create a gradle.settings file 1 directory above your grails project with the following configuration:
+Currently the only way to run the module is to include it as part of a multi-project Gradle build. To do that create a settings.gradle file file 1 directory above your grails project with the following configuration:
 
 ``` Groovy
 include 'grails-project-name', 'web-toolkit'
