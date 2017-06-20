@@ -1,7 +1,7 @@
-# web-toolkit
+# Web Toolkit
 Toolkit and value-add module for grails 3.2.x and beyond
 
-# installation
+# Installation
 Currently the only way to run the module is to include it as part of a multi-project Gradle build.
 
 This guide assumes that a grails project has already been created in the normal way (i.e. using `grails create-app`)
@@ -44,8 +44,8 @@ grails {
 ```
 4. Delete the folder `.gradle` from your grails project root directory if it exists. If you haven't built your project yet, this folder may not exists.
 
-# File change summary
-If we assume your grails project is called `grails-project` then the structure of file changes should look like the following:
+## File change summary
+If we assume your grails project is called `grails-project` then, once you have completed the steps above, the structure of file changes should look like the following:
 ``` Tree
 root
 ├── grails-project
