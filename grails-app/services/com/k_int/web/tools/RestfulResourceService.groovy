@@ -72,7 +72,10 @@ class RestfulResourceService {
             // URI ?
             def uri = rann.uri() ?: ControllerUtils.getControllerDefaultUri(ctrl, grailsUrlMappingsHolder) ?: grailsLinkGenerator.link(controller: ctrl.logicalPropertyName)?.toLowerCase()?.replaceAll("\\/${ctrl.defaultAction.toLowerCase()}(\\/?)\$", '')
             if (uri) {
-              details = ['baseUri' : uri]
+              details = [
+                'baseUri': uri,
+                'identifierProp':  dc.identifier.name
+              ]
             }
           } else {
             
@@ -82,7 +85,10 @@ class RestfulResourceService {
             
             if (details && !extendedInfo) {
               // Discard the extras.
-              details = [ baseUri: details['baseUri'] ]
+              details = [
+                baseUri: details['baseUri'],
+                'identifierProp':  dc.identifier.name
+              ]
             }
           }
           
