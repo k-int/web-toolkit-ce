@@ -90,7 +90,7 @@ class JsonSchemaUtils {
     if (obj instanceof GrailsDomainClass) {
       
       // Grab the contrained property map.
-      Map <String,ConstrainedProperty> constraints =  obj.constrainedProperties
+      Map <String,Object> constraints =  obj.constrainedProperties
       
       // This schema needs building and then the reference adding.
       obj.properties.each { GrailsDomainClassProperty prop ->
@@ -98,8 +98,14 @@ class JsonSchemaUtils {
         // Gorm adds some properties of type Object to track identifiers.
         if (!(prop.type == Object && prop.name.endsWith ('Id'))) {
           
+          // Although referencedPropertyType is supposed to delegate to type if not a reference,
+          // this doesn't work in every instance. For instance when declaring a custom primitive Identifier
+          // type. Like String based UIDs.
+          def propType = prop.referencedPropertyType ?: prop.type
+          
+          
           // Derive the schema name for the target object type.
-          String schemaName = resolveSimpleName(prop.referencedPropertyType)
+          String schemaName = resolveSimpleName(propType)
           def val = existingSchemas[schemaName]?.ref
           
           // If we haven't already have seen this type build.
@@ -110,7 +116,7 @@ class JsonSchemaUtils {
             val = [:]//['title' : GrailsNameUtils.getNaturalName(schemaName)]
             
             // Get the type of this object.
-            String type = jsonType(prop.referencedPropertyType)
+            String type = jsonType(propType)
             val['type'] = type
             
             // Only objects need expanding.
@@ -128,7 +134,7 @@ class JsonSchemaUtils {
                 ]
               
                 // Lets take a look at the properties now.
-                val.putAll ( buildChildren (prop.referencedDomainClass ?: prop.referencedPropertyType, idPrefix, existingSchemas))
+                val.putAll ( buildChildren (prop.referencedDomainClass ?: propType, idPrefix, existingSchemas))
                 
                 // Add the schema once built too!
                 existingSchemas[schemaName]['schema'] = val
@@ -140,7 +146,7 @@ class JsonSchemaUtils {
             
             
             // Examine any constraints.
-            ConstrainedProperty con = constraints[prop.name]
+            def con = constraints[prop.name]
             if (con) {
               val = examineContraints(con, type, [prop: val, owner: conMap ]).get('prop')
             }
@@ -196,8 +202,8 @@ class JsonSchemaUtils {
     json
   }
   
-  @CompileStatic
-  private static Map<String, ?> examineContraints (final ConstrainedProperty con, final String jsonType, final Map<String, ?> props) {
+//  @CompileStatic
+  private static Map<String, ?> examineContraints (final def con, String jsonType, final Map<String, ?> props) {
     
     // Constraints.
     // Props map should contain a prop key and an owner key.
@@ -262,6 +268,11 @@ class JsonSchemaUtils {
             }
           }
           break
+        case 'date' :
+          // Check if blank is allowed. we can then infer the minimum.
+          p['type'] = 'string'
+          p['format'] = 'date-time'
+          break
           
         case 'array' :
           def etremity = con.maxSize
@@ -302,6 +313,10 @@ class JsonSchemaUtils {
           type = jsonNumberSpec (theClass as Class<Number>)
           break
         
+        case {Date.isAssignableFrom(theClass)} :
+          type = 'date'
+          break
+          
         case {String.isAssignableFrom(theClass)} :
           type =  'string'
           break
