@@ -58,6 +58,10 @@ class RestfulResourceService {
         // Get the controller.
         GrailsControllerClass ctrl = grailsApplication.getArtefactByLogicalPropertyName(ControllerArtefactHandler.TYPE, name)
         
+        if (!ctrl) {
+          ctrl = DomainUtils.findControllersForDomain(dc)
+        }
+        
         if (ctrl) {
   
           // Grab the associated class with this domain object.

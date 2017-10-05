@@ -3,9 +3,12 @@ package com.k_int.web.toolkit.utils
 import com.fasterxml.jackson.databind.introspect.AnnotatedClass
 
 import grails.core.GrailsApplication
+import grails.core.GrailsControllerClass
 import grails.core.GrailsDomainClass
+import grails.rest.RestfulController
 import grails.util.Holders
 import groovy.transform.Memoized
+import org.grails.core.artefact.ControllerArtefactHandler
 
 public class DomainUtils {
   
@@ -86,5 +89,31 @@ public class DomainUtils {
         "prop"  :  lastPropName
       ]
     } catch (Exception e) { return null }
+  }
+  
+  @Memoized(maxCacheSize=200)
+  public static def findControllersForDomain ( final def target ) {
+    if (!(target)) {
+      return null
+    }
+    
+    GrailsControllerClass match = null
+    try {
+      GrailsApplication grailsApplication = Holders.grailsApplication
+      GrailsDomainClass type = resolveDomainClass(target)
+      def ctrls = grailsApplication.getArtefacts(ControllerArtefactHandler.TYPE)
+      for (int i=0; i<ctrls.length && !match; i++ ) {
+        if (RestfulController.class.isAssignableFrom(ctrls[i].clazz)) {
+          // We should check the ocject type.
+          def controller = grailsApplication.mainContext.getBean(ctrls[i].clazz)
+          if (controller.resource == type.clazz) {
+            match = ctrls[i]
+          }
+        }
+      }
+      
+    } catch (Exception e) { return null }
+    
+    match
   }
 }
