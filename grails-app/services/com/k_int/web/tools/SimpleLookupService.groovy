@@ -1,15 +1,12 @@
 package com.k_int.web.tools
 
-import com.k_int.web.toolkit.utils.DomainUtils
-import grails.transaction.Transactional
-import groovy.util.logging.Log4j
 
-import org.hibernate.criterion.Criterion
-import org.hibernate.criterion.DetachedCriteria
-import org.hibernate.criterion.MatchMode
-import org.hibernate.criterion.Projections
-import org.hibernate.criterion.Restrictions
-import org.hibernate.criterion.Subqueries
+import org.hibernate.criterion.*
+
+import com.k_int.web.toolkit.utils.DomainUtils
+
+import grails.util.GrailsClassUtils
+import groovy.util.logging.Log4j
 
 @Log4j
 class SimpleLookupService {
@@ -98,21 +95,25 @@ class SimpleLookupService {
     ret
   }
   
-  private static final String REGEX_OP = "^([A-Za-z0-9\\.]+)([\\=\\!\\<\\>]{1,2})(.+)\$"
-  private static final String REGEX_BETWEEN = "^(.+)(\\<\\=?)([A-Za-z0-9\\.]+)(\\<\\=?)(.+)\$"
+  private static final String REGEX_OP = "^(.*?)(=i=|([!=<>]{1,2}))(.*?)\$"
+  private static final String REGEX_BETWEEN = "^(.*?)([<>]=?)(.*?)([<>]=?)(.*?)\$"
+  private static final String REGEX_NONE_ESCAPED_PERCENTAGE = "([^\\\\])(%)"
   
-  private static List getComparisonParts ( String filterString ) {
+  private List getComparisonParts (final DetachedCriteria criteria, final Map<String, String> aliasStack, final String filterString, final String indentation = null ) {
     // Between first.
-    def results = []
+    final def results = []
     def matches = filterString =~ REGEX_BETWEEN
     if (matches.size() == 1) {
+      
+      log.debug('Special between style syntax. Splitting into 2 filters instead.')
+      
+      // Grab the match.
       def match = matches[0]
-      results << 'between'
-      results << match[3]
-      results << match[1]
-      results << (match[2] == '<=')
-      results << match[5]
-      results << (match[4] == '<=')
+      
+      // Build up 2 more filter strings instead of directly returning the parts here.
+      // Match 3 is the center part and is the common part of the expression.
+      results << parseFilterString(criteria, aliasStack, "${match[1]}${match[2]}${match[3]}", indentation)
+      results << parseFilterString(criteria, aliasStack, "${match[3]}${match[4]}${match[5]}", indentation)
       
     } else {
       matches = filterString =~ REGEX_OP
@@ -140,14 +141,23 @@ class SimpleLookupService {
           case '<=' :
             results << 'le'
             break
+          case '=i=' :
+            // Special case insensitive equal. We need to use ilike under the hood and remove
+            // and we also need to remeber to escape % signs as they should be matched explicitly 
+            results << 'ilike'
+            break
             
           default : 
             log.debug "Unknown comparator '${match[2]}' ignoring expression."
         }
         
         if (results) {
-          results << match[1]
-          results << match[3]
+          
+          def m1 = results[0] == 'ilike' ? "${match[1]}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2') : match[1]
+          def m2 = results[0] == 'ilike' ? "${match[4]}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2') : match[4]
+          
+          results << m1
+          results << m2
         }
       }
     }
@@ -157,11 +167,36 @@ class SimpleLookupService {
     results
   }
   
+  private String invertOp(final String op) {
+    final String newOp = op
+    switch (op) {
+      case 'eq' :
+        newOp = 'ne'
+        break
+      case 'ne' :
+        newOp = 'eq'
+        break
+      case 'gt' :
+        newOp = 'lt'
+        break
+      case 'ge' :
+        newOp = 'le'
+        break
+      case 'lt' :
+        newOp = 'gt'
+        break
+      case 'le' :
+        newOp = 'ge'
+        break
+        
+      default :
+        log.debug "Unknown reverse op of ${op}. Retuning original."
+    }
+    
+    newOp
+  }
+  
   private Criterion parseFilterString ( final DetachedCriteria criteria, final Map<String, String> aliasStack, String filterString, String indentation = null ) {
-//    def recurse = { String fStr, def o, def d, def to ->
-//      // Now call out to this parent method again and with the same owner, delegate and thisObject
-//      parseFilterString.rehydrate(o, d, to).call(fStr)
-//    }
     
     Criterion crit = null
     
@@ -210,38 +245,50 @@ class SimpleLookupService {
           
         } else {
           // Then check for comparator type i.e. gt, eq, lt etc..
-          def parts = getComparisonParts filterString
-          
+          def parts = getComparisonParts (criteria, aliasStack, filterString, indentation)
+          log.debug "Got comparision parts ${parts}"
           if (parts) {
-            def op = parts[0]
-            def propertyType = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, parts[1]).type
-            def propName = getAliasedProperty(criteria, aliasStack, parts[1]) as String
             
-            if (op == 'between') {
-              def gtop = parts[3] ? 'ge' : 'gt'
-              def ltop = parts[5] ? 'le' : 'lt'
-              
-              List<Criterion> criterionList = []
-              
-              // Because we allow for our between to be inclusive, or not we use to operations anded
-              // instead of the between method
-              log.trace ("${indentation}and {")
-                
-              log.trace ("${indentation}${ltop} ${parts[1]}, ${parts[2]}")
-              def from = valueConverterService.attemptConversion(propertyType, parts[2])
-              criterionList << Restrictions."${gtop}" (propName, from)
-              
-              log.trace ("${indentation}${ltop} ${parts[1]}, ${parts[4]}")
-              def to = valueConverterService.attemptConversion(propertyType, parts[4])
-              criterionList << Restrictions."${ltop}" (propName, to)
-              
-              log.trace ("${indentation}}")
-              crit = Restrictions.and( criterionList as Criterion[] )
-              
+            def op = parts[0]
+            if (Criterion.class.isAssignableFrom(op.class)){
+              // Assume all parts are Criterion.
+              // And them.              
+              crit = Restrictions.and( parts as Criterion[] )
             } else {
-              log.trace ("${indentation}${op} ${parts[1]}, ${parts[2]}")
-              def val = valueConverterService.attemptConversion(propertyType, parts[2])
-              crit = Restrictions."${op}" (propName, val)
+            
+              // Assume normal op.
+              // part 1 or 2 could be the property name.
+              // the other is the value.
+              def prop = "${parts[1]}".trim()
+              def value = parts[2]
+              def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop)
+              if (!propDef) {
+                // Swap the values and retry.
+                prop = "${parts[2]}".trim()
+                propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop)
+                if (propDef) {
+                  value = parts[1]
+                  op = invertOp(op)
+                }
+              }
+              
+              if (propDef) {
+                def propertyType = propDef.type
+                def propName = getAliasedProperty(criteria, aliasStack, prop) as String
+                
+                // Can't ilike on none-strings. So we should change back to eq.
+                if (op == 'ilike' && !String.class.isAssignableFrom(propertyType)) {
+                  op = 'eq'
+                }
+              
+                log.trace ("${indentation}${op} ${prop}, ${value}")
+                def val = valueConverterService.attemptConversion(propertyType, value)
+                
+                log.debug ("Converted ${value} into ${val}")
+                crit = Restrictions."${op}" (propName, val)
+              } else {
+                log.debug "Could not process op def ${parts}"
+              }
             }
           }
         }
@@ -261,6 +308,37 @@ class SimpleLookupService {
       }
     }
   }
+  
+  private List<Criterion> getTextMatches (final DetachedCriteria criteria, final Map<String, String> aliasStack, final String term, final match_in, MatchMode textMatching = MatchMode.ANYWHERE) {
+    List<Criterion> textMatches = []
+    if (term) {
+      // Add a condition for each parameter we wish to search.
+      match_in.each { String prop ->
+        def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop)
+        
+        if (propDef) {
+          def propertyType = propDef.type
+          def propName = getAliasedProperty(criteria, aliasStack, prop) as String
+          
+          // We use equal unless the compared property is a String then we should use iLIKE
+          def op = 'eq'
+          if (String.class.isAssignableFrom(propertyType)) {
+            textMatches << Restrictions.ilike("${propName}", "${term}", textMatching)
+            log.debug ("Looking for term '${term}' in ${propName}" )
+          } else {
+            // Attempt to convert the value into one comparable with the target. 
+            def val = valueConverterService.attemptConversion(propertyType, term)
+            textMatches << Restrictions.eq("${propName}", val)
+            log.debug ("Converted ${term} into ${val} as type '${propertyType}'")
+          }
+        } else {
+          log.debug "Could not process ${prop}"
+        }
+      }
+    }
+    
+    textMatches
+  }
 
   private DetachedCriteria buildLookupCriteria(final DetachedCriteria criteria, final String term, final match_in, final filters) {
 
@@ -269,57 +347,24 @@ class SimpleLookupService {
 
     // Filters...
     parseFilters (criteria, aliasStack, filters)
-//    if (filters) {
-//
-//      filters.eachWithIndex { String filter, idx ->
-//        String[] parts =  filter.split("\\=")
-//
-//        if ( parts.length == 2 && parts[0].length() > 0 && parts[1].length() > 0 ) {
-//
-//          // The prop name.
-//          String propname = parts[0]
-//          String op = "eq"
-//
-//          if (propname.startsWith("!")) {
-//            propname = propname.substring(1)
-//            op = "ne"
-//          }
-//
-//          def prop = getAliasedProperty(criteria, aliasStack, propname)
-//
-//          log.debug ("Testing  ${prop as String} ${op == 'eq' ? '=' : '!='} ${parts[1]}")
-//          criterionList << Restrictions."${op}" ( "${prop.toString()}", prop['property'] == 'id' ? parts[1].toLong() : parts[1] )
-//        }
-//      }
-//    }
+    
+    // Text matching uses ilike ops for string property and eq for all others.
+    List<Criterion> textMatches = getTextMatches(criteria, aliasStack, term, match_in)
+    
+    // Text searching should be Disjunctive accross all properties specified.
+    if (textMatches) criterionList << Restrictions.or(textMatches.toArray(new Criterion[textMatches.size()]))
 
-    if (term) {
-      // Add a condition for each parameter we wish to search.
-      List<Criterion> textMatches = []
-      match_in.each { String param_name ->
-        switch (param_name) {
-          case "id" :
-            textMatches << Restrictions.eq ("${param_name}", term.toLong())
-            break;
-          // Like for strings.
-          default :
-            textMatches << Restrictions.ilike("${param_name}", "${term}", MatchMode.ANYWHERE)
-        }
-      }
-      if (textMatches) criterionList << Restrictions.or(textMatches.toArray(new Criterion[textMatches.size()]))
-    }
-
-    // Add the list as the AND criterion.
+    // Conjunction to ensure results returned match any text searches specified and ALL filters specified.
     if (criterionList) criteria.add(Restrictions.and(criterionList.toArray(new Criterion[criterionList.size()])))
 
+    // Project distinct IDs so as to only include results once on multiple matches.
     criteria.setProjection(
-        Projections.distinct(Projections.id())
-        )
+      Projections.distinct(Projections.id())
+    )
 
     criteria
   }
 
-  @Transactional(readOnly=true)
   public def lookup (final Class c, final String term, final Integer perPage = 10, final Integer page = 1, final List filters = [], final List match_in = [], final Closure base = null) {
 
     // Results per page, cap at 1000 for safety here. This will probably be capped by the implementing controller to a lower value.
@@ -340,16 +385,15 @@ class SimpleLookupService {
 
       // Add lookup.
       criteria.add(
-          Subqueries.propertyIn(
+        Subqueries.propertyIn(
           'id',
           buildLookupCriteria(DetachedCriteria.forClass(targetClass, 'uniques'), term, match_in, filters)
-          )
-          )
+        )
+      )
     })
   }
 
-  @Transactional(readOnly=true)
-  public def lookupWithStats (final Class c, final String term, final Integer perPage = 10, final Integer page = 1, final List filters = [], final List match_in = [], final Map<String,Closure> extraStats = null, final Closure base = null) {
+  public def lookupWithStats (final Class c, final String term, final Integer perPage = 10, final Integer page = 1, final List filters = [], final List match_in = [], final Closure base = null, final Map<String,Closure> extraStats = null) {
 
     Map aliasStack = [:]
 
@@ -391,7 +435,8 @@ class SimpleLookupService {
         
         // Change the delegate and execute.
         if (extra) {
-          extra.rehydrate(delegate, extra.owner, thisObject).call()
+          extra.setDelegate(delegate)
+          extra()
         }
       }
       
@@ -421,10 +466,16 @@ class SimpleLookupService {
 
   private synchronized def doMethod (final Class c, final String method, final Map methodPars = null, final Closure crit) {
     final Closure newCrit = {
-      Closure base = GrailsClassUtils.getStaticPropertyValue(c, "lookupBase")
+      
+      def basePropVal = GrailsClassUtils.getStaticPropertyValue(c, "lookupBase")
+      Closure base = basePropVal && (basePropVal instanceof Closure) ? basePropVal : null
       base?.rehydrate(delegate, base?.owner, base?.thisObject)?.call()
 
       crit.setDelegate(delegate)
+      
+      // Always set to read only.
+      readOnly true
+      
       crit ()
     };
 

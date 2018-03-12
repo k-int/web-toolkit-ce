@@ -7,7 +7,6 @@ class ValueConverterService {
   
   public def attemptConversion (Class targetType, value) {
     def val = grailsWebDataBinder.attemptConversion (targetType, value)
-    
     val
   }
 }

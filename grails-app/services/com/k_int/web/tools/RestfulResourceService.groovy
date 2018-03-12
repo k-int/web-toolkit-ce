@@ -3,14 +3,13 @@ package com.k_int.web.tools
 import java.util.concurrent.ConcurrentHashMap
 
 import org.grails.core.artefact.ControllerArtefactHandler
-import org.springframework.beans.factory.annotation.Autowired
+import org.grails.datastore.mapping.model.PersistentEntity
 
 import com.k_int.web.toolkit.utils.ControllerUtils
 import com.k_int.web.toolkit.utils.DomainUtils
 
 import grails.core.GrailsApplication
 import grails.core.GrailsControllerClass
-import grails.core.GrailsDomainClass
 import grails.rest.Resource
 import grails.web.mapping.LinkGenerator
 import grails.web.mapping.UrlMappingsHolder
@@ -19,13 +18,8 @@ class RestfulResourceService {
   
   private Map<String, Boolean> knownResources = new ConcurrentHashMap<String, Boolean>()
   
-  @Autowired(required=true)
   GrailsApplication grailsApplication
-  
-  @Autowired(required=true)
   UrlMappingsHolder grailsUrlMappingsHolder
-  
-  @Autowired(required=true)
   LinkGenerator grailsLinkGenerator
   
   public Boolean isResource ( final def domainTarget ) {
@@ -48,10 +42,11 @@ class RestfulResourceService {
   public Map getResourceInfo (boolean extendedInfo = false) {
     def conf = [:]
     Set<String> processedControllers = []
-    grailsApplication.domainClasses.each { GrailsDomainClass dc ->
+    
+    grailsApplication.mappingContext.getPersistentEntities().each { PersistentEntity dc ->
       
       // The name of the controller derived from the DomainClass.
-      String name = "${dc.logicalPropertyName}"
+      String name = "${dc.decapitalizedName}"
       
       // Test the name
       if (!processedControllers.contains(name)) {
@@ -65,7 +60,7 @@ class RestfulResourceService {
         if (ctrl) {
   
           // Grab the associated class with this domain object.
-          final clazz = dc.clazz
+          final clazz = dc.javaClass
     
           // Check for the resource annotation.
           Resource rann = clazz.getAnnotation(Resource)
@@ -78,7 +73,7 @@ class RestfulResourceService {
             if (uri) {
               details = [
                 'baseUri': uri,
-                'identifierProp':  dc.identifier.name
+                'identifierProps':  dc.compositeIdentity?.collect(name) ?: [dc.identity.name]
               ]
             }
           } else {
@@ -91,7 +86,7 @@ class RestfulResourceService {
               // Discard the extras.
               details = [
                 baseUri: details['baseUri'],
-                'identifierProp':  dc.identifier.name
+                'identifierProps':  dc.compositeIdentity?.collect(name) ?: [dc.identity.name]
               ]
             }
           }
@@ -108,17 +103,17 @@ class RestfulResourceService {
             }
             
             // We can now add our details to the mapping.
-            conf[dc.shortName] = details
+            conf[dc.decapitalizedName] = details
           }
           
           processedControllers << name
         }
       }
       
-      if (conf.containsKey(dc.shortName)) {
-        knownResources[dc.shortName] = true
+      if (conf.containsKey(dc.decapitalizedName)) {
+        knownResources[dc.decapitalizedName] = true
       } else {
-        knownResources[dc.shortName] = false
+        knownResources[dc.decapitalizedName] = false
       }
     }
     

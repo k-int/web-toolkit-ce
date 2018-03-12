@@ -1,16 +1,29 @@
 package com.k_int.web.toolkit.utils
 
-import com.fasterxml.jackson.databind.introspect.AnnotatedClass
+import org.grails.core.artefact.ControllerArtefactHandler
+import org.grails.datastore.mapping.model.MappingContext
+import org.grails.datastore.mapping.model.PersistentEntity
+import org.grails.datastore.mapping.model.PersistentProperty
+import org.grails.datastore.mapping.model.types.Association
 
 import grails.core.GrailsApplication
 import grails.core.GrailsControllerClass
-import grails.core.GrailsDomainClass
 import grails.rest.RestfulController
 import grails.util.Holders
 import groovy.transform.Memoized
-import org.grails.core.artefact.ControllerArtefactHandler
 
 public class DomainUtils {
+  
+  
+  private static GrailsApplication getGrailsApplication() {
+    Holders.grailsApplication
+  }
+  
+  private static MappingContext getMappingContext() {
+    def mc = grailsApplication.mainContext.getBean('grailsDomainClassMappingContext')
+    mc
+  }
+  
   
   /**
    * Matches domain classes by Fully qualified or simple name. i.e. com.k-int.MyClass or MyClass.
@@ -22,19 +35,18 @@ public class DomainUtils {
    * @return The matching class or null if not found. 
    */
   @Memoized(maxCacheSize=50)
-  public static GrailsDomainClass findDomainClass ( final String domainClassString ) {
+  public static PersistentEntity findDomainClass ( final String domainClassString ) {
     if (!domainClassString) return null
     
-    GrailsApplication grailsApplication = Holders.grailsApplication
-    grailsApplication.getDomainClass("${domainClassString}") ?: grailsApplication.domainClasses.find { it.clazz.simpleName.toLowerCase() == domainClassString.toLowerCase() }
+    mappingContext.getPersistentEntity(domainClassString) ?: mappingContext.getPersistentEntities().find({PersistentEntity pe -> pe.javaClass.simpleName.toLowerCase() == domainClassString.toLowerCase()})
   }
   
-  public static GrailsDomainClass resolveDomainClass (final def target) {
+  public static PersistentEntity resolveDomainClass (final def target) {
     
     def dc = target
     
     // We can accept the Basic class representation
-    if (dc != null && !GrailsDomainClass.isAssignableFrom(dc.class)) {
+    if (dc != null && !PersistentEntity.isAssignableFrom(dc.class)) {
       
       // Test the target.
       switch (dc) {
@@ -68,23 +80,23 @@ public class DomainUtils {
       }
       
       def type = resolveDomainClass(target)
+      
   
       // Cycle through the properties to get to the end target.
-      def owner = type.clazz
+      def owner = type.javaClass
       String lastPropName
       def props = prop.split('\\.')
       props.each { p ->
         lastPropName = p
-        owner = type.clazz
-        def theProp  = type.getPersistentProperty(p)
-        def domainRef = theProp.referencedDomainClass
-        type = domainRef ? domainRef : theProp.referencedPropertyType
+        owner = type.javaClass
+        PersistentProperty theProp  = type.getPropertyByName(p)
+        type = (theProp instanceof Association) ? ((Association)theProp).associatedEntity : theProp.type
       }
   
       // Get the class for the type.
       return [
-        "domain":  (type instanceof GrailsDomainClass),
-        "type"  :  type instanceof GrailsDomainClass ? type.clazz : type,
+        "domain":  (type instanceof PersistentEntity || mappingContext.isPersistentEntity(type)),
+        "type"  :  type instanceof PersistentEntity ? type.javaClass : type,
         "owner" :  owner,
         "prop"  :  lastPropName
       ]
@@ -100,13 +112,13 @@ public class DomainUtils {
     GrailsControllerClass match = null
     try {
       GrailsApplication grailsApplication = Holders.grailsApplication
-      GrailsDomainClass type = resolveDomainClass(target)
+      PersistentEntity type = resolveDomainClass(target)
       def ctrls = grailsApplication.getArtefacts(ControllerArtefactHandler.TYPE)
       for (int i=0; i<ctrls.length && !match; i++ ) {
         if (RestfulController.class.isAssignableFrom(ctrls[i].clazz)) {
           // We should check the ocject type.
           def controller = grailsApplication.mainContext.getBean(ctrls[i].clazz)
-          if (controller.resource == type.clazz) {
+          if (controller.resource == type.javaClass) {
             match = ctrls[i]
           }
         }

@@ -1,18 +1,23 @@
 package com.k_int.web.toolkit.json
 
-import com.k_int.web.toolkit.utils.DomainUtils
-
-import grails.core.GrailsDomainClass
-import grails.core.GrailsDomainClassProperty
-import grails.util.GrailsNameUtils
-import grails.validation.ConstrainedProperty
-import groovy.transform.CompileStatic
 import org.apache.commons.lang.ClassUtils
+import org.grails.datastore.gorm.validation.constraints.eval.ConstraintsEvaluator
+import org.grails.datastore.mapping.model.PersistentEntity
+import org.grails.datastore.mapping.model.PersistentProperty
+import org.grails.datastore.mapping.model.types.Association
+import org.grails.web.plugins.support.ValidationSupport
+import org.springframework.context.ApplicationContext
+import com.k_int.web.toolkit.utils.DomainUtils
+import grails.gorm.validation.Constrained
+import grails.gorm.validation.ConstrainedProperty
+import grails.util.GrailsNameUtils
+import grails.util.Holders
+import groovy.transform.CompileStatic
 
 class JsonSchemaUtils {
   
   private static String resolveSimpleName (final def obj) {
-    def type = obj instanceof GrailsDomainClass ? obj.clazz : obj
+    def type = obj instanceof PersistentEntity ? obj.javaClass : obj
     type.simpleName
   }
   
@@ -46,8 +51,8 @@ class JsonSchemaUtils {
     json['title'] = GrailsNameUtils.getNaturalName(schemaName)
     
     // Get the type of this object first.
-    String type = jsonType(target ?: obj)
-    json['type'] = type
+    json += jsonType(target ?: obj)
+    String type = json['type']
     
     // Only objects need expanding.
     if (type == 'object') {
@@ -64,15 +69,15 @@ class JsonSchemaUtils {
         ]
       
         // Lets take a look at the properties now.
-        json.putAll(buildChildren (target ?: obj, embedReferences ? '#/references/' : "${linkPrefix.length() < 1 ? '/' : linkPrefix}" , existingSchemas))
+        json.putAll(buildChildren (target ?: obj, embedReferences ? '#/definitions/' : "${linkPrefix.length() < 1 ? '/' : linkPrefix}" , existingSchemas))
         
         // References now need to be filtered.
         if (embedReferences) {
-          json['references'] = existingSchemas.collectEntries { entry -> 
+          json['definitions'] = existingSchemas.collectEntries { entry -> 
             entry.value?.schema != null ? [(entry.key) : entry.value.schema] : [:]
           }
         } else {
-          json.remove('references')
+          json.remove('definitions')
         }
       }
     }
@@ -86,14 +91,13 @@ class JsonSchemaUtils {
     final Map<String, ?> properties = [:]
     
     Map<String, ?> conMap = [:]
-    
-    if (obj instanceof GrailsDomainClass) {
+    if (obj instanceof PersistentEntity) {
       
-      // Grab the contrained property map.
-      Map <String,Object> constraints =  obj.constrainedProperties
+      // Grab the contraints evaluator.
+      Map<String, ConstrainedProperty> constraints = ValidationSupport.getConstrainedPropertiesForClass(obj.javaClass)
       
       // This schema needs building and then the reference adding.
-      obj.properties.each { GrailsDomainClassProperty prop ->
+      obj.persistentProperties.each { PersistentProperty prop ->
         
         // Gorm adds some properties of type Object to track identifiers.
         if (!(prop.type == Object && prop.name.endsWith ('Id'))) {
@@ -101,8 +105,7 @@ class JsonSchemaUtils {
           // Although referencedPropertyType is supposed to delegate to type if not a reference,
           // this doesn't work in every instance. For instance when declaring a custom primitive Identifier
           // type. Like String based UIDs.
-          def propType = prop.referencedPropertyType ?: prop.type
-          
+          def propType = (prop instanceof Association) ? prop.associatedEntity : prop.type
           
           // Derive the schema name for the target object type.
           String schemaName = resolveSimpleName(propType)
@@ -116,14 +119,14 @@ class JsonSchemaUtils {
             val = [:]//['title' : GrailsNameUtils.getNaturalName(schemaName)]
             
             // Get the type of this object.
-            String type = jsonType(propType)
-            val['type'] = type
+            val += jsonType(propType)
+            String type = val['type']
             
             // Only objects need expanding.
             if (type == 'object') {
               
               // Check to see if we have any children.
-              def children = prop.referencedPropertyType.properties
+              def children = propType.properties
               
               if (children) {
             
@@ -134,7 +137,7 @@ class JsonSchemaUtils {
                 ]
               
                 // Lets take a look at the properties now.
-                val.putAll ( buildChildren (prop.referencedDomainClass ?: propType, idPrefix, existingSchemas))
+                val.putAll ( buildChildren (propType, idPrefix, existingSchemas))
                 
                 // Add the schema once built too!
                 existingSchemas[schemaName]['schema'] = val
@@ -146,15 +149,14 @@ class JsonSchemaUtils {
             
             
             // Examine any constraints.
-            def con = constraints[prop.name]
-            if (con) {
-              val = examineContraints(con, type, [prop: val, owner: conMap ]).get('prop')
+            if (constraints.containsKey(prop.name)) {
+              val = examineContraints(constraints[prop.name], type, [prop: val, owner: json ]).get('prop')
             }
           }
           
           // Get the actual type in case of collection. 
-          String theType = jsonType(prop.type)
-          if (theType == 'array') {
+          def theType = jsonType(prop.type)
+          if (theType.type == 'array') {
             // This property is a collection
             val = [
               type: 'array',
@@ -180,8 +182,8 @@ class JsonSchemaUtils {
           // Let's generate. We won't traverse children though as that would make the schema very large, and we don't really care about
           // None-domain complex structures.
           // Get the type of this object first.
-          String type = jsonType(prop.type)
-          val = ['type': type ]
+          val = jsonType(prop.type)
+          String type = val['type']
           
           // Special collections type.
           if (type == 'array') {
@@ -202,8 +204,8 @@ class JsonSchemaUtils {
     json
   }
   
-//  @CompileStatic
-  private static Map<String, ?> examineContraints (final def con, String jsonType, final Map<String, ?> props) {
+  @CompileStatic
+  private static Map<String, ?> examineContraints (final ConstrainedProperty con, String jsonType, final Map<String, ?> props) {
     
     // Constraints.
     // Props map should contain a prop key and an owner key.
@@ -213,7 +215,7 @@ class JsonSchemaUtils {
     if (!con.nullable) {
       // Required exists on the object that declares the property and not on the property definition itself.
       Set<String> required = (Set<String>)o['required']
-      if (!o['required']) {
+      if (!required) {
         required = [] as Set<String>
         // initialise as set.
         o['required'] = required
@@ -268,11 +270,6 @@ class JsonSchemaUtils {
             }
           }
           break
-        case 'date' :
-          // Check if blank is allowed. we can then infer the minimum.
-          p['type'] = 'string'
-          p['format'] = 'date-time'
-          break
           
         case 'array' :
           def etremity = con.maxSize
@@ -293,10 +290,10 @@ class JsonSchemaUtils {
   }
   
   @CompileStatic
-  private static String jsonType ( final def propertyType ) {
-    String type 
+  private static Map<String,?> jsonType ( final def propertyType ) {
+    Map<String,?> theDef = [:]
     if (propertyType == null) {
-      type = 'null'
+      theDef.type = 'null'
     } else {
       
       // We need the class.
@@ -310,34 +307,33 @@ class JsonSchemaUtils {
       switch (theClass) {
         
         case {Number.isAssignableFrom(theClass)} :
-          type = jsonNumberSpec (theClass as Class<Number>)
+          theDef.type = jsonNumberSpec (theClass as Class<Number>)
           break
         
         case {Date.isAssignableFrom(theClass)} :
-          type = 'date'
-          break
-          
+          theDef.format = 'date-time'
+
         case {String.isAssignableFrom(theClass)} :
-          type =  'string'
+          theDef.type =  'string'
           break
         
         case {Boolean.isAssignableFrom(theClass)} :
-          type =  'boolean'
+          theDef.type =  'boolean'
           break
         
         case {Collection.isAssignableFrom(theClass) && !Map.isAssignableFrom(theClass)} :
           // Maps, even though a collection must be represented as an object.
-          type =  'array'
+          theDef.type =  'array'
           break
         
         default :
           // The default is 'object'
-          type =  'object'          
+          theDef.type =  'object'          
           break
       }
     }
     
-    type
+    theDef
   }
   
   @CompileStatic

@@ -1,11 +1,15 @@
 package com.k_int.web.toolkit
 
+import com.k_int.web.toolkit.databinding.ExtendedWebDataBinder
+
+import grails.config.Settings
 import grails.plugins.*
+import grails.web.databinding.DataBindingUtils
 
 class WebToolkitGrailsPlugin extends Plugin {
 
     // the version or versions of Grails the plugin is designed for
-    def grailsVersion = "3.2.10 > *"
+    def grailsVersion = "3.3.0 > *"
     // resources that are excluded from plugin packaging
     def pluginExcludes = [
         "grails-app/views/error.gsp"
@@ -46,9 +50,23 @@ Brief summary/description of the plugin.
 //    def scm = [ url: "http://svn.codehaus.org/grails-plugins/" ]
 
     Closure doWithSpring() { {->
-            // TODO Implement runtime spring config (optional)
-        }
-    }
+      def application = grailsApplication
+      def config = application.config
+      boolean trimStringsSetting = config.getProperty(Settings.TRIM_STRINGS, Boolean, true)
+      boolean convertEmptyStringsToNullSetting = config.getProperty(Settings.CONVERT_EMPTY_STRINGS_TO_NULL, Boolean, true)
+      Integer autoGrowCollectionLimitSetting = config.getProperty(Settings.AUTO_GROW_COLLECTION_LIMIT, Integer, 256)
+      
+
+      // Replace the default data binder with out custom version.
+      "${DataBindingUtils.DATA_BINDER_BEAN_NAME}"(ExtendedWebDataBinder, grailsApplication) {
+        // trimStrings defaults to TRUE
+        trimStrings = trimStringsSetting
+        // convertEmptyStringsToNull defaults to TRUE
+        convertEmptyStringsToNull = convertEmptyStringsToNullSetting
+        // autoGrowCollectionLimit defaults to 256
+        autoGrowCollectionLimit = autoGrowCollectionLimitSetting
+      }
+    }}
 
     void doWithDynamicMethods() {
         // TODO Implement registering dynamic methods to classes (optional)
