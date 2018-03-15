@@ -23,14 +23,14 @@ class WebToolkitGrailsPlugin extends Plugin {
 
     // TODO Fill in these fields
     def title = "Web Toolkit" // Headline display name of the plugin
-    def author = "Your name"
-    def authorEmail = ""
+    def author = "Steve Osguthorpe"
+    def authorEmail = "steve.osguthorpe@k-int.com"
     def description = '''\
-Brief summary/description of the plugin.
-'''
+      Provides general tooling for web application frontend development.
+    '''
 
     // URL to the plugin's documentation
-    def documentation = "http://grails.org/plugin/web-toolkit"
+//    def documentation = "http://grails.org/plugin/web-toolkit"
 
     // Extra (optional) plugin metadata
 
