@@ -1,3 +1,6 @@
+def un = project.hasProperty('kintMavenUser') ? project.kintMavenUser : null
+def pw = project.hasProperty('kintMavenPassword') ? project.kintMavenPassword : null
+
 buildscript {
     repositories {
         mavenLocal()
@@ -11,7 +14,7 @@ buildscript {
 }
 
 version "3.3.1"
-group "web.toolkit"
+group "com.k_int.grails"
 
 apply plugin:"eclipse"
 apply plugin:"idea"
@@ -56,25 +59,47 @@ dependencies {
     testCompile "org.grails:grails-datastore-rest-client"
     testRuntime "org.seleniumhq.selenium:selenium-htmlunit-driver:2.47.1"
     testRuntime "net.sourceforge.htmlunit:htmlunit:2.18"
+    
+    provided 'org.grails.plugins:spring-security-core:3.2.0'
 }
 
 bootRun {
     jvmArgs('-Dspring.output.ansi.enabled=always')
     addResources = true
 }
-// enable if you wish to package this plugin as a standalone application
-bootRepackage.enabled = false
-grailsPublish {
-    // TODO: Provide values here
-    user = 'user'
-    key = 'key'
-    githubSlug = 'foo/bar'
-    license {
-        name = 'Apache-2.0'
+
+publishing {
+  publications {
+      plugin(MavenPublication) {
+          groupId "${group}"
+          pom.withXml {
+              def pomNode = asNode()
+              pomNode.dependencyManagement.replaceNode {}
+
+              // simply remove dependencies without a version
+              // version-less dependencies are handled with dependencyManagement
+              // see https://github.com/spring-gradle-plugins/dependency-management-plugin/issues/8 for more complete solutions
+              pomNode.dependencies.dependency.findAll {
+                  it.version.text().isEmpty()
+              }.each {
+                  it.replaceNode {}
+              }
+          }
+          from components.java
+      }
+  }
+  
+  if (un) {
+    System.out.println("Found username for K-Int Maven repo '${un}'")
+    repositories {
+      maven {
+        name "KIntPrivate"
+        url "http://maven.k-int.com/content/repositories/private/"
+        credentials {
+          username un
+          password pw
+        }
+      }
     }
-    title = "My Plugin"
-    desc = "Full plugin description"
-    developers = [johndoe:"John Doe"]
-    portalUser = ""
-    portalPassword = ""    
+  }
 }
