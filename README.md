@@ -56,3 +56,15 @@ root
 └── settings.gradle         <--- Create this file and add the content as detailed in #2
 
 ```
+
+# Development
+
+## Publish
+edit ~/.gradle/gradle.properties and add
+
+    kintMavenUser=
+    kintMavenPassword=
+
+then run
+    grails publish-plugin
+
