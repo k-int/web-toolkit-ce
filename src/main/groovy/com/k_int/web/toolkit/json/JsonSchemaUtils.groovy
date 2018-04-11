@@ -98,9 +98,9 @@ class JsonSchemaUtils {
       
       // This schema needs building and then the reference adding.
       obj.persistentProperties.each { PersistentProperty prop ->
-        
+        boolean owningRelationship = (prop instanceof Association) ? ((Association)prop).isOwningSide() : true
         // Gorm adds some properties of type Object to track identifiers.
-        if (!(prop.type == Object && prop.name.endsWith ('Id'))) {
+        if (!(prop.type == Object && prop.name.endsWith ('Id')) && owningRelationship) {
           
           // Although referencedPropertyType is supposed to delegate to type if not a reference,
           // this doesn't work in every instance. For instance when declaring a custom primitive Identifier
@@ -223,12 +223,12 @@ class JsonSchemaUtils {
       
       // Add the property.
       required << con.propertyName
-    } else {
-      // Can be either the declared type or null.
-      Map<String,?> anyOf = [anyOf : [p, [ "type": "null" ]]]
-      
-      // Replace in the original map, but do not change the reference above.
-      props['prop'] = anyOf
+//    } else {
+//      // Can be either the declared type or null.
+//      Map<String,?> anyOf = [anyOf : [p, [ "type": "null" ]]]
+//      
+//      // Replace in the original map, but do not change the reference above.
+//      props['prop'] = anyOf
     }
     
     // Type specifics.
@@ -262,11 +262,12 @@ class JsonSchemaUtils {
             p['minLength'] = etremity
           } else {
             // Check if blank is allowed. we can then infer the minimum.
-            if (con.blank) {
+            String format = p['format']
+            if (con.blank && !format?.startsWith('date')) {
               p['minLength'] = 0
-            } else {
-              // None-Blank string has to be greater than 1 character. 
-              p['minLength'] = 1
+//            } else {
+//              // None-Blank string has to be greater than 1 character. 
+//              p['minLength'] = 1
             }
           }
           break
