@@ -2,7 +2,9 @@ package com.k_int.web.toolkit
 
 import static org.springframework.http.HttpStatus.*
 
-import org.grails.core.DefaultGrailsDomainClass
+import org.grails.datastore.mapping.model.PersistentEntity
+
+import com.k_int.web.toolkit.utils.DomainUtils
 
 import grails.core.GrailsApplication
 
@@ -17,7 +19,7 @@ class ValidateController {
   def index(String domain, String prop) {
     
     // Try and locate the Domain class.
-    DefaultGrailsDomainClass target = grailsApplication.getDomainClass("${domain}") ?: grailsApplication.domainClasses.find { it.clazz.simpleName == domain }
+    PersistentEntity target = DomainUtils.findDomainClass(domain)
     
     // Do the 
     Class type
@@ -30,8 +32,11 @@ class ValidateController {
     
     // Handle the id specially.
     def bindings = getObjectToBind()
-    if (bindings.id) {
-      object['id'] = bindings.id
+    
+    String idName = target.getIdentity().name
+    
+    if (idName) {
+      object[idName] = bindings."${idName}"
     }
     
     // Bind the supplied properties.
