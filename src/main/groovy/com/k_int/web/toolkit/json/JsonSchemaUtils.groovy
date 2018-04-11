@@ -98,9 +98,9 @@ class JsonSchemaUtils {
       
       // This schema needs building and then the reference adding.
       obj.persistentProperties.each { PersistentProperty prop ->
-        boolean owningRelationship = (prop instanceof Association) ? ((Association)prop).isOwningSide() : true
+        
         // Gorm adds some properties of type Object to track identifiers.
-        if (!(prop.type == Object && prop.name.endsWith ('Id')) && owningRelationship) {
+        if (!(prop.type == Object && prop.name.endsWith ('Id'))) {
           
           // Although referencedPropertyType is supposed to delegate to type if not a reference,
           // this doesn't work in every instance. For instance when declaring a custom primitive Identifier
