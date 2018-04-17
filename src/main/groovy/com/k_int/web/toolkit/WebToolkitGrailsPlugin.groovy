@@ -1,9 +1,12 @@
 package com.k_int.web.toolkit
 
 import com.k_int.web.toolkit.databinding.ExtendedWebDataBinder
+import com.k_int.web.toolkit.links.ProxyAwareCachingLinkGenerator
+import com.k_int.web.toolkit.links.ProxyAwareLinkGenerator
 
 import grails.config.Settings
 import grails.plugins.*
+import grails.util.Environment
 import grails.web.databinding.DataBindingUtils
 
 class WebToolkitGrailsPlugin extends Plugin {
@@ -49,14 +52,18 @@ class WebToolkitGrailsPlugin extends Plugin {
     // Online location of the plugin's browseable source code.
 //    def scm = [ url: "http://svn.codehaus.org/grails-plugins/" ]
 
-    Closure doWithSpring() { {->
+    Closure doWithSpring() { {ctx->
       def application = grailsApplication
       def config = application.config
       boolean trimStringsSetting = config.getProperty(Settings.TRIM_STRINGS, Boolean, true)
       boolean convertEmptyStringsToNullSetting = config.getProperty(Settings.CONVERT_EMPTY_STRINGS_TO_NULL, Boolean, true)
       Integer autoGrowCollectionLimitSetting = config.getProperty(Settings.AUTO_GROW_COLLECTION_LIMIT, Integer, 256)
       
-
+      // Replace the default link generator.
+      boolean isReloadEnabled = Environment.isDevelopmentMode() || Environment.current.isReloadEnabled()
+      boolean cacheUrls = config.getProperty(Settings.WEB_LINK_GENERATOR_USE_CACHE, Boolean, !isReloadEnabled)
+      grailsLinkGenerator(cacheUrls ? ProxyAwareCachingLinkGenerator : ProxyAwareLinkGenerator, config.getProperty(Settings.SERVER_URL) ?: null)
+      
       // Replace the default data binder with out custom version.
       "${DataBindingUtils.DATA_BINDER_BEAN_NAME}"(ExtendedWebDataBinder, grailsApplication) {
         // trimStrings defaults to TRUE
@@ -72,8 +79,7 @@ class WebToolkitGrailsPlugin extends Plugin {
         // TODO Implement registering dynamic methods to classes (optional)
     }
 
-    void doWithApplicationContext() {
-        // TODO Implement post initialization spring config (optional)
+    void doWithApplicationContext() {      
     }
 
     void onChange(Map<String, Object> event) {

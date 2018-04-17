@@ -12,21 +12,6 @@ class ConfigController {
   static responseFormats = ['json']
   RestfulResourceService restfulResourceService
   
-  private String getRootLink(String type) {
-    String theUri = request.forwardURI.toLowerCase().replaceAll("${type.toLowerCase()}(\\/?)\$", "").replaceAll(/\/\//, '/')
-    
-    String link = request.getHeader('host')
-    
-    if (!link) {
-      link = grailsLinkGenerator.link(absolute: true, uri: theUri)
-    } else {
-      String proto = request.getHeader("X-Forwarded-Proto") ?: request.scheme
-      link = "${proto}://${link}${theUri}"
-    }
-    
-    link
-  }
-  
   def resources () {
     boolean extended = params.get('extended') == 'extended'
     render ([
@@ -35,13 +20,15 @@ class ConfigController {
   }
   
   def schemaEmbedded (String type) {
-    def schema = JsonSchemaUtils.jsonSchema(type, getRootLink(type), true)
+    String theUri = request.forwardURI.toLowerCase().replaceAll("${type.toLowerCase()}(\\/?)\$", "").replaceAll(/\/\//, '/')
+    def schema = JsonSchemaUtils.jsonSchema(type, grailsLinkGenerator.link(absolute: true, uri: theUri), true)
     render schema as JSON
   }
   
   
   def schema (String type) {
-    def schema = JsonSchemaUtils.jsonSchema(type, getRootLink(type) ,false)
+    String theUri = request.forwardURI.toLowerCase().replaceAll("${type.toLowerCase()}(\\/?)\$", "").replaceAll(/\/\//, '/')
+    def schema = JsonSchemaUtils.jsonSchema(type, grailsLinkGenerator.link(absolute: true, uri: theUri) ,false)
     render schema as JSON
   }
 }
