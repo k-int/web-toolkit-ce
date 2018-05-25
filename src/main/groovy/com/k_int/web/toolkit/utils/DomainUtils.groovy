@@ -5,12 +5,13 @@ import org.grails.datastore.mapping.model.MappingContext
 import org.grails.datastore.mapping.model.PersistentEntity
 import org.grails.datastore.mapping.model.PersistentProperty
 import org.grails.datastore.mapping.model.types.Association
-
+import com.k_int.web.toolkit.search.Searchable
 import grails.core.GrailsApplication
 import grails.core.GrailsControllerClass
 import grails.rest.RestfulController
 import grails.util.Holders
 import groovy.transform.Memoized
+import java.lang.reflect.Field
 
 public class DomainUtils {
   
@@ -86,20 +87,59 @@ public class DomainUtils {
       def owner = type.javaClass
       String lastPropName
       def props = prop.split('\\.')
+      
+      final Map<String,Boolean> searchConfig = [
+        value: true,
+        filter: true,
+        sort: true
+      ]
+      
+      final Set<String> keys = [] + searchConfig.keySet()
+      
       props.each { p ->
         lastPropName = p
         owner = type.javaClass
         PersistentProperty theProp  = type.getPropertyByName(p)
         type = (theProp instanceof Association) ? ((Association)theProp).associatedEntity : theProp.type
+        
+        
+        // We should check the presence of search annotation. Check the class first.
+        Searchable searchable = null
+        
+        // Field annotation
+        Field classField = owner.getDeclaredField(p)
+        if (classField?.isAnnotationPresent(Searchable)) {
+          
+          // Get the value of the annotation on the field.
+          searchable = classField.getAnnotation(Searchable)
+          
+        } else  if (owner.isAnnotationPresent(Searchable)) {
+          
+          // Get the value of the annotation on the class.
+          searchable = owner.getAnnotation(Searchable)
+        }
+        
+        if (searchable) {
+          
+          // Merge the values in.
+          keys.each { String key ->
+            searchConfig[key] = searchConfig[key] && (searchable."${key}"())
+          }
+        }
       }
+      
+      searchConfig['search'] = searchConfig['value']
+      searchConfig.remove('value')
   
       // Get the class for the type.
-      return [
+      final def desc = [
         "domain":  (type instanceof PersistentEntity || mappingContext.isPersistentEntity(type)),
-        "type"  :  type instanceof PersistentEntity ? type.javaClass : type,
+        "type"  :  (type instanceof PersistentEntity ? type.javaClass : type),
         "owner" :  owner,
         "prop"  :  lastPropName
-      ]
+      ] + searchConfig
+      
+      desc
     } catch (Exception e) { return null }
   }
   

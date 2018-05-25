@@ -273,19 +273,23 @@ class SimpleLookupService {
               }
               
               if (propDef) {
-                def propertyType = propDef.type
-                def propName = getAliasedProperty(criteria, aliasStack, prop) as String
+                if (propDef.filter) {
+                  def propertyType = propDef.type
+                  def propName = getAliasedProperty(criteria, aliasStack, prop) as String
+                  
+                  // Can't ilike on none-strings. So we should change back to eq.
+                  if (op == 'ilike' && !String.class.isAssignableFrom(propertyType)) {
+                    op = 'eq'
+                  }
                 
-                // Can't ilike on none-strings. So we should change back to eq.
-                if (op == 'ilike' && !String.class.isAssignableFrom(propertyType)) {
-                  op = 'eq'
+                  log.trace ("${indentation}${op} ${prop}, ${value}")
+                  def val = valueConverterService.attemptConversion(propertyType, value)
+                  
+                  log.debug ("Converted ${value} into ${val}")
+                  crit = Restrictions."${op}" (propName, val)
+                } else {
+                  log.debug "Filter on ${parts} has been disallowed."
                 }
-              
-                log.trace ("${indentation}${op} ${prop}, ${value}")
-                def val = valueConverterService.attemptConversion(propertyType, value)
-                
-                log.debug ("Converted ${value} into ${val}")
-                crit = Restrictions."${op}" (propName, val)
               } else {
                 log.debug "Could not process op def ${parts}"
               }
@@ -317,19 +321,24 @@ class SimpleLookupService {
         def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop)
         
         if (propDef) {
-          def propertyType = propDef.type
-          def propName = getAliasedProperty(criteria, aliasStack, prop) as String
-          
-          // We use equal unless the compared property is a String then we should use iLIKE
-          def op = 'eq'
-          if (String.class.isAssignableFrom(propertyType)) {
-            textMatches << Restrictions.ilike("${propName}", "${term}", textMatching)
-            log.debug ("Looking for term '${term}' in ${propName}" )
+        
+          if (propDef.search) {
+            def propertyType = propDef.type
+            def propName = getAliasedProperty(criteria, aliasStack, prop) as String
+            
+            // We use equal unless the compared property is a String then we should use iLIKE
+            def op = 'eq'
+            if (String.class.isAssignableFrom(propertyType)) {
+              textMatches << Restrictions.ilike("${propName}", "${term}", textMatching)
+              log.debug ("Looking for term '${term}' in ${propName}" )
+            } else {
+              // Attempt to convert the value into one comparable with the target. 
+              def val = valueConverterService.attemptConversion(propertyType, term)
+              textMatches << Restrictions.eq("${propName}", val)
+              log.debug ("Converted ${term} into ${val} as type '${propertyType}'")
+            }
           } else {
-            // Attempt to convert the value into one comparable with the target. 
-            def val = valueConverterService.attemptConversion(propertyType, term)
-            textMatches << Restrictions.eq("${propName}", val)
-            log.debug ("Converted ${term} into ${val} as type '${propertyType}'")
+            log.debug "Search on ${prop} has been disallowed."
           }
         } else {
           log.debug "Could not process ${prop}"
@@ -338,6 +347,34 @@ class SimpleLookupService {
     }
     
     textMatches
+  }
+  
+  private addSorts (final target, final sorts) {
+    final Map<String, String> aliasStack = [:]
+    
+    sorts.each { String sort ->
+      final String[] sortParts = sort.split(/;/)
+      final String prop = sortParts[0]
+      
+      def propDef = DomainUtils.resolveProperty(target.targetClass, prop)
+      if (propDef) {
+        if (propDef.sort) {
+        
+          // Sort direction for this field.
+          final String direction = (sortParts.length > 1 ? sortParts[1] : 'asc')?.toLowerCase() == 'desc' ? 'desc' : 'asc'
+          
+          def propName = getAliasedProperty(target, aliasStack, prop) as String
+          if (propName) {
+            target.addOrder(Order."${direction}"(propName))
+            log.debug "Sort on ${propName} ${direction}."
+          }
+        } else {
+          log.debug "Sort on ${prop} has been disallowed."
+        }
+      } else {
+        log.debug "Could not process sort ${prop}"
+      }
+    }
   }
 
   private DetachedCriteria buildLookupCriteria(final DetachedCriteria criteria, final String term, final match_in, final filters) {
@@ -365,7 +402,7 @@ class SimpleLookupService {
     criteria
   }
 
-  public def lookup (final Class c, final String term, final Integer perPage = 10, final Integer page = 1, final List filters = [], final List match_in = [], final Closure base = null) {
+  public def lookup (final Class c, final String term, final Integer perPage = 10, final Integer page = 1, final List filters = [], final List match_in = [], final List sorts = [], final Closure base = null) {
 
     // Results per page, cap at 1000 for safety here. This will probably be capped by the implementing controller to a lower value.
     int pageSize = Math.min(perPage, 1000)
@@ -390,10 +427,15 @@ class SimpleLookupService {
           buildLookupCriteria(DetachedCriteria.forClass(targetClass, 'uniques'), term, match_in, filters)
         )
       )
+      
+      // Add any sorts.
+      if (sorts) {
+        addSorts (delegate, sorts)
+      }
     })
   }
 
-  public def lookupWithStats (final Class c, final String term, final Integer perPage = 10, final Integer page = 1, final List filters = [], final List match_in = [], final Closure base = null, final Map<String,Closure> extraStats = null) {
+  public def lookupWithStats (final Class c, final String term, final Integer perPage = 10, final Integer page = 1, final List filters = [], final List match_in = [], final List sorts = [], final Closure base = null, final Map<String,Closure> extraStats = null) {
 
     Map aliasStack = [:]
 
@@ -403,7 +445,7 @@ class SimpleLookupService {
     // Stats is now an array containing the projections we asked for.
     // Positions 0 and 1 contain the total count and id respectively.
     def statMap = [
-      'results'     : lookup(c, term, pageSize, page, filters, match_in, base),
+      'results'     : lookup(c, term, pageSize, page, filters, match_in, sorts, base),
       'pageSize'    : pageSize,
       'page'        : page ?: 1,
       'totalPages'  : 0,
@@ -437,6 +479,11 @@ class SimpleLookupService {
         if (extra) {
           extra.setDelegate(delegate)
           extra()
+        }
+        
+        // Add any sorts.
+        if (sorts) {
+          addSorts (delegate, [:], sorts)
         }
       }
       
