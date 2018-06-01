@@ -172,7 +172,7 @@ class JsonSchemaUtils {
                   ]
                   
                   schema.ref = [
-                    'oneOf' : [
+                    'anyOf' : [
                       idTypeDef,
                       [
                         type: 'object',
