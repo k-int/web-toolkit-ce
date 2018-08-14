@@ -57,6 +57,7 @@ dependencies {
     testRuntime "net.sourceforge.htmlunit:htmlunit:2.18"
     
     provided 'org.grails.plugins:spring-security-core:3.2.0'
+    compile "org.postgresql:postgresql:42.2.4"
 }
 
 bootRun {
