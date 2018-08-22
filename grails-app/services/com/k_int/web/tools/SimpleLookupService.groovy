@@ -34,25 +34,35 @@ class SimpleLookupService {
   }
 
   private static final String checkAlias(def target, final Map<String, String> aliasStack, String dotNotationString) {
+    
+    log.debug ("Checking for ${dotNotationString}")
+    
     def str = aliasStack[dotNotationString]
     if (!str) {
 
+      log.debug "Full match not found..."
+        
       // No alias found for exact match.
       // Start from the front and build up aliases.
       String[] props = dotNotationString.split("\\.")
       String propStr = "${props[0]}"
-      String alias = aliasStack[propStr];
+      String alias = aliasStack[propStr]
+      String currentAlias = alias
       int counter = 1
-      while (alias && counter < props.length) {
-        str = "${alias}"
+      while (currentAlias && counter < props.length) {
+        str = "${currentAlias}"
         String test = propStr + ".${props[counter]}"
-
-        alias = aliasStack[test]
-        if (alias) {
+        log.debug "Testing for ${test}"
+        currentAlias = aliasStack[test]
+        if (currentAlias) {
+          alias = currentAlias
           propStr += test
         }
         counter ++
       }
+      
+      log.debug "...propStr: ${propStr}"
+      log.debug "...alias: ${alias}"
 
       // At this point we should have a dot notated alias string, where the aliases already been created for this query.
       // Any none existent aliases will need creating but also adding to the map for traversing.
@@ -83,6 +93,9 @@ class SimpleLookupService {
   }
 
   private static final Map getAliasedProperty (def target, final Map<String, String> aliasStack, final String propname) {
+    
+    log.debug "Looking for property ${propname}"
+    
     // Split at the dot.
     String[] levels = propname.split("\\.")
 
