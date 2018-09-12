@@ -448,15 +448,13 @@ class SimpleLookupService {
     })
   }
 
-  public def lookupWithStats (final Class c, final String term, final Integer perPage = 10, final Integer page = 1, final List filters = [], final List match_in = [], final List sorts = [], final Closure base = null, final Map<String,Closure> extraStats = null) {
+  public def lookupWithStats (final Class c, final String term, final Integer perPage = 10, final Integer page = 1, final List filters = [], final List match_in = [], final List sorts = [], final Map<String,Closure> extraStats = null, final Closure base = null) {
 
     Map aliasStack = [:]
 
     // Results per page, cap at 1000 for safety here. This will probably be capped by the implementing controller to a lower value.
     int pageSize = Math.min(perPage, 1000)
     
-    // Stats is now an array containing the projections we asked for.
-    // Positions 0 and 1 contain the total count and id respectively.
     def statMap = [
       'results'     : lookup(c, term, pageSize, page, filters, match_in, sorts, base),
       'pageSize'    : pageSize,
@@ -465,12 +463,12 @@ class SimpleLookupService {
       'meta'        : [:]
     ]
     
-    statMap.total = statMap.results?.totalCount ?: 0
-    statMap.totalPages = ((int)(statMap.total / pageSize) + (statMap.total % pageSize == 0 ? 0 : 1))
+    statMap.totalRecords = statMap.results?.totalCount ?: 0
+    statMap.totalPages = ((int)(statMap.totalRecords / pageSize) + (statMap.totalRecords % pageSize == 0 ? 0 : 1))
     
     // Add extra projection values to the map by re-executing the original query with our
     // extras piped in.
-    if (statMap.total > 0 && extraStats) {
+    if (statMap.totalRecords > 0 && extraStats) {
       
       final Closure query = { Closure extra ->
   
@@ -513,6 +511,8 @@ class SimpleLookupService {
       }
     }
 
+    statMap.total = statMap.totalRecords
+    
     statMap
   }
 
