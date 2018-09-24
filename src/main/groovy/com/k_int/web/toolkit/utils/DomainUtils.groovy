@@ -7,6 +7,7 @@ import org.grails.datastore.mapping.model.PersistentProperty
 import org.grails.datastore.mapping.model.types.Association
 import com.k_int.web.toolkit.search.Searchable
 import grails.core.GrailsApplication
+import grails.core.GrailsClass
 import grails.core.GrailsControllerClass
 import grails.rest.RestfulController
 import grails.util.Holders
@@ -51,8 +52,10 @@ public class DomainUtils {
       
       // Test the target.
       switch (dc) {
+        case {it instanceof GrailsClass} :
+          dc = dc.clazz
         case {it instanceof Class} :
-          dc = target.name
+          dc = dc.name
         case {it instanceof String} :
           dc = findDomainClass (dc)
           break
