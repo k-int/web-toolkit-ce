@@ -84,7 +84,6 @@ public class DomainUtils {
       }
       
       def type = resolveDomainClass(target)
-      
   
       // Cycle through the properties to get to the end target.
       def owner = type.javaClass
@@ -102,21 +101,34 @@ public class DomainUtils {
       props.each { p ->
         lastPropName = p
         owner = type.javaClass
-        PersistentProperty theProp  = type.getPropertyByName(p)
-        type = (theProp instanceof Association) ? ((Association)theProp).associatedEntity : theProp.type
+        PersistentProperty theProp = type.getPropertyByName(p)
         
+        // Special "class" property should be treated as string.
+        if (p == 'class') {
+          type = Class
+        } else {
+        
+          type = (theProp instanceof Association) ? ((Association)theProp).associatedEntity : theProp.type
+        }
         
         // We should check the presence of search annotation. Check the class first.
         Searchable searchable = null
         
-        // Field annotation
-        Field classField = owner.getDeclaredField(p)
+        // Check for field annotation.
+        // Some fields don't need to be declared in GORM so we should fail this gracefully.
+        Field classField
+        try {
+          classField = owner.getDeclaredField(p)
+        } catch (NoSuchFieldException ex) {
+          classField = null
+        }
+        
         if (classField?.isAnnotationPresent(Searchable)) {
           
           // Get the value of the annotation on the field.
           searchable = classField.getAnnotation(Searchable)
           
-        } else  if (owner.isAnnotationPresent(Searchable)) {
+        } else if (owner.isAnnotationPresent(Searchable)) {
           
           // Get the value of the annotation on the class.
           searchable = owner.getAnnotation(Searchable)

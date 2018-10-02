@@ -106,6 +106,25 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
   protected def attemptConversion (Class typeToConvertTo, value) {
     this.convert(typeToConvertTo, value)
   }
+  
+  @Override
+  protected convert(Class typeToConvertTo, value) {
+    
+    if (value == null) {
+        return null
+    }
+    
+    // Class is a special type
+    if (typeToConvertTo instanceof Class && value instanceof String) {
+      return Class.forName(value)
+    }
+    
+    def persistentInstance
+    if(isDomainClass(typeToConvertTo)) {
+        persistentInstance = getPersistentInstance(typeToConvertTo, value)
+    }
+    persistentInstance ?: super.convert(typeToConvertTo, value)
+  }
 
   //  /**
   //   * Extend to create new when ID == __new__
