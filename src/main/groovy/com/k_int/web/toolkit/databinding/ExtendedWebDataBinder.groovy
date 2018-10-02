@@ -115,7 +115,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
     }
     
     // Class is a special type
-    if (typeToConvertTo instanceof Class && value instanceof String) {
+    if (typeToConvertTo == Class && value instanceof String) {
       return Class.forName(value)
     }
     
