@@ -3,10 +3,12 @@ package com.k_int.web.toolkit.databinding
 import grails.core.GrailsApplication
 import grails.databinding.DataBindingSource
 import grails.databinding.SimpleMapDataBindingSource
+import grails.databinding.converters.ValueConverter
 import grails.databinding.events.DataBindingListener
 import grails.web.databinding.GrailsWebDataBinder
 import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
+import org.grails.databinding.ClosureValueConverter
 
 
 @Log4j
@@ -124,6 +126,36 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
         persistentInstance = getPersistentInstance(typeToConvertTo, value)
     }
     persistentInstance ?: super.convert(typeToConvertTo, value)
+  }
+  
+  @Override
+  protected ValueConverter getValueConverterForField(obj, String propName) {
+    
+    // Allow the normal per property annotation to take precedence
+    def converter = super.getValueConverterForField(obj, propName)
+    if (!converter) {
+      try {
+        def field = getField(obj.getClass(), propName)
+        if (field) {
+          
+          // Grab the type of the field and check for an annotation at class level.       
+          def annotation = field.type?.getAnnotation(BindUsingWhenRef)
+          if (annotation) {
+            
+            // Ensure that this is a closure that is passed in.
+            def valueClass = annotation.value()
+            if (Closure.isAssignableFrom(valueClass)) {
+              Closure closure = (Closure)valueClass.newInstance(null, null)
+              
+              // Curry both the obj and the propertyName. Useful when we need to know the origin.
+              converter = new ClosureValueConverter(converterClosure: closure.curry(obj, propName), targetType: field.type)
+            }
+          }
+        }
+      } catch (Exception e) {
+      }
+    }
+    converter
   }
 
   //  /**
