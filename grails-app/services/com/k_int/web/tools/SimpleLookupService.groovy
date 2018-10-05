@@ -274,11 +274,11 @@ class SimpleLookupService {
               // the other is the value.
               def prop = "${parts[1]}".trim()
               def value = parts[2]
-              def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop)
+              def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true)
               if (!propDef) {
                 // Swap the values and retry.
                 prop = "${parts[2]}".trim()
-                propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop)
+                propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true)
                 if (propDef) {
                   value = parts[1]
                   op = invertOp(op)
@@ -331,7 +331,7 @@ class SimpleLookupService {
     if (term) {
       // Add a condition for each parameter we wish to search.
       match_in.each { String prop ->
-        def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop)
+        def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true)
         
         if (propDef) {
         
@@ -369,7 +369,7 @@ class SimpleLookupService {
       final String[] sortParts = sort.split(/;/)
       final String prop = sortParts[0]
       
-      def propDef = DomainUtils.resolveProperty(target.targetClass, prop)
+      def propDef = DomainUtils.resolveProperty(target.targetClass, prop, true)
       if (propDef) {
         if (propDef.sort) {
         
