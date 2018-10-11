@@ -2,7 +2,7 @@ package com.k_int.web.toolkit.rest;
 
 import org.grails.datastore.gorm.query.NamedCriteriaProxy;
 
-import com.k_int.web.tools.SimpleLookupService
+import com.k_int.web.toolkit.SimpleLookupService
 
 import groovy.lang.Closure;
 

@@ -1,4 +1,4 @@
-package com.k_int.web.tools
+package com.k_int.web.toolkit
 
 
 import org.hibernate.criterion.*
