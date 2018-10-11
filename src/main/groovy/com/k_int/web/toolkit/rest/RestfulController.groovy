@@ -19,11 +19,11 @@ public class RestfulController<T> extends grails.rest.RestfulController<T> {
     super(resource, readOnly)
   }
     
-  protected def doTheLookup (def res = this.resource, NamedCriteriaProxy namedQuery = null) {
-    doTheLookup ( res , namedQuery?.criteriaClosure )
+  protected def doTheLookup (Class res = this.resource, NamedCriteriaProxy namedQuery = null) {
+    doTheLookup ( res , namedQuery?.criteriaClosure as Closure)
   }
   
-  protected def doTheLookup (def res, Closure baseQuery) {
+  protected def doTheLookup (Class res, Closure baseQuery) {
     final int offset = params.int("offset") ?: 0
     final int perPage = Math.min(params.int('perPage') ?: params.int('max') ?: 10, 100)
     final int page = params.int("page") ?: (offset ? (offset / perPage) + 1 : 1)
