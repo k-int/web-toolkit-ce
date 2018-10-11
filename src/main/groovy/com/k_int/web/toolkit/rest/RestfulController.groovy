@@ -12,13 +12,11 @@ public class RestfulController<T> extends grails.rest.RestfulController<T> {
   SimpleLookupService simpleLookupService
 
   public RestfulController (Class<T> resource) {
-    super(resource);
-    // TODO Auto-generated constructor stub
+    super(resource)
   }
   
   public RestfulController (Class<T> resource, boolean readOnly) {
-    super(resource, readOnly);
-    // TODO Auto-generated constructor stub
+    super(resource, readOnly)
   }
     
   protected def doTheLookup (def res = this.resource, NamedCriteriaProxy namedQuery = null) {
