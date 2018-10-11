@@ -108,6 +108,7 @@ class SimpleLookupService {
     ret
   }
   
+  private static final String REGEX_SPECIAL_OP = "(?i)^(.*?)\\s+(is)(Not)?(Null|Empty)\\s*\$"
   private static final String REGEX_OP = "^(.*?)(=i=|([!=<>]{1,2}))(.*?)\$"
   private static final String REGEX_BETWEEN = "^(.*?)([<>]=?)(.*?)([<>]=?)(.*?)\$"
   private static final String REGEX_NONE_ESCAPED_PERCENTAGE = "([^\\\\])(%)"
@@ -129,48 +130,62 @@ class SimpleLookupService {
       results << parseFilterString(criteria, aliasStack, "${match[3]}${match[4]}${match[5]}", indentation)
       
     } else {
-      matches = filterString =~ REGEX_OP
+      matches = filterString =~ REGEX_SPECIAL_OP
       if (matches.size() == 1) {
+        log.debug('Single op like isEmpty or isNotNull.')
+        
         def match = matches[0]
+        String op = "${match[2]?.trim()?.toLowerCase()}${match[3]?.trim()?.toLowerCase()?.capitalize() ?: ''}${match[4]?.trim()?.toLowerCase()?.capitalize()}"
         
-        switch (match[2]) {
-          case '=' :
-          case '==' :
-            results << 'eq'
-            break
-          case '!=' :
-          case '<>' :
-            results << 'ne'
-            break
-          case '>' :
-            results << 'gt'
-            break
-          case '>=' :
-            results << 'ge'
-            break
-          case '<' :
-            results << 'lt'
-            break
-          case '<=' :
-            results << 'le'
-            break
-          case '=i=' :
-            // Special case insensitive equal. We need to use ilike under the hood and remove
-            // and we also need to remeber to escape % signs as they should be matched explicitly 
-            results << 'ilike'
-            break
+        results << op
+        results << match[1]
+        
+        
+      } else {
+      
+        matches = filterString =~ REGEX_OP
+        if (matches.size() == 1) {
+          def match = matches[0]
+          
+          switch (match[2]) {
+            case '=' :
+            case '==' :
+              results << 'eqOrIsNull'
+              break
+            case '!=' :
+            case '<>' :
+              results << 'neOrIsNotNull'
+              break
+            case '>' :
+              results << 'gt'
+              break
+            case '>=' :
+              results << 'ge'
+              break
+            case '<' :
+              results << 'lt'
+              break
+            case '<=' :
+              results << 'le'
+              break
+            case '=i=' :
+              // Special case insensitive equal. We need to use ilike under the hood and remove
+              // and we also need to remeber to escape % signs as they should be matched explicitly 
+              results << 'ilike'
+              break
+              
+            default : 
+              log.debug "Unknown comparator '${match[2]}' ignoring expression."
+          }
+          
+          if (results) {
             
-          default : 
-            log.debug "Unknown comparator '${match[2]}' ignoring expression."
-        }
-        
-        if (results) {
-          
-          def m1 = results[0] == 'ilike' ? "${match[1]}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2') : match[1]
-          def m2 = results[0] == 'ilike' ? "${match[4]}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2') : match[4]
-          
-          results << m1
-          results << m2
+            def m1 = results[0] == 'ilike' ? "${match[1]}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2') : match[1]
+            def m2 = results[0] == 'ilike' ? "${match[4]}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2') : match[4]
+            
+            results << (m1.trim() == 'NULL' ? null : m1)
+            results << (m2.trim() == 'NULL' ? null : m2)
+          }
         }
       }
     }
@@ -183,11 +198,9 @@ class SimpleLookupService {
   private String invertOp(final String op) {
     final String newOp = op
     switch (op) {
-      case 'eq' :
-        newOp = 'ne'
-        break
-      case 'ne' :
-        newOp = 'eq'
+      case 'eqOrIsNull' :
+      case 'neOrIsNotNull' :
+        log.debug "Reverse of op ${op} is still ${op}"
         break
       case 'gt' :
         newOp = 'lt'
@@ -267,21 +280,25 @@ class SimpleLookupService {
               // Assume all parts are Criterion.
               // And them.              
               crit = Restrictions.and( parts as Criterion[] )
-            } else {
+            } else if (parts.size() > 1) {
             
               // Assume normal op.
               // part 1 or 2 could be the property name.
               // the other is the value.
-              def prop = "${parts[1]}".trim()
-              def value = parts[2]
-              def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true)
-              if (!propDef) {
-                // Swap the values and retry.
-                prop = "${parts[2]}".trim()
-                propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true)
-                if (propDef) {
-                  value = parts[1]
-                  op = invertOp(op)
+              def prop = parts[1] ? "${parts[1]}".trim() : null
+              def propDef = prop ? DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true) : null
+              def value = null
+              if (parts.size() == 3) {
+              
+                value = parts[2]
+                if (!propDef) {
+                  // Swap the values and retry.
+                  prop = parts[2] ? "${parts[2]}".trim() : null
+                  propDef = prop ? DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true) : null
+                  if (propDef) {
+                    value = parts[1]
+                    op = invertOp(op)
+                  }
                 }
               }
               
@@ -290,22 +307,32 @@ class SimpleLookupService {
                   def propertyType = propDef.type
                   def propName = getAliasedProperty(criteria, aliasStack, prop) as String
                   
-                  // Can't ilike on none-strings. So we should change back to eq.
-                  if (op == 'ilike' && !String.class.isAssignableFrom(propertyType)) {
-                    op = 'eq'
-                  }
-                
-                  log.trace ("${indentation}${op} ${prop}, ${value}")
-                  def val = valueConverterService.attemptConversion(propertyType, value)
+                  if (parts.size() == 2) {
+                    
+                    log.trace ("${indentation}${op} ${prop}")
+                    crit = Restrictions."${op}" (propName)
+                    
+                  } else {
                   
-                  log.debug ("Converted ${value} into ${val}")
-                  crit = Restrictions."${op}" (propName, val)
+                    // Can't ilike on none-strings. So we should change back to eq.
+                    if (op == 'ilike' && !String.class.isAssignableFrom(propertyType)) {
+                      op = 'eqOrIsNull'
+                    }
+                    
+                    log.trace ("${indentation}${op} ${prop}, ${value}")
+                    def val = value ? valueConverterService.attemptConversion(propertyType, value) : null
+                    
+                    log.debug ("Converted ${value} into ${val}")
+                    crit = Restrictions."${op}" (propName, val)
+                  }
                 } else {
                   log.debug "Filter on ${parts} has been disallowed."
                 }
               } else {
                 log.debug "Could not process op def ${parts}"
               }
+            } else {
+              log.debug "Could not process op def ${parts}"
             }
           }
         }
