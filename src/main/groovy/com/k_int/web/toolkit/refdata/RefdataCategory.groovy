@@ -1,4 +1,4 @@
-package com.k_int.web.toolkit.refData
+package com.k_int.web.toolkit.refdata
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 

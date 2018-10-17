@@ -1,4 +1,4 @@
-package com.k_int.web.toolkit.refData
+package com.k_int.web.toolkit.refdata
 
 import com.ibm.icu.lang.UCharacter
 import com.ibm.icu.text.Normalizer2
