@@ -7,4 +7,8 @@ import grails.gorm.annotation.Entity
 class Tag implements MultiTenant<Tag> {
   
   String value
+  
+  static constraints = {
+    value (nullable: false, blank:false)
+  }
 }
