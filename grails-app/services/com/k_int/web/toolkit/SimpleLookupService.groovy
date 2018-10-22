@@ -56,7 +56,7 @@ class SimpleLookupService {
         currentAlias = aliasStack[test]
         if (currentAlias) {
           alias = currentAlias
-          propStr += test
+          propStr = test
         }
         counter ++
       }
@@ -69,17 +69,16 @@ class SimpleLookupService {
       if (counter <= props.length) {
         // The counter denotes how many aliases were present, so we should start at the counter and create the missing
         // aliases.
-        propStr = null
         for (int i=(counter-1); i<props.length; i++) {
           String aliasVal = alias ? "${alias}.${props[i]}" : "${props[i]}"
           alias = "alias${aliasStack.size()}"
 
           // Create the alias.
-          log.debug ("Creating alias: ${aliasVal} ->  ${alias}")
+          log.debug ("Creating alias: ${aliasVal} -> ${alias}")
           target.criteria.createAlias(aliasVal, alias)
 
           // Add to the map.
-          propStr = propStr ? "${propStr}.${props[i]}" : "${props[i]}"
+          propStr = i>0 ? "${propStr}.${props[i]}" : "${props[i]}"
           aliasStack[propStr] = alias
           log.debug ("Added quick string: ${propStr} -> ${alias}")
         }
