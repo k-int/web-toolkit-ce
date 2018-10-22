@@ -5,13 +5,13 @@ import java.util.concurrent.ConcurrentHashMap
 import org.grails.core.artefact.ControllerArtefactHandler
 import org.grails.datastore.mapping.model.PersistentEntity
 import org.grails.datastore.mapping.model.PersistentProperty
+
 import com.k_int.web.toolkit.utils.ControllerUtils
 import com.k_int.web.toolkit.utils.DomainUtils
 
 import grails.core.GrailsApplication
 import grails.core.GrailsClass
 import grails.core.GrailsControllerClass
-import grails.core.GrailsDomainClass
 import grails.rest.Resource
 import grails.rest.RestfulController
 import grails.web.mapping.LinkGenerator

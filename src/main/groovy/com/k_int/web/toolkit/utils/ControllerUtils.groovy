@@ -6,6 +6,7 @@ import org.grails.web.mapping.DefaultUrlMappingInfo
 import org.springframework.http.HttpMethod
 
 import grails.core.GrailsControllerClass
+import grails.rest.RestfulController
 import grails.web.mapping.UrlCreator
 import grails.web.mapping.UrlMappingInfo
 import grails.web.mapping.UrlMappingsHolder
@@ -100,13 +101,13 @@ public class ControllerUtils {
   }
   
   @Memoized(maxCacheSize=200)
-  public static Map<String,Object> getRestfulDetails (GrailsControllerClass gcc, UrlMappingsHolder grailsUrlMappingsHolder, String baseUri = null)  {
+  public static Map<String,Object> getRestfulDetails (GrailsControllerClass gcc, UrlMappingsHolder grailsUrlMappingsHolder, String baseUri = null, boolean readOnly)  {
 
     Map<String,Object> details = [
       mapping : [:].withDefault { [] }
     ]
     String ctrlName = "${gcc.logicalPropertyName}"
-
+    
     if (!baseUri) {
       UrlCreator entryPoint = grailsUrlMappingsHolder.getReverseMapping(ctrlName, null, null, null, HttpMethod.GET.toString(), null)
       baseUri = entryPoint?.createRelativeURL(ctrlName, null, null, null)
@@ -135,11 +136,11 @@ public class ControllerUtils {
       if (notDefault) {
         
         //Add base URI for ease of access.
-         details['baseUri'] = baseUri
+        details['baseUri'] = baseUri
 
         // So now we know that the controller responds to a GET request to its default action we
         // should look for get and post with an identifier next.
-        notDefault = grailsUrlMappingsHolder.matchAll(baseUri, HttpMethod.POST)?.findAll { UrlMappingInfo inf ->
+        notDefault = readOnly || grailsUrlMappingsHolder.matchAll(baseUri, HttpMethod.POST)?.findAll { UrlMappingInfo inf ->
           // Only care about none-default URL Mappings.
           if (!DefaultUrlMappingInfo.class.isAssignableFrom(inf.class)) {
   
@@ -172,7 +173,7 @@ public class ControllerUtils {
           if (notDefault) {
   
             // Check PUT request to /baseUri/ID
-            notDefault = grailsUrlMappingsHolder.matchAll("${baseUri}/1", HttpMethod.PUT)?.findAll { UrlMappingInfo inf ->
+            notDefault = readOnly || grailsUrlMappingsHolder.matchAll("${baseUri}/1", HttpMethod.PUT)?.findAll { UrlMappingInfo inf ->
               // Only care about none-default URL Mappings.
               if (!DefaultUrlMappingInfo.class.isAssignableFrom(inf.class)) {
     
@@ -187,7 +188,7 @@ public class ControllerUtils {
             }
             if (notDefault) {
               // Check DELETE
-              notDefault = grailsUrlMappingsHolder.matchAll("${baseUri}/1", HttpMethod.DELETE)?.findAll { UrlMappingInfo inf ->
+              notDefault = readOnly || grailsUrlMappingsHolder.matchAll("${baseUri}/1", HttpMethod.DELETE)?.findAll { UrlMappingInfo inf ->
                 // Only care about none-default URL Mappings.
                 if (!DefaultUrlMappingInfo.class.isAssignableFrom(inf.class)) {
     
@@ -204,18 +205,20 @@ public class ControllerUtils {
               if (notDefault) {
                 
                 // PATCH isn't a deal breaker for us. We include if present.
-                grailsUrlMappingsHolder.matchAll("${baseUri}/1", HttpMethod.PATCH)?.each { UrlMappingInfo inf ->
-                  // Only care about none-default URL Mappings.
-                  if (!DefaultUrlMappingInfo.class.isAssignableFrom(inf.class)) {
-      
-                    // Grab the action name for exclusion when we add custom "actions"
-                    if (inf.actionName && ctrlName == inf.controllerName) {
-                      details['mapping'][inf.actionName] << [method: "${HttpMethod.PATCH}", uri: "${baseUri}/{id}", type:'patch']
+                if (!readOnly) {
+                  grailsUrlMappingsHolder.matchAll("${baseUri}/1", HttpMethod.PATCH)?.each { UrlMappingInfo inf ->
+                    // Only care about none-default URL Mappings.
+                    if (!DefaultUrlMappingInfo.class.isAssignableFrom(inf.class)) {
+        
+                      // Grab the action name for exclusion when we add custom "actions"
+                      if (inf.actionName && ctrlName == inf.controllerName) {
+                        details['mapping'][inf.actionName] << [method: "${HttpMethod.PATCH}", uri: "${baseUri}/{id}", type:'patch']
+                      }
+                      return true
                     }
-                    return true
+        
+                    false
                   }
-      
-                  false
                 }
                 
                 return details
