@@ -20,7 +20,7 @@ import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
 
 @Log4j
-class BindImmutablyListener extends DataBindingListenerAdapter {
+class ExtendedBindingListener extends DataBindingListenerAdapter {
 
   @Autowired
   GrailsWebDataBinder binder
@@ -68,31 +68,51 @@ class BindImmutablyListener extends DataBindingListenerAdapter {
     supported && log.debug ("supports ${clazz}")
     supported
   }
+  
+  public Boolean bindImmutably (Object obj, String propertyName, Object value, Object errors) {
+    log.debug "Treating property ${propertyName} on ${obj} as immutable collection."
+    
+    // Grab the ids of the items to not remove. i.e. The items present in the new collection
+    Set<Serializable> ids = value?.findResults { it?.id }
+
+    // Collect ensures a copy is returned.
+    obj[propertyName].collect().each {
+      if (it.id && !ids.contains(it.id)) {
+        log.debug "Item with id ${it.id} was not present in data for ${propertyName} on ${obj}, so we should remove it."
+        obj."removeFrom${GrailsNameUtils.getClassName(propertyName)}" (it)
+      }
+    }
+    
+    true
+  }
+  
+  public Boolean bindAdditively(Object obj, String propertyName, Object value, Object errors) {
+    log.debug "Treating property ${propertyName} on ${obj} as additive collection."
+    // Treat collection as an update. Look for { id:identifier, _delete:true }
+    
+    Set<Serializable> idsToDelete = value?.findResults { (it?.'_delete' == true) ? it?.id : null }
+
+    // Collect ensures a copy is returned.
+    obj[propertyName].collect().each {
+      if (it.id && idsToDelete.contains(it.id)) {
+        log.debug "Item with id ${it.id} flagged for deletion from ${propertyName} on ${obj}, so we should remove it."
+        obj."removeFrom${GrailsNameUtils.getClassName(propertyName)}" (it)
+      }
+    }
+    
+    true
+  }
 
   public Boolean beforeBinding(Object obj, String propertyName, Object value, Object errors) {
 
-    if (obj[propertyName] instanceof Collection && shouldBindCollectionImmutably(obj.class, propertyName) ) {
-      log.debug "Treating property ${propertyName} on ${obj} as immutable collection."
-
-      // Grab the ids of the items to not remove. i.e. The items present in the new collection
-      Set<Serializable> ids = value?.findResults { it?.id }
-
-      // Remove each item not in the supplied vals.
-      boolean needsSave = false
-      
-      // Collect ensures a copy is returned.
-      obj[propertyName].collect().each {
-        if (it.id && !ids.contains(it.id)) {
-          log.debug "Item with id ${it.id} was not present in data for ${propertyName} on ${obj}, so we should remove it."
-          obj."removeFrom${GrailsNameUtils.getClassName(propertyName)}" (it)
-//          needsSave = true
-        }
+    if (obj[propertyName] instanceof Collection) {
+      if (shouldBindCollectionImmutably(obj.class, propertyName) ) {
+        return bindImmutably (obj, propertyName, value, errors)
+      } else {
+        return bindAdditively(obj, propertyName, value, errors)
       }
-//      if (needsSave) {
-//        obj.save(failOnError:true, flush:true)
-//      }
     }
-    // Return true to state that we still want binding to continue no matter what happens above.
+    
     true
   }
 }
