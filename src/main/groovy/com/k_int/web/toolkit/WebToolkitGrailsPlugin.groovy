@@ -74,9 +74,9 @@ class WebToolkitGrailsPlugin extends Plugin {
         // autoGrowCollectionLimit defaults to 256
         autoGrowCollectionLimit = autoGrowCollectionLimitSetting
       }
-      extendedBindingListener (ExtendedBindingListener) {
-        binder = ref (DataBindingUtils.DATA_BINDER_BEAN_NAME)
-      }
+//      extendedBindingListener (ExtendedBindingListener) {
+//        binder = ref (DataBindingUtils.DATA_BINDER_BEAN_NAME)
+//      }
     }}
 
     void doWithDynamicMethods() {

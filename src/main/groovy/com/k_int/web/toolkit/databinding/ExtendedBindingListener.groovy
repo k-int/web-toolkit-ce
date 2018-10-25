@@ -1,5 +1,6 @@
 package com.k_int.web.toolkit.databinding
 
+import com.k_int.web.toolkit.utils.DomainUtils
 import grails.databinding.events.DataBindingListener
 import grails.databinding.events.DataBindingListenerAdapter
 import grails.util.GrailsNameUtils
@@ -47,7 +48,7 @@ class ExtendedBindingListener extends DataBindingListenerAdapter {
   }
   
   @CompileStatic
-  @Memoized(maxCacheSize=20)
+//  @Memoized(maxCacheSize=20)
   protected boolean shouldBindCollectionImmutably (Class c, String propName) {
     def field = getField(c, propName)
     if (field) {
@@ -59,7 +60,7 @@ class ExtendedBindingListener extends DataBindingListenerAdapter {
       }
     }
     
-    return false
+    false
   }
 
   @CompileStatic
@@ -90,7 +91,7 @@ class ExtendedBindingListener extends DataBindingListenerAdapter {
     log.debug "Treating property ${propertyName} on ${obj} as additive collection."
     // Treat collection as an update. Look for { id:identifier, _delete:true }
     
-    Set<Serializable> idsToDelete = value?.findResults { (it?.'_delete' == true) ? it?.id : null }
+    Set<Serializable> idsToDelete = value?.findResults { ( it?.hasProperty('_delete') && it.'_delete' == true ) ? it?.id : null }
 
     // Collect ensures a copy is returned.
     obj[propertyName].collect().each {
@@ -104,12 +105,16 @@ class ExtendedBindingListener extends DataBindingListenerAdapter {
   }
 
   public Boolean beforeBinding(Object obj, String propertyName, Object value, Object errors) {
-
-    if (obj[propertyName] instanceof Collection) {
+        
+    if (DomainUtils.isDomainPropertyCollection(obj.class, propertyName)) {
+      log.debug "Is collection"
       if (shouldBindCollectionImmutably(obj.class, propertyName) ) {
+        
+        log.debug "Should bind immutably."
         return bindImmutably (obj, propertyName, value, errors)
       } else {
-        return bindAdditively(obj, propertyName, value, errors)
+        log.debug "Should bind additively."
+        return bindAdditively (obj, propertyName, value, errors)
       }
     }
     
