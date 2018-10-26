@@ -75,7 +75,7 @@ class GrailsDomainRefdataHelpers {
       
       // Get the declared fields.
       for (PersistentProperty p : pe.getPersistentProperties()) {
-        Class<?> type = p instanceof Association ? p.associatedEntity.javaClass : null
+        Class<?> type = p instanceof Association ? p.associatedEntity?.javaClass : null
         if (GrailsClassUtils.isAssignableOrConvertibleFrom(RefdataValue.class, type)) {
           
           // The field name.
