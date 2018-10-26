@@ -13,6 +13,7 @@ import grails.rest.RestfulController
 import grails.util.Holders
 import groovy.transform.Memoized
 import java.lang.reflect.Field
+import java.util.List
 
 public class DomainUtils {
   
@@ -139,7 +140,6 @@ public class DomainUtils {
           if (p == 'class') {
             type = Class
           } else {
-          
             type = (theProp instanceof Association) ? ((Association)theProp).associatedEntity : theProp.type
           }
           
@@ -218,6 +218,18 @@ public class DomainUtils {
     }
     
     foundDef
+  }
+  
+  @Memoized(maxCacheSize=200)
+  public static boolean isDomainPropertyCollection(final def target, final String propertyName ) {
+    
+    PersistentEntity pe = resolveDomainClass(target)
+    if (pe) {
+      PersistentProperty prop = pe.getPropertyByName(propertyName)
+      return Collection.class.isAssignableFrom(prop.type);
+    }
+    
+    false
   }
   
   @Memoized(maxCacheSize=200)

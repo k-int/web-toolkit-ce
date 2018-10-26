@@ -1,6 +1,6 @@
 package com.k_int.web.toolkit
 
-import com.k_int.web.toolkit.databinding.BindImmutablyListener
+import com.k_int.web.toolkit.databinding.ExtendedBindingListener
 import com.k_int.web.toolkit.databinding.ExtendedWebDataBinder
 import com.k_int.web.toolkit.links.ProxyAwareCachingLinkGenerator
 import com.k_int.web.toolkit.links.ProxyAwareLinkGenerator
@@ -74,9 +74,9 @@ class WebToolkitGrailsPlugin extends Plugin {
         // autoGrowCollectionLimit defaults to 256
         autoGrowCollectionLimit = autoGrowCollectionLimitSetting
       }
-      bindImmutablyListener (BindImmutablyListener) {
-        binder = ref (DataBindingUtils.DATA_BINDER_BEAN_NAME)
-      }
+//      extendedBindingListener (ExtendedBindingListener) {
+//        binder = ref (DataBindingUtils.DATA_BINDER_BEAN_NAME)
+//      }
     }}
 
     void doWithDynamicMethods() {
