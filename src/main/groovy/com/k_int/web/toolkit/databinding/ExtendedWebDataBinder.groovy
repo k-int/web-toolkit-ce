@@ -72,7 +72,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
   protected boolean processCollectionEntryAction (final obj, final String propertyName, final collectionEntry, Class collectionEntryTargetType) {
     
     boolean processed = false
-    if (collectionEntryTargetType && Map.isAssignableFrom(collectionEntry.class) && collectionEntry['_delete']) {
+    if (collectionEntryTargetType && collectionEntry && collectionEntry instanceof Map && collectionEntry['_delete']) {
       final PersistentProperty pId = DomainUtils.resolveDomainClass(collectionEntryTargetType)?.getIdentity()
       
       // We need an identifier.
