@@ -79,13 +79,45 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
       if (collectionEntry[pId.name]) {
         // Do the delete.
         def toRemove = collectionEntryTargetType.read(collectionEntry[pId.name])
-        obj."removeFrom${GrailsNameUtils.getClassName(propertyName)}"
         
-        processed = true
+        if (toRemove) {
+          removeElementFromCollection (obj, propertyName, toRemove )
+          processed = true
+        }
       }
     }
     
     processed
+  }
+  
+  protected removeElementFromCollection(obj, String propName, elementToRemove) {
+    if (obj && elementToRemove) {
+      // Set propertyValue's otherside value to null for bidirectional manyToOne relationships
+      def domainClass = DomainUtils.resolveDomainClass(obj.class)
+      if (domainClass != null) {
+        def property = domainClass.getPropertyByName(propName)
+        if (property != null && property instanceof Association) {
+          Association association = ((Association)property)
+          if (association.bidirectional) {
+            def otherSide = association.inverseSide
+            if (otherSide instanceof ManyToOne) {
+              // Null it out.
+              elementToRemove[otherSide.name] = null
+            }
+          }
+        }
+      }
+      
+      Collection coll = obj[propName]
+      if (coll != null && coll.size() > 0) {
+        def referencedType = getReferencedTypeForCollection propName, obj
+        if (referencedType != null) {
+          if (referencedType.isAssignableFrom(elementToRemove.class)) {
+            coll.remove(elementToRemove)
+          }
+        }
+      }
+    }
   }
 
   protected processCollectionProperty(final obj, final MetaProperty metaProperty, final val, final DataBindingSource source, final DataBindingListener listener, final errors) {
