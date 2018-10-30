@@ -1,28 +1,29 @@
 package com.k_int.web.toolkit.databinding
 
+import static groovy.transform.TypeCheckingMode.SKIP
+
+import javax.persistence.ManyToOne
+
+import org.grails.databinding.ClosureValueConverter
+import org.grails.databinding.xml.GPathResultMap
+import org.grails.datastore.mapping.model.PersistentProperty
+import org.grails.datastore.mapping.model.types.Association
+
 import com.k_int.web.toolkit.utils.DomainUtils
+
 import grails.core.GrailsApplication
 import grails.databinding.DataBindingSource
 import grails.databinding.SimpleMapDataBindingSource
 import grails.databinding.converters.ValueConverter
 import grails.databinding.events.DataBindingListener
-import grails.util.GrailsNameUtils
 import grails.web.databinding.GrailsWebDataBinder
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
 import groovy.util.logging.Log4j
 
-import java.lang.reflect.Field
-
-import javax.persistence.ManyToOne
-import org.grails.databinding.ClosureValueConverter
-import org.grails.databinding.xml.GPathResultMap
-import org.grails.datastore.mapping.model.PersistentEntity
-import org.grails.datastore.mapping.model.PersistentProperty
-import org.grails.datastore.mapping.model.types.Association
-
 
 @Log4j
+@CompileStatic
 class ExtendedWebDataBinder extends GrailsWebDataBinder {
 
   protected static final String NEW_IDENTIFIER_VALUE = "__new__"
@@ -32,7 +33,6 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
     log.debug "Replaceing default grails databinder"
   }
 
-  @CompileStatic
   @Memoized(maxCacheSize=10)
   protected boolean shouldBindCollectionImmutably (Class c, String propName) {
     def field = getField(c, propName)
@@ -48,27 +48,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
     false
   }
   
-  protected def resolvePersistentInstance (Class typeClass, data) {
-    if(typeClass && isDomainClass(typeClass)) {
-      if(data instanceof Map || data instanceof DataBindingSource) {
-        def idValue = getIdentifierValueFrom(item)
-        if(idValue != null) {
-          persistentInstance = getPersistentInstance(typeClass, idValue)
-          if(persistentInstance != null) {
-            DataBindingSource newBindingSource
-            if(data instanceof DataBindingSource) {
-              newBindingSource = (DataBindingSource)data
-            } else {
-              newBindingSource = new SimpleMapDataBindingSource((Map)data)
-            }
-            bind persistentInstance, newBindingSource, listener
-            itemsWhichNeedBinding << persistentInstance
-          }
-        }
-      }
-    }
-  }
-  
+  @CompileStatic(SKIP)
   protected boolean processCollectionEntryAction (final obj, final String propertyName, final collectionEntry, Class collectionEntryTargetType) {
     
     boolean processed = false
@@ -108,7 +88,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
         }
       }
       
-      Collection coll = obj[propName]
+      Collection coll = obj[propName] as Collection
       if (coll != null && coll.size() > 0) {
         def referencedType = getReferencedTypeForCollection propName, obj
         if (referencedType != null) {
@@ -252,8 +232,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
     if(propertyType == null || propertyType == Object) {
       propertyType = getField(obj.getClass(), propName)?.type ?: Object
     }
-
-    if ( grailsApplication.isDomainClass(propertyType) ) {
+    if ( isDomainClass(propertyType) ) {
 
       if (propertyValue instanceof Map) {
         if (!Collection.isAssignableFrom(propertyType)) {
@@ -261,7 +240,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
           // If the id denotes a new object we still need to make sure we remove the id.
           if (identifierValueDenotesNewObject(propertyValue['id'])) {
             log.debug ("Need to create new '${propertyType.name}' value for property '${propName}' of ${obj}")
-            propertyValue = new ExtendedSimpleMapDataBindingSource(propertyValue)
+            propertyValue = new ExtendedSimpleMapDataBindingSource(propertyValue as Map)
 
             if (obj[propName] != null) {
 
@@ -374,47 +353,4 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
     }
     converter
   }
-
-//  @Override
-//  protected addElementToCollection(obj, String propName, Class propertyType, propertyValue, boolean clearCollection) {
-//
-//    boolean isAdded = false
-//    def referencedType = getReferencedTypeForCollection propName, obj
-//    if (referencedType != null) {
-//      if (isDomainClass(referencedType)) {
-//        def converter = getValueConverterForCollectionItems (obj, propName)
-//        if (converter) {
-//          // We should add the result here.
-//          def elementToAdd = converter.convert(propertyValue)
-//          if (elementToAdd) {
-//            def coll = initializeCollection obj, propName, propertyType
-//            if (coll != null) {
-//              if (clearCollection) {
-//                coll.clear()
-//              }
-//              coll << elementToAdd
-//              isAdded = true
-//            }
-//          }
-//        }
-//      }
-//    }
-//
-//    isAdded || super.addElementToCollection ( obj, propName, propertyType, propertyValue, clearCollection )
-//  }
-
-  //  /**
-  //   * Extend to create new when ID == __new__
-  //   * @see grails.web.databinding.GrailsWebDataBinder#getIdentifierValueFrom(java.lang.Object)
-  //   */
-  //  @Override
-  //  @CompileStatic
-  //  protected getIdentifierValueFrom(source) {
-  //        def idValue = super.getIdentifierValueFrom(source)
-  //        if (identifierValueDenotesNewObject(idValue)) {
-  //          // We should return null.
-  //          idValue = null
-  //        }
-  //        idValue
-  //    }
 }
