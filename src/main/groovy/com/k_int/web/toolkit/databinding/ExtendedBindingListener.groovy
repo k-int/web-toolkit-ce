@@ -23,7 +23,7 @@ import org.springframework.web.context.request.ServletRequestAttributes
 @Log4j
 class ExtendedBindingListener extends DataBindingListenerAdapter {
 
-  @Autowired
+  @Autowired()
   GrailsWebDataBinder binder
 
 //  @CompileStatic
@@ -48,7 +48,7 @@ class ExtendedBindingListener extends DataBindingListenerAdapter {
   }
   
   @CompileStatic
-//  @Memoized(maxCacheSize=20)
+  @Memoized(maxCacheSize=20)
   protected boolean shouldBindCollectionImmutably (Class c, String propName) {
     def field = getField(c, propName)
     if (field) {
