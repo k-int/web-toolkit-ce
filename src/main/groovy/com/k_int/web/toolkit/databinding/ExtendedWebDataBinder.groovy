@@ -101,7 +101,6 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
   }
 
   protected processCollectionProperty(final obj, final MetaProperty metaProperty, final val, final DataBindingSource source, final DataBindingListener listener, final errors) {
-//    return val
     if (source.dataSourceAware) {
       
       def propertyType = metaProperty.type
