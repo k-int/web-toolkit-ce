@@ -11,12 +11,6 @@ import grails.web.databinding.DataBindingUtils
 
 
 @BindUsingWhenRef({ obj, propName, source ->
-    
-//  if (Tag.isAssignableFrom(source.class) ) {
-//    // Just return the source.
-//    System.out.println "Already a tag ${source}"
-//    return source
-//  }
   
   // Initialize the data var as the property from the binding source.
   def data = source
