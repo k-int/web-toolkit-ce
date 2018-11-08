@@ -9,13 +9,6 @@ import grails.gorm.transactions.Rollback
 @Entity
 class PropertyInstance<T> implements MultiTenant<PropertyInstance> {
   
-  static {
-    PropertyTypeBoolean.mapping
-    PropertyTypeRefdata.mapping
-    PropertyTypeString.mapping
-    PropertyTypeContainer.mapping
-  }
-  
   String name
   String stringValue
   
