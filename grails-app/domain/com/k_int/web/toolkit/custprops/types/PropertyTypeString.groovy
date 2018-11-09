@@ -1,12 +1,12 @@
 package com.k_int.web.toolkit.custprops.types
 
-import com.k_int.web.toolkit.custprops.PropertyInstance
+import com.k_int.web.toolkit.custprops.CustomProperty
 
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 
 @Entity
-class PropertyTypeString extends PropertyInstance<String> implements  MultiTenant<PropertyTypeString> { 
+class PropertyTypeString extends CustomProperty<String> implements  MultiTenant<PropertyTypeString> { 
   
   String value
   

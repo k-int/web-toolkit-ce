@@ -7,10 +7,9 @@ import grails.gorm.annotation.Entity
 import grails.gorm.transactions.Rollback
 
 @Entity
-class PropertyInstance<T> implements MultiTenant<PropertyInstance> {
+class CustomProperty<T> implements MultiTenant<CustomProperty> {
   
   String name
-  String stringValue
   
   T value
   

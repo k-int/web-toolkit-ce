@@ -1,17 +1,17 @@
 package com.k_int.web.toolkit.custprops.types
 
-import com.k_int.web.toolkit.custprops.PropertyInstance
+import com.k_int.web.toolkit.custprops.CustomProperty
 
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 
 @Entity
-class PropertyTypeContainer extends PropertyInstance<Set<PropertyInstance>> implements MultiTenant<PropertyTypeContainer> {
+class PropertyTypeContainer extends CustomProperty<Set<CustomProperty>> implements MultiTenant<PropertyTypeContainer> {
   
 //  static transients = ['value']
   
   static hasMany = [
-    value: PropertyInstance
+    value: CustomProperty
   ]
   
 //  @Override
