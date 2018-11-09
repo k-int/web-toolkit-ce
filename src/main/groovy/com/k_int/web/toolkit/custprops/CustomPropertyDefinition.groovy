@@ -20,7 +20,15 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
   String name
   String description
   Class<? extends CustomProperty> type
-
+  
+  static hasMany = [
+    propertyInstances: CustomProperty 
+  ]
+  
+  static mappedBy = [
+    propertyInstances: "definition"
+  ]
+  
   static constraints = {
     name            (nullable: false, blank: false, unique:true)
     description     (nullable: true, blank: false)
