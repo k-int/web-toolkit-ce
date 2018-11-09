@@ -1,7 +1,7 @@
 package com.k_int.web.toolkit.custprops;
 
-import com.k_int.web.toolkit.custprops.types.PropertyTypeContainer
+import com.k_int.web.toolkit.custprops.types.CustomPropertyContainer
 
 trait CustomProperties {
-  PropertyTypeContainer customProperties
+  CustomPropertyContainer customProperties
 }
