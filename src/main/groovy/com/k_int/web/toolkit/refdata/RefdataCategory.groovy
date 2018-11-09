@@ -1,8 +1,6 @@
 package com.k_int.web.toolkit.refdata
 import grails.gorm.MultiTenant
-import grails.gorm.annotation.Entity
 
-@Entity
 class RefdataCategory implements MultiTenant<RefdataCategory> {
 
   String id

@@ -5,7 +5,6 @@ import com.ibm.icu.text.Normalizer2
 import com.k_int.web.toolkit.databinding.BindUsingWhenRef
 
 import grails.gorm.MultiTenant
-import grails.gorm.annotation.Entity
 import grails.util.GrailsNameUtils
 
 @BindUsingWhenRef({ obj, propName, source ->
@@ -34,7 +33,6 @@ import grails.util.GrailsNameUtils
   
   val
 })
-@Entity
 class RefdataValue implements MultiTenant<RefdataValue> {
   
   private static final Normalizer2 normalizer = Normalizer2.NFKDInstance

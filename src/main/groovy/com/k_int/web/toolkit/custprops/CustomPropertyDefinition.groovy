@@ -14,7 +14,7 @@ import groovy.util.logging.Log4j
 @Entity
 class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> {
   
-  static transients = ['instance']
+  static transients = ['propertyInstance']
 
   String id
   String name
@@ -52,14 +52,14 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
   
   static CustomPropertyDefinition forType (final String type) {
     CustomPropertyDefinition definition = null
-    final Class<? extends CustomProperty> typeClass = Class.forName("com.k_int.web.toolkit.PropertyType${GrailsNameUtils.getClassName(type)}")
+    final Class<? extends CustomProperty> typeClass = Class.forName("${CustomProperty.class.name}${GrailsNameUtils.getClassName(type)}")
     if (typeClass) {
       definition = new CustomPropertyDefinition("type" : (typeClass))
     }
     definition
   }
 
-  CustomProperty getInstance() {
+  CustomProperty getPropertyInstance() {
     CustomProperty inst = type?.newInstance()
     if (inst) {
       inst.definition = this

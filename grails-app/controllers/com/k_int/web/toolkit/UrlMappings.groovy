@@ -7,6 +7,12 @@ class UrlMappings {
     "/kiwt/config/schema/$type" (controller: 'config' , action: "schema")
     "/kiwt/config/schema/embedded/$type" (controller: 'config' , action: "schemaEmbedded")
     
-    "/ref/blank/$domain/$prop" (controller: 'ref', action: 'blank')
+    "/customPropertyDefinitions" (resources: 'customPropertyDefinition')
+    "/refdata" (resources: 'refdata') {
+      collection {
+        "/$domain/$property" (controller: 'refdata', action: 'lookup')
+      }
+    }
+//    "/ref/blank/$domain/$prop" (controller: 'ref', action: 'blank')
   }
 }

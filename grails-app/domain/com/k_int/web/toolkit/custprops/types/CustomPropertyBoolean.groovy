@@ -6,9 +6,9 @@ import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 
 @Entity
-class PropertyTypeText extends CustomProperty<String> implements MultiTenant<PropertyTypeText> { 
+class CustomPropertyBoolean extends CustomProperty<Boolean> implements MultiTenant<CustomPropertyBoolean> { 
   
-  String value
+  Boolean value
   
   static constraints = {
     value nullable: false, blank: false

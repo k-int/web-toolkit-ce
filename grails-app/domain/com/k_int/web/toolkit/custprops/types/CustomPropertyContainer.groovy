@@ -6,7 +6,7 @@ import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 
 @Entity
-class PropertyTypeContainer extends CustomProperty<Set<CustomProperty>> implements MultiTenant<PropertyTypeContainer> {
+class CustomPropertyContainer extends CustomProperty<Set<CustomProperty>> implements MultiTenant<CustomPropertyContainer> {
   
   Set<CustomProperty> value
   static hasMany = [
