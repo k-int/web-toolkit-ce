@@ -8,11 +8,9 @@ import grails.gorm.annotation.Entity
 
 @Entity
 class PropertyTypeRefdata extends CustomProperty<RefdataValue> implements MultiTenant<PropertyTypeRefdata> {
-  RefdataCategory category
   RefdataValue value
   
   static constraints = {
-    category nullable: false, blank: false
     value nullable: false, blank: false
   }
   

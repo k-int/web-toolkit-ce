@@ -8,20 +8,8 @@ import grails.gorm.annotation.Entity
 @Entity
 class PropertyTypeContainer extends CustomProperty<Set<CustomProperty>> implements MultiTenant<PropertyTypeContainer> {
   
-//  static transients = ['value']
-  
+  Set<CustomProperty> value
   static hasMany = [
     value: CustomProperty
   ]
-  
-//  @Override
-//  Set<PropertyInstance> getValue() {
-//    Set<PropertyInstance> props = []
-//    this.hasMany.each { String prop, Class type ->
-//      if (PropertyInstance.isAssignableFrom(type)) {
-//        props += this."${prop}"
-//      }
-//    }
-//    props
-//  }
 }

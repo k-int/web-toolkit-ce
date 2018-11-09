@@ -6,7 +6,7 @@ import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 
 @Entity
-class PropertyTypeString extends CustomProperty<String> implements  MultiTenant<PropertyTypeString> { 
+class PropertyTypeText extends CustomProperty<String> implements MultiTenant<PropertyTypeText> { 
   
   String value
   

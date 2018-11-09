@@ -10,10 +10,10 @@ import grails.gorm.transactions.Rollback
 class CustomProperty<T> implements MultiTenant<CustomProperty> {
   
   String name
-  
+  CustomPropertyDefinition definition
   T value
   
   static mapping = {
-    tablePerHierarchy false
+    tablePerHierarchy true
   }
 }
