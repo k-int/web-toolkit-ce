@@ -5,8 +5,10 @@ import com.ibm.icu.text.Normalizer2
 import com.k_int.web.toolkit.databinding.BindUsingWhenRef
 
 import grails.gorm.MultiTenant
+import grails.gorm.annotation.Entity
 import grails.util.GrailsNameUtils
 
+@Entity
 @BindUsingWhenRef({ obj, propName, source ->
 
   def data = source[propName]
