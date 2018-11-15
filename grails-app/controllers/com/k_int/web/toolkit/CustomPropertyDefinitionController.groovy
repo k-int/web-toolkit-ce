@@ -12,4 +12,18 @@ class CustomPropertyDefinitionController extends RestfulController<CustomPropert
   CustomPropertyDefinitionController() {
     super(CustomPropertyDefinition)
   }
+  
+  protected CustomPropertyDefinition createResource(Map params) {
+    def obj = getObjectToBind()
+    if (!obj.type) return super.createResource(params)
+      
+    resource.forType("${obj.type}", params)
+  }
+  
+  protected CustomPropertyDefinition createResource() {
+    def obj = getObjectToBind()
+    if (!obj.type) return super.createResource()
+      
+    resource.forType("${obj.type}")
+  }
 }

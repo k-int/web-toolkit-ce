@@ -21,18 +21,18 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
   String description
   Class<? extends CustomProperty> type
   
-  static hasMany = [
-    propertyInstances: CustomProperty 
-  ]
-  
-  static mappedBy = [
-    propertyInstances: "definition"
-  ]
+//  static hasMany = [
+//    propertyInstances: CustomProperty
+//  ]
+//  
+//  static mappedBy = [
+//    propertyInstances: "definition"
+//  ]
   
   static constraints = {
-    name            (nullable: false, blank: false, unique:true)
+    name            (nullable: false, blank: false, unique: true)
     description     (nullable: true, blank: false)
-    type            (nullable: false, blank: false)
+    type            (bindable: false, nullable: false, blank: false)
   }
 
   static mapping = {
@@ -42,29 +42,29 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
     type column: 'pd_type', index: 'td_type_idx'
   }
   
-  static CustomPropertyDefinition forType (final Class<? extends CustomProperty> type) {
+  static CustomPropertyDefinition forType (final Class<? extends CustomProperty> type, final Map otherProps = [:]) {
     CustomPropertyDefinition definition = null
     if (type) {
-      definition = new CustomPropertyDefinition("type" : (type))
+      definition = new CustomPropertyDefinition( otherProps )
+      definition.type = type
     }
     definition
   }
   
-  static CustomPropertyDefinition forType (final String type) {
+  static CustomPropertyDefinition forType (final String type, final Map otherProps = [:]) {
     CustomPropertyDefinition definition = null
-    final Class<? extends CustomProperty> typeClass = Class.forName("${CustomProperty.class.name}${GrailsNameUtils.getClassName(type)}")
+    final Class<? extends CustomProperty> typeClass = Class.forName(
+      "${CustomProperty.class.package.name}.types.${CustomProperty.class.simpleName}${GrailsNameUtils.getClassName(type)}"
+    )
     if (typeClass) {
-      definition = new CustomPropertyDefinition("type" : (typeClass))
+      definition = new CustomPropertyDefinition( otherProps )
+      definition.type = typeClass
     }
     definition
   }
 
   CustomProperty getPropertyInstance() {
-    CustomProperty inst = type?.newInstance()
-    if (inst) {
-      inst.definition = this
-    }
-    inst
+    type?.newInstance(definition: this)
   }
 }
 
