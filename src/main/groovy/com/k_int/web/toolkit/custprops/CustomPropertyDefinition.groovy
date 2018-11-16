@@ -7,6 +7,7 @@ import com.k_int.web.toolkit.refdata.RefdataValue
 
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
+import grails.util.GrailsClassUtils
 import grails.util.GrailsNameUtils
 import groovy.util.logging.Log4j
 
@@ -15,6 +16,7 @@ import groovy.util.logging.Log4j
 class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> {
   
   static transients = ['propertyInstance']
+  private static final String DEFINITION_PROPERTY = 'definitionClass'
 
   String id
   String name
@@ -36,6 +38,7 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
   }
 
   static mapping = {
+    tablePerHierarchy false
     id column: 'pd_id', generator: 'uuid', length:36
     name column: 'pd_name', index: 'td_name_idx'
     description column: 'pd_description'
@@ -45,7 +48,9 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
   static CustomPropertyDefinition forType (final Class<? extends CustomProperty> type, final Map otherProps = [:]) {
     CustomPropertyDefinition definition = null
     if (type) {
-      definition = new CustomPropertyDefinition( otherProps )
+      // Grab the class or default to this one.
+      Class cpdc = GrailsClassUtils.getStaticFieldValue(type, DEFINITION_PROPERTY) ?: CustomPropertyDefinition
+      definition = cpdc.newInstance( otherProps )
       definition.type = type
     }
     definition
@@ -57,8 +62,7 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
       "${CustomProperty.class.package.name}.types.${CustomProperty.class.simpleName}${GrailsNameUtils.getClassName(type)}"
     )
     if (typeClass) {
-      definition = new CustomPropertyDefinition( otherProps )
-      definition.type = typeClass
+      definition = forType(typeClass, otherProps)
     }
     definition
   }

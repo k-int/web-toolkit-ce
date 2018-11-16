@@ -1,0 +1,8 @@
+package customPropertyRefdataDefinition;
+import com.k_int.web.toolkit.custprops.types.CustomPropertyRefdataDefinition
+import groovy.transform.*
+
+@Field CustomPropertyRefdataDefinition customPropertyRefdataDefinition
+json g.render(customPropertyRefdataDefinition, [excludes: ['type']]) {
+  type customPropertyRefdataDefinition.type.name
+} 

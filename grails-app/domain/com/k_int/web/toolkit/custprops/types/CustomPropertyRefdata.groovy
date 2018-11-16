@@ -10,6 +10,8 @@ import grails.gorm.annotation.Entity
 class CustomPropertyRefdata extends CustomProperty<RefdataValue> implements MultiTenant<CustomPropertyRefdata> {
   RefdataValue value
   
+  // Customise the definition class.
+  static Class definitionClass = CustomPropertyRefdataDefinition
   static constraints = {
     value nullable: false, blank: false
   }
