@@ -2,8 +2,9 @@ package com.k_int.web.toolkit
 
 import java.util.Map
 import javax.servlet.http.HttpServletRequest
+
+import com.k_int.web.toolkit.RestfulResourceService
 import com.k_int.web.toolkit.json.JsonSchemaUtils
-import com.k_int.web.tools.RestfulResourceService
 
 import grails.converters.JSON
 

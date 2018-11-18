@@ -18,7 +18,7 @@ class JsonSchemaUtils {
   
   private static String resolveSimpleName (final def obj) {
     def type = obj instanceof PersistentEntity ? obj.javaClass : obj
-    type.simpleName
+    type.getSimpleName()
   }
   
   public static Map<String, ?> jsonSchema ( final def obj, String linkPrefix = '', boolean embedReferences = false) {
@@ -38,7 +38,7 @@ class JsonSchemaUtils {
       linkPrefix = ''
     }
     
-    final Set<String> rootProps = ['title']
+//    final Set<String> rootProps = ['$id', 'title']
     
     // Lets resolve to a Grails domain if possible.
     def target = DomainUtils.resolveDomainClass( obj )
@@ -47,7 +47,7 @@ class JsonSchemaUtils {
     String schemaName = resolveSimpleName(target ?: obj)
     
     // The map to hold our json representation. Initialise with ID.
-    Map<String, ?> json = ['id' : "${linkPrefix}${schemaName}" as String]
+    Map<String, ?> json = ['$id' : "${linkPrefix}${schemaName}" as String]
     
     // The title.
     json['title'] = GrailsNameUtils.getNaturalName(schemaName)
@@ -65,33 +65,34 @@ class JsonSchemaUtils {
       if (children) {
     
         // Flag for removal.
-        Set<String> propsMoved = []
+//        Set<String> propsMoved = []
         
         // We should now add this schema to the map of seen schemas. Along with the location. This is the root schema so the relative
-        // location would simply be #/
-        existingSchemas[schemaName] = [
-          ref : ['$ref' : "#/definitions/${schemaName}"],
-          schema: json.collectEntries { entry ->
-            if (rootProps.contains(entry.key)) {
-              return [:]
-            }
-            
-            propsMoved << entry.key
-            
-            // Return the entry here.
-            [(entry.key) : entry.value]
-          }
-        ]
+        // location would simply be #/. However because of various parsing failures, the reference #/ doesn't seem to work, so
+        // we leave the root of the schema as is and copy to the definitions. 
+//        existingSchemas[schemaName] = [
+//          ref : ['$ref' : "#/definitions/${schemaName}"],
+//          schema: json.collectEntries { entry ->
+//            if (rootProps.contains(entry.key)) {
+//              return [:]
+//            }
+//            
+////            propsMoved << entry.key
+//            
+//            // Return the entry here.
+//            [(entry.key) : entry.value]
+//          }
+//        ]
         
         
         // remove form the json root.
-        json.keySet().removeAll(propsMoved)
+//        json.keySet().removeAll(propsMoved)
         
         // Add the ref.
-        json.putAll(existingSchemas[schemaName].ref)
+//        json.putAll(existingSchemas[schemaName].ref)
       
         // Lets take a look at the properties now.
-        existingSchemas[schemaName].schema.putAll(buildChildren (target ?: obj, embedReferences ? '#/definitions/' : "${linkPrefix.length() < 1 ? '/' : linkPrefix}" , existingSchemas))
+        json.putAll(buildChildren (target ?: obj, embedReferences ? '#/definitions/' : "${linkPrefix.length() < 1 ? '/' : linkPrefix}" , existingSchemas))
         
         // References now need to be filtered.
         if (embedReferences) {
@@ -100,12 +101,13 @@ class JsonSchemaUtils {
           }
         } else {
           // The embedded references are no longer needed.
-          json['definitions']?.keySet()?.each {
-            if (schemaName != it) {
-              // Remove.
-              json['definitions'].remove(it)
-            }
-          }
+          json.remove('definitions')
+//          json['definitions']?.keySet()?.each {
+//            if (schemaName != it) {
+//              // Remove.
+//              json['definitions'].remove(it)
+//            }
+//          }
         }
       }
     }
@@ -167,26 +169,22 @@ class JsonSchemaUtils {
                 
                 if (idType) {
                   
-                  final Map idTypeDef = [
-                    type: idType
-                  ]
-                  
                   schema.ref = [
                     'anyOf' : [
-                      idTypeDef,
+                      schema.ref,
                       [
                         type: 'object',
                         properties: [
-                          (theId.name) : idTypeDef
+                          (theId.name) : [
+                            type: idType
+                          ]
                         ]
-                      ],
-                      schema.ref
+                      ]
                     ]
                   ]
                 }
                 
-                // We should now add this schema to the map of seen schemas. Along with the location. This is the root schema so the relative
-                // location would simply be #/
+                // We should now add this schema to the map of seen schemas. Along with the location. 
                 existingSchemas[schemaName] = schema
               
                 // Lets take a look at the properties now.

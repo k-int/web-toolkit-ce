@@ -4,8 +4,8 @@ import static org.springframework.http.HttpStatus.*
 
 import org.grails.datastore.mapping.model.PersistentEntity
 
+import com.k_int.web.toolkit.SimpleLookupService
 import com.k_int.web.toolkit.utils.DomainUtils
-import com.k_int.web.tools.SimpleLookupService
 
 import grails.core.GrailsApplication
 import grails.gorm.transactions.Transactional

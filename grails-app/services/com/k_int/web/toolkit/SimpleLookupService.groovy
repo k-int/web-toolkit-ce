@@ -1,4 +1,4 @@
-package com.k_int.web.tools
+package com.k_int.web.toolkit
 
 
 import org.hibernate.criterion.*
@@ -34,42 +34,51 @@ class SimpleLookupService {
   }
 
   private static final String checkAlias(def target, final Map<String, String> aliasStack, String dotNotationString) {
+    
+    log.debug ("Checking for ${dotNotationString}")
+    
     def str = aliasStack[dotNotationString]
     if (!str) {
 
+      log.debug "Full match not found..."
+        
       // No alias found for exact match.
       // Start from the front and build up aliases.
       String[] props = dotNotationString.split("\\.")
       String propStr = "${props[0]}"
-      String alias = aliasStack[propStr];
+      String alias = aliasStack[propStr]
+      String currentAlias = alias
       int counter = 1
-      while (alias && counter < props.length) {
-        str = "${alias}"
+      while (currentAlias && counter < props.length) {
+        str = "${currentAlias}"
         String test = propStr + ".${props[counter]}"
-
-        alias = aliasStack[test]
-        if (alias) {
-          propStr += test
+        log.debug "Testing for ${test}"
+        currentAlias = aliasStack[test]
+        if (currentAlias) {
+          alias = currentAlias
+          propStr = test
         }
         counter ++
       }
+      
+      log.debug "...propStr: ${propStr}"
+      log.debug "...alias: ${alias}"
 
       // At this point we should have a dot notated alias string, where the aliases already been created for this query.
       // Any none existent aliases will need creating but also adding to the map for traversing.
       if (counter <= props.length) {
         // The counter denotes how many aliases were present, so we should start at the counter and create the missing
         // aliases.
-        propStr = null
         for (int i=(counter-1); i<props.length; i++) {
           String aliasVal = alias ? "${alias}.${props[i]}" : "${props[i]}"
           alias = "alias${aliasStack.size()}"
 
           // Create the alias.
-          log.debug ("Creating alias: ${aliasVal} ->  ${alias}")
+          log.debug ("Creating alias: ${aliasVal} -> ${alias}")
           target.criteria.createAlias(aliasVal, alias)
 
           // Add to the map.
-          propStr = propStr ? "${propStr}.${props[i]}" : "${props[i]}"
+          propStr = i>0 ? "${propStr}.${props[i]}" : "${props[i]}"
           aliasStack[propStr] = alias
           log.debug ("Added quick string: ${propStr} -> ${alias}")
         }
@@ -83,6 +92,9 @@ class SimpleLookupService {
   }
 
   private static final Map getAliasedProperty (def target, final Map<String, String> aliasStack, final String propname) {
+    
+    log.debug "Looking for property ${propname}"
+    
     // Split at the dot.
     String[] levels = propname.split("\\.")
 
@@ -95,6 +107,7 @@ class SimpleLookupService {
     ret
   }
   
+  private static final String REGEX_SPECIAL_OP = "(?i)^(.*?)\\s+(is)(Not)?(Null|Empty)\\s*\$"
   private static final String REGEX_OP = "^(.*?)(=i=|([!=<>]{1,2}))(.*?)\$"
   private static final String REGEX_BETWEEN = "^(.*?)([<>]=?)(.*?)([<>]=?)(.*?)\$"
   private static final String REGEX_NONE_ESCAPED_PERCENTAGE = "([^\\\\])(%)"
@@ -116,48 +129,62 @@ class SimpleLookupService {
       results << parseFilterString(criteria, aliasStack, "${match[3]}${match[4]}${match[5]}", indentation)
       
     } else {
-      matches = filterString =~ REGEX_OP
+      matches = filterString =~ REGEX_SPECIAL_OP
       if (matches.size() == 1) {
+        log.debug('Single op like isEmpty or isNotNull.')
+        
         def match = matches[0]
+        String op = "${match[2]?.trim()?.toLowerCase()}${match[3]?.trim()?.toLowerCase()?.capitalize() ?: ''}${match[4]?.trim()?.toLowerCase()?.capitalize()}"
         
-        switch (match[2]) {
-          case '=' :
-          case '==' :
-            results << 'eq'
-            break
-          case '!=' :
-          case '<>' :
-            results << 'ne'
-            break
-          case '>' :
-            results << 'gt'
-            break
-          case '>=' :
-            results << 'ge'
-            break
-          case '<' :
-            results << 'lt'
-            break
-          case '<=' :
-            results << 'le'
-            break
-          case '=i=' :
-            // Special case insensitive equal. We need to use ilike under the hood and remove
-            // and we also need to remeber to escape % signs as they should be matched explicitly 
-            results << 'ilike'
-            break
+        results << op
+        results << match[1]
+        
+        
+      } else {
+      
+        matches = filterString =~ REGEX_OP
+        if (matches.size() == 1) {
+          def match = matches[0]
+          
+          switch (match[2]) {
+            case '=' :
+            case '==' :
+              results << 'eqOrIsNull'
+              break
+            case '!=' :
+            case '<>' :
+              results << 'neOrIsNotNull'
+              break
+            case '>' :
+              results << 'gt'
+              break
+            case '>=' :
+              results << 'ge'
+              break
+            case '<' :
+              results << 'lt'
+              break
+            case '<=' :
+              results << 'le'
+              break
+            case '=i=' :
+              // Special case insensitive equal. We need to use ilike under the hood and remove
+              // and we also need to remeber to escape % signs as they should be matched explicitly 
+              results << 'ilike'
+              break
+              
+            default : 
+              log.debug "Unknown comparator '${match[2]}' ignoring expression."
+          }
+          
+          if (results) {
             
-          default : 
-            log.debug "Unknown comparator '${match[2]}' ignoring expression."
-        }
-        
-        if (results) {
-          
-          def m1 = results[0] == 'ilike' ? "${match[1]}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2') : match[1]
-          def m2 = results[0] == 'ilike' ? "${match[4]}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2') : match[4]
-          
-          results << m1
-          results << m2
+            def m1 = results[0] == 'ilike' ? "${match[1]}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2') : match[1]
+            def m2 = results[0] == 'ilike' ? "${match[4]}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2') : match[4]
+            
+            results << (m1.trim() == 'NULL' ? null : m1)
+            results << (m2.trim() == 'NULL' ? null : m2)
+          }
         }
       }
     }
@@ -170,11 +197,9 @@ class SimpleLookupService {
   private String invertOp(final String op) {
     final String newOp = op
     switch (op) {
-      case 'eq' :
-        newOp = 'ne'
-        break
-      case 'ne' :
-        newOp = 'eq'
+      case 'eqOrIsNull' :
+      case 'neOrIsNotNull' :
+        log.debug "Reverse of op ${op} is still ${op}"
         break
       case 'gt' :
         newOp = 'lt'
@@ -254,21 +279,25 @@ class SimpleLookupService {
               // Assume all parts are Criterion.
               // And them.              
               crit = Restrictions.and( parts as Criterion[] )
-            } else {
+            } else if (parts.size() > 1) {
             
               // Assume normal op.
               // part 1 or 2 could be the property name.
               // the other is the value.
-              def prop = "${parts[1]}".trim()
-              def value = parts[2]
-              def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop)
-              if (!propDef) {
-                // Swap the values and retry.
-                prop = "${parts[2]}".trim()
-                propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop)
-                if (propDef) {
-                  value = parts[1]
-                  op = invertOp(op)
+              def prop = parts[1] ? "${parts[1]}".trim() : null
+              def propDef = prop ? DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true) : null
+              def value = null
+              if (parts.size() == 3) {
+              
+                value = parts[2]
+                if (!propDef) {
+                  // Swap the values and retry.
+                  prop = parts[2] ? "${parts[2]}".trim() : null
+                  propDef = prop ? DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true) : null
+                  if (propDef) {
+                    value = parts[1]
+                    op = invertOp(op)
+                  }
                 }
               }
               
@@ -277,22 +306,32 @@ class SimpleLookupService {
                   def propertyType = propDef.type
                   def propName = getAliasedProperty(criteria, aliasStack, prop) as String
                   
-                  // Can't ilike on none-strings. So we should change back to eq.
-                  if (op == 'ilike' && !String.class.isAssignableFrom(propertyType)) {
-                    op = 'eq'
-                  }
-                
-                  log.trace ("${indentation}${op} ${prop}, ${value}")
-                  def val = valueConverterService.attemptConversion(propertyType, value)
+                  if (parts.size() == 2) {
+                    
+                    log.trace ("${indentation}${op} ${prop}")
+                    crit = Restrictions."${op}" (propName)
+                    
+                  } else {
                   
-                  log.debug ("Converted ${value} into ${val}")
-                  crit = Restrictions."${op}" (propName, val)
+                    // Can't ilike on none-strings. So we should change back to eq.
+                    if (op == 'ilike' && !String.class.isAssignableFrom(propertyType)) {
+                      op = 'eqOrIsNull'
+                    }
+                    
+                    log.trace ("${indentation}${op} ${prop}, ${value}")
+                    def val = value ? valueConverterService.attemptConversion(propertyType, value) : null
+                    
+                    log.debug ("Converted ${value} into ${val}")
+                    crit = Restrictions."${op}" (propName, val)
+                  }
                 } else {
                   log.debug "Filter on ${parts} has been disallowed."
                 }
               } else {
                 log.debug "Could not process op def ${parts}"
               }
+            } else {
+              log.debug "Could not process op def ${parts}"
             }
           }
         }
@@ -318,7 +357,7 @@ class SimpleLookupService {
     if (term) {
       // Add a condition for each parameter we wish to search.
       match_in.each { String prop ->
-        def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop)
+        def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true)
         
         if (propDef) {
         
@@ -356,7 +395,7 @@ class SimpleLookupService {
       final String[] sortParts = sort.split(/;/)
       final String prop = sortParts[0]
       
-      def propDef = DomainUtils.resolveProperty(target.targetClass, prop)
+      def propDef = DomainUtils.resolveProperty(target.targetClass, prop, true)
       if (propDef) {
         if (propDef.sort) {
         
@@ -435,15 +474,13 @@ class SimpleLookupService {
     })
   }
 
-  public def lookupWithStats (final Class c, final String term, final Integer perPage = 10, final Integer page = 1, final List filters = [], final List match_in = [], final List sorts = [], final Closure base = null, final Map<String,Closure> extraStats = null) {
+  public def lookupWithStats (final Class c, final String term, final Integer perPage = 10, final Integer page = 1, final List filters = [], final List match_in = [], final List sorts = [], final Map<String,Closure> extraStats = null, final Closure base = null) {
 
     Map aliasStack = [:]
 
     // Results per page, cap at 1000 for safety here. This will probably be capped by the implementing controller to a lower value.
     int pageSize = Math.min(perPage, 1000)
     
-    // Stats is now an array containing the projections we asked for.
-    // Positions 0 and 1 contain the total count and id respectively.
     def statMap = [
       'results'     : lookup(c, term, pageSize, page, filters, match_in, sorts, base),
       'pageSize'    : pageSize,
@@ -452,12 +489,12 @@ class SimpleLookupService {
       'meta'        : [:]
     ]
     
-    statMap.total = statMap.results?.totalCount ?: 0
-    statMap.totalPages = ((int)(statMap.total / pageSize) + (statMap.total % pageSize == 0 ? 0 : 1))
+    statMap.totalRecords = statMap.results?.totalCount ?: 0
+    statMap.totalPages = ((int)(statMap.totalRecords / pageSize) + (statMap.totalRecords % pageSize == 0 ? 0 : 1))
     
     // Add extra projection values to the map by re-executing the original query with our
     // extras piped in.
-    if (statMap.total > 0 && extraStats) {
+    if (statMap.totalRecords > 0 && extraStats) {
       
       final Closure query = { Closure extra ->
   
@@ -500,6 +537,8 @@ class SimpleLookupService {
       }
     }
 
+    statMap.total = statMap.totalRecords
+    
     statMap
   }
 

@@ -3,7 +3,6 @@ package com.k_int.web.toolkit.rest
 import grails.artefact.Artefact
 import grails.gorm.multitenancy.CurrentTenant
 import grails.gorm.transactions.Transactional
-import grails.rest.RestfulController
 
 
 @CurrentTenant
