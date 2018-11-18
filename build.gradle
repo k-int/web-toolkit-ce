@@ -111,6 +111,7 @@ publishing {
 }
 
 // Run with gradle groovydoc
+// See http://mrhaki.blogspot.com/2016/01/groovy-goodness-customise-groovydoc.html
 groovydoc {
   // Put docs at root of project
   destinationDir = new File('docs')
