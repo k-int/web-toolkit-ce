@@ -10,6 +10,9 @@ import grails.gorm.annotation.Entity
 import grails.web.databinding.DataBindingUtils
 
 
+/**
+ * Tag entity that is used by the Taggable interface. Represents a tag added to any domain class.
+ */
 @BindUsingWhenRef({ obj, propName, source ->
   
   // Initialize the data var as the property from the binding source.
