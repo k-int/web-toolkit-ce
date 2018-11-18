@@ -59,6 +59,10 @@ root
 
 # Development
 
+## Local building
+
+    grails packake-plugin
+
 ## Publish
 edit ~/.gradle/gradle.properties and add
 

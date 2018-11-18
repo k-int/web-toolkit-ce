@@ -116,3 +116,10 @@ groovydoc {
   destinationDir = new File('docs')
 }
 
+//http://www.gradle.org/docs/current/userguide/gradle_wrapper.html
+//generate gradlew with: gradle wrapper
+task wrapper(type: Wrapper) {
+    // gradleVersion = '4.10.2' - Tested working by ian 2018-11-18
+    gradleVersion = '3.4.1'
+}
+
