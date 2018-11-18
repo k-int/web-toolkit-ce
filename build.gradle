@@ -109,3 +109,10 @@ publishing {
     }
   }
 }
+
+// Run with gradle groovydoc
+groovydoc {
+  // Put docs at root of project
+  destinationDir = new File('docs')
+}
+
