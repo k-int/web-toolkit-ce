@@ -1,7 +1,7 @@
 package com.k_int.web.toolkit.custprops.types
 
 import com.k_int.web.toolkit.custprops.CustomProperty
-
+import grails.databinding.BindUsing
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 

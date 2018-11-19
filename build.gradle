@@ -66,10 +66,6 @@ bootRun {
     addResources = true
 }
 
-compileGsonViews {
-  packageName = ""
-}
-
 publishing {
   publications {
       plugin(MavenPublication) {

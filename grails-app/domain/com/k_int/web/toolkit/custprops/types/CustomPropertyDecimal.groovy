@@ -6,7 +6,7 @@ import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 
 @Entity
-class CustomPropertyBigDecimal extends CustomProperty<BigDecimal> implements MultiTenant<CustomPropertyBigDecimal> { 
+class CustomPropertyDecimal extends CustomProperty<BigDecimal> implements MultiTenant<CustomPropertyDecimal> { 
   
   BigDecimal value
   
