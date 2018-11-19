@@ -22,4 +22,8 @@ class RefdataCategory implements MultiTenant<RefdataCategory> {
     version column: 'rdc_version'
        desc column: 'rdc_description'
   }
+  
+  static constraints = {
+       desc unique: true
+  }
 }
