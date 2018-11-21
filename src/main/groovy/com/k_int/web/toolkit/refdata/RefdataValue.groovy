@@ -76,6 +76,9 @@ class RefdataValue implements MultiTenant<RefdataValue> {
   
   void setLabel (String label) {
     this.label = tidyLabel( label )
+    if (this.value == null) {
+      this.setValue( label )
+    }
   }
   
   /**
