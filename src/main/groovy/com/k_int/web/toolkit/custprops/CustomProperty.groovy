@@ -7,11 +7,11 @@ import grails.gorm.annotation.Entity
 import grails.gorm.transactions.Rollback
 
 @Entity
-abstract class CustomProperty<T> implements MultiTenant<CustomProperty> {
+class CustomProperty<T> implements MultiTenant<CustomProperty> {
   
 //  String name
   CustomPropertyDefinition definition
-  abstract T value
+  T value
   
   CustomPropertyContainer parent
   
@@ -21,6 +21,7 @@ abstract class CustomProperty<T> implements MultiTenant<CustomProperty> {
   
   static constraints = {
     parent nullable: true, blank: false
+    definition nullable: false
   }
   
   static mapping = {

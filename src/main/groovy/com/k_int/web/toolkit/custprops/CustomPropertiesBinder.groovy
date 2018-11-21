@@ -1,23 +1,20 @@
 package com.k_int.web.toolkit.custprops
 
 import com.k_int.web.toolkit.custprops.types.CustomPropertyContainer
-
-import grails.databinding.DataBinder
-import grails.databinding.DataBindingSource
-import grails.databinding.SimpleDataBinder
 import grails.databinding.SimpleMapDataBindingSource
+import grails.util.Holders
+import grails.web.databinding.DataBindingUtils
+import grails.web.databinding.GrailsWebDataBinder
 
 class CustomPropertiesBinder {
   
+  private static GrailsWebDataBinder getDataBinder() {
+    Holders.grailsApplication.mainContext.getBean(DataBindingUtils.DATA_BINDER_BEAN_NAME)
+  }
+  
+  
   private static doBind (Map propSource, CustomPropertyContainer cpc) {
     
-    /* Expected format :{
-     *  "propertyDefName" : value,
-     *  "propertyDefName2" : {
-     *    "nestedPropertyName" : 23
-     *  }
-     * }
-     */
     if (propSource && propSource.size() > 0) {
       // Each supplied property. We only allow predefined types.
       final Set<String> propertyNames = propSource instanceof Map ? propSource.keySet() : propSource.propertyNames
@@ -67,7 +64,8 @@ class CustomPropertiesBinder {
             // Not delete
             if (!deleteFlag) {
               // Create a new property if we need one.
-              theProp = theProp ?: propDef.getPropertyInstance(val)
+              theProp = theProp ?: propDef.getPropertyInstance()
+              dataBinder.bind(theProp, new SimpleMapDataBindingSource(val) )
                             
               // Add the property to the container
               cpc.addToValue ( theProp )
@@ -96,7 +94,11 @@ class CustomPropertiesBinder {
     
     // We need the property source only
     def propSource = source[propertyName]
-    doBind (propSource, (obj[propertyName] ?: new CustomPropertyContainer()))
+    CustomPropertyContainer cont = doBind (propSource, (obj[propertyName] ?: new CustomPropertyContainer()))
+    obj[propertyName] = cont
+    obj.save()
+    cont
+    
   }
 
 }

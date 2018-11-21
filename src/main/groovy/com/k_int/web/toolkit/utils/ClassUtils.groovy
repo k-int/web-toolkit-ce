@@ -15,7 +15,6 @@ public class ClassUtils {
       def fields = clazz.declaredFields
       for (int i=(fields.length - 1); !field && i>=0; i--) {
         Field f = fields[i]
-        println "${f}"
         // The below is nasty! There must be a better way to get the remapped name. 
         if (f.name.endsWith("__${fieldName}")) {
           field = f

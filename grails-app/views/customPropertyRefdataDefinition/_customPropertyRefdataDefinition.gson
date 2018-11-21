@@ -1,4 +1,3 @@
-package customPropertyRefdataDefinition;
 import com.k_int.web.toolkit.custprops.types.CustomPropertyRefdataDefinition
 import groovy.transform.*
 

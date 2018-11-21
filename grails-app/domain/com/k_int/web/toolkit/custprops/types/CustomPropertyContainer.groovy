@@ -2,6 +2,7 @@ package com.k_int.web.toolkit.custprops.types
 
 import com.k_int.web.toolkit.custprops.CustomPropertiesBinder
 import com.k_int.web.toolkit.custprops.CustomProperty
+import com.k_int.web.toolkit.custprops.CustomPropertyDefinition
 import com.k_int.web.toolkit.databinding.BindUsingWhenRef
 
 import grails.gorm.MultiTenant
@@ -17,5 +18,10 @@ class CustomPropertyContainer extends CustomProperty<Set<CustomProperty>> implem
   
   static mapping = {
     value cascade: 'all-delete-orphan', sort: "definition"
+  }
+  
+  static constraints = {
+    parent nullable: true, blank: false
+    definition nullable: true // The root container can have a null definition.
   }
 }
