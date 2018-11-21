@@ -94,10 +94,7 @@ class CustomPropertiesBinder {
     
     // We need the property source only
     def propSource = source[propertyName]
-    CustomPropertyContainer cont = doBind (propSource, (obj[propertyName] ?: new CustomPropertyContainer()))
-    obj[propertyName] = cont
-    obj.save()
-    cont
+    doBind (propSource, (obj[propertyName] ?: new CustomPropertyContainer()))
     
   }
 
