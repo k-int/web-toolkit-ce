@@ -7,6 +7,15 @@ class RefdataCategory implements MultiTenant<RefdataCategory> {
 
   String id
   String desc
+  Set<RefdataValue> values
+  
+  static hasMany = [
+    values: RefdataValue
+  ]
+  
+  static mappedBy = [
+    values: 'owner'
+  ]
 
   static mapping = {
          id column: 'rdc_id', generator: 'uuid', length:36
