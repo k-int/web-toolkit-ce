@@ -2,4 +2,6 @@ import groovy.transform.*
 import com.k_int.web.toolkit.refdata.RefdataValue
 
 @Field RefdataValue refdataValue
-json g.render (refdataValue, [excludes: ['owner']])
+json g.render (refdataValue, [excludes: ['owner']]) {
+  owner g.render(refdataValue.owner, ['excludes': ['values']])
+}

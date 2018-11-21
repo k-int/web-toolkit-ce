@@ -25,5 +25,6 @@ abstract class CustomProperty<T> implements MultiTenant<CustomProperty> {
   
   static mapping = {
     tablePerHierarchy false
+    sort "definition"
   }
 }

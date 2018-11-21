@@ -43,6 +43,7 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
     name column: 'pd_name', index: 'td_name_idx'
     description column: 'pd_description'
     type column: 'pd_type', index: 'td_type_idx'
+    sort: 'name'
   }
   
   static CustomPropertyDefinition forType (final Class<? extends CustomProperty> type, final Map otherProps = [:]) {
@@ -67,8 +68,8 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
     definition
   }
 
-  CustomProperty getPropertyInstance() {
-    type?.newInstance(definition: this)
+  CustomProperty getPropertyInstance(Map extraProperties = [:]) {
+    type?.newInstance(extraProperties + [definition: this])
   }
 }
 

@@ -1,5 +1,13 @@
+import groovy.sql.OutParameter
 import groovy.transform.*
 import com.k_int.web.toolkit.refdata.RefdataCategory
+import com.k_int.web.toolkit.refdata.RefdataValue
 
 @Field RefdataCategory refdataCategory
-json g.render (refdataCategory, [excludes:['values']])
+json g.render (refdataCategory, [excludes:['values']]) {
+  values (refdataCategory.values) { RefdataValue rdv ->
+    id rdv.id
+    value rdv.value
+    label rdv.label
+  }
+}

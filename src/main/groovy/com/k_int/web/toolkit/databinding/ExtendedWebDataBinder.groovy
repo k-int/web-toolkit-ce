@@ -2,6 +2,8 @@ package com.k_int.web.toolkit.databinding
 
 import static groovy.transform.TypeCheckingMode.SKIP
 
+import java.lang.reflect.Field
+
 import javax.persistence.ManyToOne
 
 import org.grails.databinding.ClosureValueConverter
@@ -9,6 +11,7 @@ import org.grails.databinding.xml.GPathResultMap
 import org.grails.datastore.mapping.model.PersistentProperty
 import org.grails.datastore.mapping.model.types.Association
 
+import com.k_int.web.toolkit.utils.ClassUtils
 import com.k_int.web.toolkit.utils.DomainUtils
 
 import grails.core.GrailsApplication
@@ -296,6 +299,12 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
       return Class.forName(value)
     }
     super.convert(typeToConvertTo, value)
+  }
+  
+  @Override
+  @CompileStatic
+  protected Field getField(Class clazz, String fieldName) {
+    ClassUtils.getField(clazz, fieldName)
   }
 
   @Override

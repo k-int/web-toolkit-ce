@@ -2,13 +2,15 @@ package com.k_int.web.toolkit.custprops
 
 import com.k_int.web.toolkit.custprops.types.CustomPropertyContainer
 
+import grails.databinding.DataBinder
+import grails.databinding.DataBindingSource
+import grails.databinding.SimpleDataBinder
+import grails.databinding.SimpleMapDataBindingSource
+
 class CustomPropertiesBinder {
-
-  // Add the binder here as a static so we can debug easily.
-  static final CustomPropertyContainer bind ( final CustomPropertyContainer obj, Map source ) {
-    // Default way to bind when using this trait. Data is treated as immutable. i.e. Any properties specified,
-    // are bound as is and replace any existing values.
-
+  
+  private static doBind (Map propSource, CustomPropertyContainer cpc) {
+    
     /* Expected format :{
      *  "propertyDefName" : value,
      *  "propertyDefName2" : {
@@ -16,31 +18,32 @@ class CustomPropertiesBinder {
      *  }
      * }
      */
-    if (source && source.size() > 0) {
-      
+    if (propSource && propSource.size() > 0) {
       // Each supplied property. We only allow predefined types.
-      final Set<String> propertyNames = source.keySet()
+      final Set<String> propertyNames = propSource instanceof Map ? propSource.keySet() : propSource.propertyNames
   
       // Grab the defs present for all properties supplied.
       final Set<CustomPropertyDefinition> propDefs = []
       CustomPropertyDefinition.withNewSession {
-        propDefs << CustomPropertyDefinition.createCriteria().list {
+        propDefs.addAll( CustomPropertyDefinition.createCriteria().list {
           'in' "name", propertyNames
-        }
+        })
       }
   
       // Go through every property...
       for (CustomPropertyDefinition propDef: propDefs) {
         
+        // Grab the values sent in for this property.
+        // Either {id: 'someId', value: someValue, [_delete: true]} for update
+        // OR  { value: someValue } for new.
+        def vals = propSource[propDef.name]
+        
         // If is container, then recursively call the parent method.
         if (propDef.type == CustomPropertyContainer) {
           
+          // Add the container type property.
+          cpc.addToValue ( doBind (vals, propDef.propertyInstance()) )
         }
-        
-        // Grab the values sent in for this property.
-        // Either {id: 'someId', value: someValue, [_delete: true]}
-        // OR  { value: someValue }
-        def vals = source[propDef.name]
         
         // Ensure we have a collection.
         if (vals instanceof Map) {
@@ -51,11 +54,23 @@ class CustomPropertiesBinder {
           for (Map<String, ?> val : vals) {
             // If we have an ID. Select it by id and has to also be of this type.
             CustomProperty theProp
+            final boolean deleteFlag = (val.'_delete' == true)
             if (val.id) {
               theProp = CustomProperty.read(val.id)
-            } else {
-              // New property.
-              theProp = propDef.getPropertyInstance()
+              
+              // If we are to delete the property we should do that here.
+              if (deleteFlag) {
+                cpc.removeFromValue ( theProp )
+              }
+            }
+            
+            // Not delete
+            if (!deleteFlag) {
+              // Create a new property if we need one.
+              theProp = theProp ?: propDef.getPropertyInstance(val)
+                            
+              // Add the property to the container
+              cpc.addToValue ( theProp )
             }
           }
         }
@@ -70,7 +85,18 @@ class CustomPropertiesBinder {
       // with the same def.
     }
     
-    obj.refresh()
+    cpc.save(flush:true)
+    cpc
+  }
+
+  // Add the binder here as a static so we can debug easily.
+  static final CustomPropertyContainer bind ( obj, String propertyName, source ) {
+    // Default way to bind when using this trait. Data is treated as immutable. i.e. Any properties specified,
+    // are bound as is and replace any existing values.
+    
+    // We need the property source only
+    def propSource = source[propertyName]
+    doBind (propSource, (obj[propertyName] ?: new CustomPropertyContainer()))
   }
 
 }
