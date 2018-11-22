@@ -8,6 +8,7 @@ import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 import grails.util.GrailsNameUtils
 
+@Entity
 @BindUsingWhenRef({ obj, propName, source ->
 
   def data = source[propName]
@@ -34,7 +35,6 @@ import grails.util.GrailsNameUtils
   
   val
 })
-@Entity
 class RefdataValue implements MultiTenant<RefdataValue> {
   
   private static final Normalizer2 normalizer = Normalizer2.NFKDInstance
@@ -76,6 +76,9 @@ class RefdataValue implements MultiTenant<RefdataValue> {
   
   void setLabel (String label) {
     this.label = tidyLabel( label )
+    if (this.value == null) {
+      this.setValue( label )
+    }
   }
   
   /**

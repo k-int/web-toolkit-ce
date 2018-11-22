@@ -1,6 +1,6 @@
 package com.k_int.web.toolkit.rest;
 
-import org.grails.datastore.gorm.query.NamedCriteriaProxy;
+import org.grails.datastore.gorm.query.NamedCriteriaProxy
 
 import com.k_int.web.toolkit.SimpleLookupService
 

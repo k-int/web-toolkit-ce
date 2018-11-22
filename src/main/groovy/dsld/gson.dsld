@@ -1,0 +1,11 @@
+package dsld
+
+contribute(fileExtension('gson') & isThisType()) {
+	
+	provider = 'JSON Views'
+	// the delegate type
+	delegatesTo type:'grails.plugin.json.view.api.JsonView', useNamed:true
+	delegatesTo type:'grails.views.api.GrailsView', useNamed:true
+	delegatesTo type:'grails.views.api.HttpView', useNamed:true
+	delegatesTo type:'grails.views.api.View', useNamed:true
+}
