@@ -20,12 +20,9 @@ class CustomPropertiesBinder {
       final Set<String> propertyNames = propSource.keySet()
   
       // Grab the defs present for all properties supplied.
-      final Set<CustomPropertyDefinition> propDefs = []
-      CustomPropertyDefinition.withNewSession {
-        propDefs.addAll( CustomPropertyDefinition.createCriteria().list {
-          'in' "name", propertyNames
-        })
-      }
+      final Set<CustomPropertyDefinition> propDefs = CustomPropertyDefinition.createCriteria().list {
+        'in' "name", propertyNames
+      } as Set<CustomPropertyDefinition>
   
       // Go through every property...
       for (CustomPropertyDefinition propDef: propDefs) {
@@ -62,7 +59,7 @@ class CustomPropertiesBinder {
             CustomProperty theProp
             final boolean deleteFlag = (val.'_delete' == true)
             if (val.id) {
-              propDef.type.read(val.id)
+              theProp = propDef.type.read(val.id)
               
               // If we are to delete the property we should do that here.
               if (deleteFlag) {
