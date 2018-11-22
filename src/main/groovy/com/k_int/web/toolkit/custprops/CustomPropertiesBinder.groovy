@@ -17,7 +17,7 @@ class CustomPropertiesBinder {
     
     if (propSource && propSource.size() > 0) {
       // Each supplied property. We only allow predefined types.
-      final Set<String> propertyNames = propSource instanceof Map ? propSource.keySet() : propSource.propertyNames
+      final Set<String> propertyNames = propSource.keySet()
   
       // Grab the defs present for all properties supplied.
       final Set<CustomPropertyDefinition> propDefs = []
@@ -48,12 +48,21 @@ class CustomPropertiesBinder {
         }
         
         if (vals instanceof Collection) {
-          for (Map<String, ?> val : vals) {
+          for (final def valObj : vals) {
+            
+            // Single values are presumed to be the 'value' key
+            Map<String, ?> val
+            if ( !(valObj instanceof Map) ) {
+              val = [value: valObj]
+            } else {
+              val = valObj
+            }
+            
             // If we have an ID. Select it by id and has to also be of this type.
             CustomProperty theProp
             final boolean deleteFlag = (val.'_delete' == true)
             if (val.id) {
-              theProp = CustomProperty.read(val.id)
+              propDef.type.read(val.id)
               
               // If we are to delete the property we should do that here.
               if (deleteFlag) {
@@ -83,7 +92,7 @@ class CustomPropertiesBinder {
       // with the same def.
     }
     
-    cpc.save(flush:true)
+    cpc.save(failOnError: true)
     cpc
   }
 
