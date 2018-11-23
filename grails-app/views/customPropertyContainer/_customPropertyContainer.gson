@@ -25,6 +25,7 @@ json {
         } else {
           value p.value
         }
+        type "${p.definition.type}"
       }
     } 
   }
