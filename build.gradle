@@ -19,7 +19,6 @@ group "com.k_int.grails"
 apply plugin:"eclipse"
 apply plugin:"idea"
 apply plugin:"org.grails.grails-plugin"
-apply plugin:"org.grails.grails-plugin-publish"
 apply plugin:"org.grails.plugins.views-json"
 
 repositories {
@@ -67,43 +66,6 @@ dependencies {
 bootRun {
     jvmArgs('-Dspring.output.ansi.enabled=always')
     addResources = true
-}
-
-publishing {
-  publications {
-      plugin(MavenPublication) {
-          groupId "${group}"
-          pom.withXml {
-              def pomNode = asNode()
-              pomNode.dependencyManagement.replaceNode {}
-
-              // simply remove dependencies without a version
-              // version-less dependencies are handled with dependencyManagement
-              // see https://github.com/spring-gradle-plugins/dependency-management-plugin/issues/8 for more complete solutions
-              pomNode.dependencies.dependency.findAll {
-                  it.version.text().isEmpty()
-              }.each {
-                  it.replaceNode {}
-              }
-          }
-          from components.java
-      }
-  }
-  
-  if (un) {
-    System.out.println("Found username for K-Int Maven repo '${un}'")
-    repositories {
-      maven {
-        name "KIntPublic"
-        // url "http://maven.k-int.com/content/repositories/private/"
-        url "http://maven.k-int.com/content/repositories/releases/"
-        credentials {
-          username un
-          password pw
-        }
-      }
-    }
-  }
 }
 
 // Run with gradle groovydoc
