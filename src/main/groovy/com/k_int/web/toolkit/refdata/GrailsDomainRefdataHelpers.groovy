@@ -6,6 +6,8 @@ import java.lang.reflect.Field
 import org.grails.datastore.mapping.model.PersistentEntity
 import org.grails.datastore.mapping.model.PersistentProperty
 import org.grails.datastore.mapping.model.types.Association
+
+import com.k_int.web.toolkit.custprops.types.CustomPropertyRefdata
 import com.k_int.web.toolkit.refdata.RefdataCategory
 import com.k_int.web.toolkit.refdata.RefdataValue
 
@@ -122,10 +124,13 @@ class GrailsDomainRefdataHelpers {
   }
   
   public static void addMethods (PersistentEntity pe) {
+    // Excludes.
+    final Set<Class<?>> excludes = [RefdataValue, RefdataCategory, CustomPropertyRefdata]
+    
     final Class<?> targetClass = pe.javaClass
     final GrailsApplication grailsApplication = Holders.grailsApplication
 
-    if ( !(RefdataValue.class.isAssignableFrom(targetClass) || RefdataCategory.class.isAssignableFrom(targetClass)) ) {
+    if ( !excludes.find { it.isAssignableFrom(targetClass) } ) {
 
       // Get each refdataValue type property (or derivative)
       PropertyDescriptor[] props = GrailsClassUtils.getPropertiesAssignableToType(targetClass, RefdataValue.class)
