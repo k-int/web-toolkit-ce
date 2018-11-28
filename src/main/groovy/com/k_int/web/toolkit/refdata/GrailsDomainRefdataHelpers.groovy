@@ -83,33 +83,36 @@ class GrailsDomainRefdataHelpers {
           // The field name.
           final String fn = p.name
           
-          log.debug "  Found property ${fn} that has compatible type"
-          
           // Create our type string once per property.
-          final String typeString = targetClass."${fn}Category"
+          final String upperName = GrailsNameUtils.getClassName(fn)
           
-          log.debug "  Category: ${typeString}"
+          final String typeString = targetClass.metaClass.respondsTo(targetClass, "get${upperName}Category") ? targetClass."get${upperName}Category"() : null
+          if (typeString) {
           
-          try {
-            // Check for annotated valuesd.
-            Field field = targetClass.getDeclaredField("${fn}")
-            Defaults defaults = field.getAnnotation(Defaults.class)
-            if (defaults) {
-              
-              log.debug "  Declared defaults:"
-              defaults.value().each {
-                log.debug "    ${it}"
-                RefdataValue.lookupOrCreate(
-                  typeString,
-                  it,
-                  null,
-                  type
-                )
+            log.debug "  Found property ${fn} that has compatible type"
+            log.debug "  Category: ${typeString}"
+            
+            try {
+              // Check for annotated valuesd.
+              Field field = targetClass.getDeclaredField("${fn}")
+              Defaults defaults = field.getAnnotation(Defaults.class)
+              if (defaults) {
+                
+                log.debug "  Declared defaults:"
+                defaults.value().each {
+                  log.debug "    ${it}"
+                  RefdataValue.lookupOrCreate(
+                    typeString,
+                    it,
+                    null,
+                    type
+                  )
+                }
               }
+            } catch (NoSuchFieldException e) {
+              // We can safely ignore this exception here. GORM does not force you to
+              // explicitly declare a field in all cases.
             }
-          } catch (NoSuchFieldException e) {
-            // We can safely ignore this exception here. GORM does not force you to
-            // explicitly declare a field in all cases.
           }
         }
       }
