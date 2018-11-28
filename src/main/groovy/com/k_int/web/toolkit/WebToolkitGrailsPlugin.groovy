@@ -9,7 +9,9 @@ import grails.core.GrailsClass
 import grails.plugins.*
 import grails.util.Environment
 import grails.web.databinding.DataBindingUtils
+import groovy.util.logging.Slf4j
 
+@Slf4j
 class WebToolkitGrailsPlugin extends Plugin {
 
   // the version or versions of Grails the plugin is designed for
