@@ -1,6 +1,3 @@
-def un = project.hasProperty('kintMavenUser') ? project.kintMavenUser : null
-def pw = project.hasProperty('kintMavenPassword') ? project.kintMavenPassword : null
-
 buildscript {
     repositories {
         mavenLocal()
@@ -13,13 +10,13 @@ buildscript {
     }
 }
 
-version "3.3.20"
+version "3.3.21"
 group "com.k_int.grails"
 
 apply plugin:"eclipse"
 apply plugin:"idea"
 apply plugin:"org.grails.grails-plugin"
-apply plugin:"maven-publish"
+apply plugin:"org.grails.grails-plugin-publish"
 apply plugin:"org.grails.plugins.views-json"
 
 repositories {
@@ -71,14 +68,6 @@ bootRun {
 
 // Run with gradle groovydoc
 groovydoc {
-  destinationDir = new File('docs')
-}
-
-
-// Run with gradle groovydoc
-// See http://mrhaki.blogspot.com/2016/01/groovy-goodness-customise-groovydoc.html
-groovydoc {
-  // Put docs at root of project
   destinationDir = new File('docs')
 }
 
