@@ -6,12 +6,12 @@ import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 
 @Entity
-class CustomPropertyText extends CustomProperty<String> implements MultiTenant<CustomPropertyText> { 
+class CustomPropertyBlob extends CustomProperty<Byte[]> implements MultiTenant<CustomPropertyBlob> { 
   
-  String value
+  Byte[] value
   
   static constraints = {
-    value nullable: false, blank: false, type:'text'
+    value nullable: false, blank: false, type:'blob'
   }
   
 }
