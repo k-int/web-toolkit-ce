@@ -60,8 +60,13 @@ dependencies {
 }
 
 bootRun {
-    jvmArgs('-Dspring.output.ansi.enabled=always')
-    addResources = true
+  jvmArgs('-Dspring.output.ansi.enabled=always')
+  addResources = true
+}
+
+sourcesJar {
+  println "Excluding the source."
+  exclude '*'
 }
 
 // Run with gradle groovydoc
