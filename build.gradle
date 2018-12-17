@@ -41,9 +41,7 @@ dependencies {
     provided "org.grails:grails-logging"
     provided "org.grails.plugins:cache"
     provided "org.grails.plugins:hibernate5"
-    provided "org.hibernate:hibernate-core:5.1.5.Final"
     console "org.grails:grails-console"
-    provided "org.grails.plugins:views-json:1.2.7"
     profile "org.grails.profiles:rest-api-plugin"
     provided "org.grails:grails-plugin-services"
     provided "org.grails:grails-plugin-domain-class"
@@ -53,6 +51,9 @@ dependencies {
     testCompile "org.grails:grails-datastore-rest-client"
     testRuntime "org.seleniumhq.selenium:selenium-htmlunit-driver:2.47.1"
     testRuntime "net.sourceforge.htmlunit:htmlunit:2.18"
+    
+    provided "org.hibernate:hibernate-core:5.1.16.Final"
+    provided "org.grails.plugins:views-json"
     
     provided 'org.grails.plugins:spring-security-core:3.2.0'
     provided "org.postgresql:postgresql:42.2.4"
