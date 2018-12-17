@@ -10,4 +10,5 @@ build/
 .project
 .settings
 .classpath
-/bin/
+/bin
+/docs
