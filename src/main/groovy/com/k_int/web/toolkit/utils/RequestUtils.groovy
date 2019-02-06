@@ -1,7 +1,9 @@
 package com.k_int.web.toolkit.utils
 
+import groovy.util.logging.Slf4j
 import javax.servlet.http.HttpServletRequest
 
+@Slf4j
 class RequestUtils {
   public static final String HEADER_FORWARDED = 'forwarded'
   public static final String HEADER_FORWARDED_HOST = 'X-Forwarded-Host'
@@ -18,7 +20,20 @@ class RequestUtils {
     if (headerInfo) {
       
       details = headerInfo.split(/\s*;\s*/).inject(details) { Map<String, String> map, String token ->
-        token.split(/\s*=\s*/).with { map[it[0]] = it[1] }
+        token.split(/\s*=\s*/).with { 
+          log.debug "Trying to split ${it}"
+          
+          if (it) {
+            if (it.length == 2) {
+              map[it[0]] = it[1]
+            } else {
+              
+              log.debug "Header does not fit the pattern x=y:  ${it[0]}"
+            }
+          } else {
+            log.debug "Ignoring ${it} and treating as invalid"
+          }
+        }
         map
       }
       
