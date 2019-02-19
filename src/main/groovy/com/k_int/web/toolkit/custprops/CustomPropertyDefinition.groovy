@@ -24,6 +24,9 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
   String description
   Class<? extends CustomProperty> type
   
+  // Denotes primary. This is the primary sort, then weight, then id.
+  boolean primary = false
+  
   // Used for ordering. Larger weight values sink.
   int weight = 0
   
@@ -49,8 +52,9 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
   static constraints = {
     name            (nullable: false, blank: false, unique: true)
     description     (nullable: true, blank: false)
-    type            (bindable: false, nullable: false, blank: false)
+    type            (bindable: false, nullable: false)
     label           (nullable: false, blank: false)
+    primary         (nullable: false)
   }
 
   static mapping = {
@@ -61,7 +65,8 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
     type column: 'pd_type', index: 'td_type_idx'
     label column: 'pd_label', index: 'td_label_idx'
     weight column: 'pd_weight', index: 'td_weight_idx'
-    sort: 'name'
+    primary column: 'pd_primary', index: 'td_primary_idx'
+    sort 'primary': 'asc', 'weight':'asc', 'id':'asc'
   }
   
   static CustomPropertyDefinition forType (final Class<? extends CustomProperty> type, final Map otherProps = [:]) {
