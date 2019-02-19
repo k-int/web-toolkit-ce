@@ -59,7 +59,8 @@ class CustomPropertiesBinder {
             CustomProperty theProp
             final boolean deleteFlag = (val.'_delete' == true)
             if (val.id) {
-              theProp = propDef.type.read(val.id)
+              // Needs to be a get so that the changes are persisted.
+              theProp = propDef.type.get(val.id)
               
               // If we are to delete the property we should do that here.
               if (deleteFlag) {
