@@ -58,7 +58,7 @@ class RefdataValue implements MultiTenant<RefdataValue> {
   static constraints = {
     label (nullable: false, blank: false)
     value (nullable: false, blank: false)
-    owner (nullable: false, blank: false)
+    owner (nullable: false)
   }
   
   public static String normValue ( String string ) {
