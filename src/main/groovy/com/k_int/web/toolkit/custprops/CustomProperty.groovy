@@ -8,10 +8,10 @@ import grails.gorm.transactions.Rollback
 
 @Entity
 class CustomProperty<T> implements MultiTenant<CustomProperty> {
-  
-//  String name
   CustomPropertyDefinition definition
   T value
+  
+  String note
   
   CustomPropertyContainer parent
   
@@ -20,12 +20,14 @@ class CustomProperty<T> implements MultiTenant<CustomProperty> {
   ]
   
   static constraints = {
-    parent nullable: true, blank: false
+    parent nullable: true
     definition nullable: false
+    note nullable: true, blank: false
   }
   
   static mapping = {
     tablePerHierarchy false
+    note type: "text"
     sort "definition"
   }
 }

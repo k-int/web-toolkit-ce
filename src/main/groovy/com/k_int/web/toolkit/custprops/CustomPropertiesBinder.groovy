@@ -90,7 +90,7 @@ class CustomPropertiesBinder {
       // with the same def.
     }
     
-    cpc.save(failOnError: true)
+    cpc.save(failOnError: true, flush:true)
     cpc
   }
 
