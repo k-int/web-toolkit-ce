@@ -69,3 +69,9 @@ bootRun {
 groovydoc {
   destinationDir = new File('docs')
 }
+
+// Because the project is named differently to the plugin for the CE, we need to specify the correct package name.
+compileGsonViews {
+  packageName = "web-toolkit"
+}
+
