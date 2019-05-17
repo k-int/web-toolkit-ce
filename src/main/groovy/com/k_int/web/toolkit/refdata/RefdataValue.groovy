@@ -67,7 +67,7 @@ class RefdataValue implements MultiTenant<RefdataValue> {
   }
   
   private static String tidyLabel ( String string ) {
-    UCharacter.toTitleCase( string.trim(), null ).replaceAll(/\s{2,}/, ' ')
+    string.trim().replaceAll(/\s{2,}/, ' ')
   }
   
   void setValue (String value) {
