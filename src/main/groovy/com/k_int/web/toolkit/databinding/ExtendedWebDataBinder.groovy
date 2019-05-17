@@ -317,18 +317,27 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
       try {
         def field = getField(obj.getClass(), propName)
         if (field) {
-
-          // Grab the type of the field and check for an annotation at class level.
-          def annotation = field.type?.getAnnotation(BindUsingWhenRef)
-          if (annotation) {
-
-            // Ensure that this is a closure that is passed in.
-            def valueClass = annotation.value()
-            if (Closure.isAssignableFrom(valueClass)) {
-              Closure closure = (Closure)valueClass.newInstance(null, null)
-
-              // Curry both the obj and the propertyName. Useful when we need to know the origin.
-              converter = new ClosureValueConverter(converterClosure: closure.curry(obj, propName), targetType: field.type)
+          Class<?> theClass = field.type 
+          if (theClass) {
+            // Grab the type of the field and check for an annotation at class level.
+            def annotation = theClass.getAnnotation(BindUsingWhenRef)
+            
+            // This annotation should be searched for on parents too.
+            while (theClass != Object && !annotation) {
+              theClass = theClass.getSuperclass()
+              annotation = theClass.getAnnotation(BindUsingWhenRef)
+            }
+            
+            if (annotation) {
+  
+              // Ensure that this is a closure that is passed in.
+              def valueClass = annotation.value()
+              if (Closure.isAssignableFrom(valueClass)) {
+                Closure closure = (Closure)valueClass.newInstance(null, null)
+  
+                // Curry both the obj and the propertyName. Useful when we need to know the origin.
+                converter = new ClosureValueConverter(converterClosure: closure.curry(obj, propName), targetType: field.type)
+              }
             }
           }
         }
@@ -346,6 +355,13 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
       // Grab the type of the field and check for an annotation at class level.
       Class typeClass = getReferencedTypeForCollection (propName, obj)
       def annotation = typeClass?.getAnnotation(BindUsingWhenRef)
+      
+      // This annotation should be searched for on parents too.
+      while (typeClass != Object && !annotation) {
+        typeClass = typeClass.getSuperclass()
+        annotation = typeClass.getAnnotation(BindUsingWhenRef)
+      }
+        
       if (annotation) {
 
         // Ensure that this is a closure that is passed in.
