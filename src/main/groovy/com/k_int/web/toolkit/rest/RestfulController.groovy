@@ -1,10 +1,13 @@
 package com.k_int.web.toolkit.rest;
 
+import static org.springframework.http.HttpStatus.*
+
 import org.grails.datastore.gorm.query.NamedCriteriaProxy
 
 import com.k_int.web.toolkit.SimpleLookupService
+
 import grails.gorm.transactions.Transactional
-import groovy.lang.Closure;
+import grails.web.http.HttpHeaders
 
 public class RestfulController<T> extends grails.rest.RestfulController<T> {
 
@@ -67,7 +70,6 @@ public class RestfulController<T> extends grails.rest.RestfulController<T> {
         respond instance.errors, view:'edit' // STATUS CODE 422
         return
     }
-
     updateResource instance
     request.withFormat {
         form multipartForm {
