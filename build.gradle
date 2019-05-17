@@ -19,6 +19,12 @@ apply plugin:"org.grails.grails-plugin"
 apply plugin:"org.grails.grails-plugin-publish"
 apply plugin:"org.grails.plugins.views-json"
 
+eclipse {
+  classpath {
+    defaultOutputDir = file('bin/main')
+  }
+}
+
 repositories {
     mavenLocal()
     maven { url "https://repo.grails.org/grails/core" }
