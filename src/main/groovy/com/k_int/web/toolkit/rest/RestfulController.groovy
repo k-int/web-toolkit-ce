@@ -3,7 +3,7 @@ package com.k_int.web.toolkit.rest;
 import org.grails.datastore.gorm.query.NamedCriteriaProxy
 
 import com.k_int.web.toolkit.SimpleLookupService
-
+import grails.gorm.transactions.Transactional
 import groovy.lang.Closure;
 
 public class RestfulController<T> extends grails.rest.RestfulController<T> {
@@ -41,4 +41,45 @@ public class RestfulController<T> extends grails.rest.RestfulController<T> {
   def index(Integer max) {
     respond doTheLookup()
   }
+  
+  @Override
+  @Transactional
+  def update() {
+    if(handleReadOnly()) {
+        return
+    }
+
+    T instance = queryForResource(params.id)
+    if (instance == null) {
+        transactionStatus.setRollbackOnly()
+        notFound()
+        return
+    }
+
+    // This is the properties assigning that does not work for entities not in the
+    // domain folder. Replace it with a bindData instead.
+//    instance.properties = getObjectToBind()
+    bindData(instance, getObjectToBind())
+
+    instance.validate()
+    if (instance.hasErrors()) {
+        transactionStatus.setRollbackOnly()
+        respond instance.errors, view:'edit' // STATUS CODE 422
+        return
+    }
+
+    updateResource instance
+    request.withFormat {
+        form multipartForm {
+            flash.message = message(code: 'default.updated.message', args: [classMessageArg, instance.id])
+            redirect instance
+        }
+        '*'{
+            response.addHeader(HttpHeaders.LOCATION,
+                    grailsLinkGenerator.link( resource: this.controllerName, action: 'show',id: instance.id, absolute: true,
+                                        namespace: hasProperty('namespace') ? this.namespace : null ))
+            respond instance, [status: OK]
+        }
+    }
+}
 }
