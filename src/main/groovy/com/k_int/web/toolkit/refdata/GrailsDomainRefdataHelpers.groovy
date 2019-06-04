@@ -1,6 +1,7 @@
 package com.k_int.web.toolkit.refdata
 
 import java.beans.PropertyDescriptor
+import java.lang.annotation.Annotation
 import java.lang.reflect.Field
 
 import org.grails.datastore.mapping.model.PersistentEntity
@@ -36,19 +37,32 @@ class GrailsDomainRefdataHelpers {
    */
 //  @Memoized(maxCacheSize=50)
   public static String getCategoryString(final Class<?> c, final String propertyName) {
-    String typeString = "${c.simpleName}.${GrailsNameUtils.getClassName(propertyName)}"
+    CategoryId cat =  getFieldAnnotation(c, propertyName, CategoryId.class, true)
+    cat ? cat.value() : "${c.simpleName}.${GrailsNameUtils.getClassName(propertyName)}"
+  }
+  
+  private static <T extends Annotation> T getFieldAnnotation(final Class<?> c, final String fieldName, Class<T> annotationClass, boolean searchParents = false) {
+    T ann = null
+    Field field = null
     try {
-      // Check for annotated values first.
-      Field field = c.getDeclaredField("${propertyName}")
-      CategoryId cat = field.getAnnotation(CategoryId.class)
+      field = c.getDeclaredField("${fieldName}")
+      ann = field.getAnnotation(annotationClass)
       
-      if (cat) typeString = cat.value()
-    } catch (NoSuchFieldException e) {
-      // We can safely ignore this exception here. GORM does not force you to
-      // explicitly declare a field in all cases.
+    } catch (NoSuchFieldException e) { /* Silent */ }
+    
+    if (!field && searchParents) {
+      Class<?> theClass = c.getSuperclass()
+      while (theClass != Object && !field) {
+        try {
+          field = theClass.getDeclaredField("${fieldName}")
+          ann = field.getAnnotation(annotationClass)
+        } catch (NoSuchFieldException e) { 
+          theClass = theClass.getSuperclass()
+        }
+      }
     }
     
-    typeString
+    ann
   }
   
   public static void setDefaultsForTenant (final Serializable tid) {
@@ -92,26 +106,20 @@ class GrailsDomainRefdataHelpers {
             log.debug "  Found property ${fn} that has compatible type"
             log.debug "  Category: ${typeString}"
             
-            try {
-              // Check for annotated valuesd.
-              Field field = targetClass.getDeclaredField("${fn}")
-              Defaults defaults = field.getAnnotation(Defaults.class)
-              if (defaults) {
-                
-                log.debug "  Declared defaults:"
-                defaults.value().each {
-                  log.debug "    ${it}"
-                  RefdataValue.lookupOrCreate(
-                    typeString,
-                    it,
-                    null,
-                    type
-                  )
-                }
+            // Check for annotated values.
+            Defaults defaults = getFieldAnnotation(targetClass, fn, Defaults.class)
+            if (defaults) {
+              
+              log.debug "  Declared defaults:"
+              defaults.value().each {
+                log.debug "    ${it}"
+                RefdataValue.lookupOrCreate(
+                  typeString,
+                  it,
+                  null,
+                  type
+                )
               }
-            } catch (NoSuchFieldException e) {
-              // We can safely ignore this exception here. GORM does not force you to
-              // explicitly declare a field in all cases.
             }
           }
         }
