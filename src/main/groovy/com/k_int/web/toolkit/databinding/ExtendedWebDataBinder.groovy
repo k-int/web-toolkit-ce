@@ -10,7 +10,7 @@ import org.grails.databinding.ClosureValueConverter
 import org.grails.databinding.xml.GPathResultMap
 import org.grails.datastore.mapping.model.PersistentProperty
 import org.grails.datastore.mapping.model.types.Association
-
+import org.grails.datastore.mapping.model.types.OneToOne
 import com.k_int.web.toolkit.utils.ClassUtils
 import com.k_int.web.toolkit.utils.DomainUtils
 
@@ -19,6 +19,8 @@ import grails.databinding.DataBindingSource
 import grails.databinding.SimpleMapDataBindingSource
 import grails.databinding.converters.ValueConverter
 import grails.databinding.events.DataBindingListener
+import grails.util.GrailsMetaClassUtils
+import grails.validation.DeferredBindingActions
 import grails.web.databinding.GrailsWebDataBinder
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
@@ -276,6 +278,28 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
 
     // We can now just drop through to the default implementation, which should now create a new value for us.
     super.setPropertyValue(obj, source, metaProperty, propertyValue, listener, convertCollectionElements)
+    
+  }
+  
+  @Override
+  @CompileStatic
+  protected setPropertyValue(obj, DataBindingSource source, MetaProperty metaProperty, propertyValue, DataBindingListener listener) {
+    super.setPropertyValue(obj, source, metaProperty, propertyValue, listener)
+    def propName = metaProperty.name
+    boolean isSet = false
+    def domainClass = DomainUtils.resolveDomainClass(obj.getClass())
+    if (domainClass != null) {
+      PersistentProperty property = domainClass.getPropertyByName(propName)
+      if (property != null) {
+        PersistentProperty otherSide
+        if (property instanceof OneToOne) {
+          if (((OneToOne) property).bidirectional) {
+            otherSide = ((OneToOne) property).inverseSide
+            obj[propName][otherSide.name] = obj
+          }
+        }
+      }
+    }
   }
 
   @CompileStatic
