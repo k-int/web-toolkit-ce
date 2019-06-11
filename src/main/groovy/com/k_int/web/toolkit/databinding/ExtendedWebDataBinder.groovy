@@ -66,7 +66,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
         def toRemove = collectionEntryTargetType.read(collectionEntry[pId.name])
         
         if (toRemove) {
-          removeElementFromCollection (obj, propertyName, toRemove )
+          removeElementFromCollection ( obj, propertyName, toRemove )
           processed = true
         }
       }
@@ -287,11 +287,10 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
     def propName = metaProperty.name
 //    boolean isSet = false
     def domainClass = DomainUtils.resolveDomainClass(obj.getClass())
-    
+    PersistentProperty otherSide
     if (domainClass != null) {
       PersistentProperty property = domainClass.getPropertyByName(propName)
       if (property != null) {
-        PersistentProperty otherSide
         if (property instanceof OneToOne) {
           if (((OneToOne) property).bidirectional) {
             otherSide = ((OneToOne) property).inverseSide
@@ -306,8 +305,17 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
               return
             } 
             
+            final def previousValue = obj[propName]
+            
             // We need to first bind the property normally
             super.setPropertyValue(obj, source, metaProperty, propertyValue, listener)
+            
+            if (previousValue) {
+              if (previousValue.getAt('id') != obj.getAt(propName)?.getAt('id')) {
+                // Remove the old reference
+                previousValue[otherSide.name] = null
+              }
+            }
             
             // Then set the inverse of this relationship.
             obj[propName][otherSide.name] = obj
