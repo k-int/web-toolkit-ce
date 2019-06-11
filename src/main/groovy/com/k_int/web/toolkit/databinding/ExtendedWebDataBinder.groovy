@@ -284,10 +284,10 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
   @Override
   @CompileStatic
   protected setPropertyValue(obj, DataBindingSource source, MetaProperty metaProperty, propertyValue, DataBindingListener listener) {
-    super.setPropertyValue(obj, source, metaProperty, propertyValue, listener)
     def propName = metaProperty.name
-    boolean isSet = false
+//    boolean isSet = false
     def domainClass = DomainUtils.resolveDomainClass(obj.getClass())
+    
     if (domainClass != null) {
       PersistentProperty property = domainClass.getPropertyByName(propName)
       if (property != null) {
@@ -295,11 +295,30 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
         if (property instanceof OneToOne) {
           if (((OneToOne) property).bidirectional) {
             otherSide = ((OneToOne) property).inverseSide
+            
+            if (propertyValue == null) {
+              // Just Null out the relations. and exit.
+              if (obj[propName]) {
+                obj[propName][otherSide.name] = null
+                obj[propName] = null
+              }
+              
+              return
+            } 
+            
+            // We need to first bind the property normally
+            super.setPropertyValue(obj, source, metaProperty, propertyValue, listener)
+            
+            // Then set the inverse of this relationship.
             obj[propName][otherSide.name] = obj
+            return 
           }
         }
       }
     }
+    
+    // Always call the super if we get this far.
+    super.setPropertyValue(obj, source, metaProperty, propertyValue, listener)
   }
 
   @CompileStatic
