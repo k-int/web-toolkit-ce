@@ -21,5 +21,6 @@ class RefdataCategory implements MultiTenant<RefdataCategory> {
          id column: 'rdc_id', generator: 'uuid', length:36
     version column: 'rdc_version'
        desc column: 'rdc_description'
+     values cascade: 'all-delete-orphan'
   }
 }
