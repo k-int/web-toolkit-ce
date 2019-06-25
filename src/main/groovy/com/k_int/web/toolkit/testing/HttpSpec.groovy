@@ -30,6 +30,8 @@ abstract class HttpSpec extends GebSpec {
     (HttpHeaders.ACCEPT):       'application/json'
   ]
   
+  @Shared Closure httpClientConfig = null
+  
   protected Map<String, String> setDefaultHeaders(Map<String, String> defaultHeaders) {
     this.specDefaultHeaders = defaultHeaders
   }
@@ -175,6 +177,9 @@ abstract class HttpSpec extends GebSpec {
         conn.connectTimeout = 2000
         conn.readTimeout = 3000
       }
+      
+      // Execute extras and overrides here.
+      httpClientConfig?.rehydrate(delegate, owner, thisObject)?.call()
     }
   }
   
