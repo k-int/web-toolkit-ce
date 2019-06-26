@@ -421,7 +421,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
           Closure closure = (Closure)valueClass.newInstance(null, null)
 
           // Curry both the obj and the propertyName. Useful when we need to know the origin.
-          converter = new ClosureValueConverter(converterClosure: closure.curry(obj, propName), targetType: typeClass)
+          converter = new ClosureValueConverter(converterClosure: closure.curry(obj, propName).rcurry(true), targetType: typeClass)
         }
       }
     } catch (Exception e) {

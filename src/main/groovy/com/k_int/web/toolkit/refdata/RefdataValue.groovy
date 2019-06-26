@@ -7,8 +7,8 @@ import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 
 @Entity
-@BindUsingWhenRef({ obj, propName, source ->
-  RefdataBinding.refDataBinding(obj, propName, source)
+@BindUsingWhenRef({ obj, propName, source, boolean isCollection = false ->
+  RefdataBinding.refDataBinding(obj, propName, source, isCollection)
 })
 class RefdataValue implements MultiTenant<RefdataValue> {
   
@@ -64,10 +64,14 @@ class RefdataValue implements MultiTenant<RefdataValue> {
    */
   static <T extends RefdataValue> T lookupOrCreate(final String category_name, final String label, final String value=null, Class<T> clazz = this) {
     final RefdataCategory cat = RefdataCategory.findOrCreateByDesc(category_name).save(flush:true, failOnError:true)
+    lookupOrCreate (cat, label, value, clazz)
+  }
+  
+  static <T extends RefdataValue> T lookupOrCreate(final RefdataCategory cat, final String label, final String value=null, Class<T> clazz = this) {
     
     final String norm_value = normValue( value ?: label )
     
-    T result = clazz.findByOwnerAndValue(cat, norm_value)
+    T result = clazz.findByOwnerAndValue(cat, norm_value) 
     
     if (!result) {
       result = clazz.newInstance()
