@@ -3,12 +3,14 @@ package com.k_int.web.toolkit.custprops
 import javax.persistence.Transient
 import javax.validation.UnexpectedTypeException
 
+import com.k_int.web.toolkit.databinding.BindUsingWhenRef
 import com.k_int.web.toolkit.refdata.RefdataValue
-
+import grails.databinding.SimpleMapDataBindingSource
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 import grails.util.GrailsClassUtils
 import grails.util.GrailsNameUtils
+import grails.web.databinding.DataBindingUtils
 import groovy.util.logging.Log4j
 
 @Log4j
@@ -76,7 +78,10 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
     if (type) {
       // Grab the class or default to this one.
       Class cpdc = GrailsClassUtils.getStaticFieldValue(type, DEFINITION_PROPERTY) ?: CustomPropertyDefinition
-      definition = cpdc.newInstance( otherProps )
+      definition = cpdc.newInstance()
+      
+      // Use the binder instead.
+      DataBindingUtils.bindObjectToInstance(definition, new SimpleMapDataBindingSource( otherProps ))
       definition.type = type
     }
     definition
