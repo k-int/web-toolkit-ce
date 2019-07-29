@@ -30,6 +30,8 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
   // Used for ordering. Larger weight values sink.
   int weight = 0
   
+  boolean defaultInternal = true
+    
   private static String nameToLabel (String value) {
     // Strip double whitespace entries.
     return value?.trim().replaceAll(/([a-z0-9A-Z])([A-Z][a-z])/, '$1 $2')
