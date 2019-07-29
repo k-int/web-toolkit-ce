@@ -15,6 +15,8 @@ class CustomProperty<T> implements MultiTenant<CustomProperty> {
   
   CustomPropertyContainer parent
   
+  boolean internal = true
+  
   static mappedBy = [
     "parent" : "value",
   ]

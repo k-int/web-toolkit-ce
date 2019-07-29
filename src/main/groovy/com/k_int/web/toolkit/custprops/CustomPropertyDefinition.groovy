@@ -94,7 +94,7 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
   }
 
   CustomProperty getPropertyInstance(Map extraProperties = [:]) {
-    type?.newInstance(extraProperties + [definition: this])
+    type?.newInstance([internal: (this.defaultInternal)] + extraProperties + [definition: this])
   }
 }
 
