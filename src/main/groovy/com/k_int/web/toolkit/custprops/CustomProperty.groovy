@@ -12,6 +12,7 @@ class CustomProperty<T> implements MultiTenant<CustomProperty> {
   T value
   
   String note
+  String internalNote
   
   CustomPropertyContainer parent
   
@@ -25,11 +26,13 @@ class CustomProperty<T> implements MultiTenant<CustomProperty> {
     parent nullable: true
     definition nullable: false
     note nullable: true, blank: false
+    internalNote nullable: true, blank: false
   }
   
   static mapping = {
     tablePerHierarchy false
     note type: "text"
+    internalNote type: 'text'
     sort "definition"
   }
 }
