@@ -275,10 +275,46 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
         }
       }
     }
-
-    // We can now just drop through to the default implementation, which should now create a new value for us.
-    super.setPropertyValue(obj, source, metaProperty, propertyValue, listener, convertCollectionElements)
     
+    setPropertyValuePromotingSetter (obj, source, metaProperty, propertyValue, listener, convertCollectionElements)
+  }
+  
+  /**
+   * Fixes an issue with getter return type being treated higher than declared field type in a bean. Actually, this should be
+   * the setter type that should be higher. Implementing that here before dropping through to the super.
+   */
+  protected setPropertyValuePromotingSetter(obj, DataBindingSource source, MetaProperty metaProperty, propertyValue, DataBindingListener listener, boolean convertCollectionElements) {
+    
+    if (!(metaProperty instanceof MetaBeanProperty)) {
+      // We can now just drop through to the default implementation, which should now create a new value for us.
+      return super.setPropertyValue(obj, source, metaProperty, propertyValue, listener, convertCollectionElements)
+    }
+      
+    final String propName = metaProperty.name
+    final MetaBeanProperty mbp = (MetaBeanProperty)metaProperty
+    final Class propertyType = mbp.setter?.nativeParameterTypes?.getAt(0) ?: mbp.field?.type
+    
+    if (!Collection.isAssignableFrom(propertyType)) {
+      if (propertyValue instanceof Map) {
+        if (obj[propName] == null) {
+          initializeProperty(obj, propName, propertyType, source)
+        }
+        bind obj[propName], new SimpleMapDataBindingSource(propertyValue), listener
+        
+      } else if (propertyValue instanceof DataBindingSource) {
+        if (obj[propName] == null) {
+          initializeProperty(obj, propName, propertyType, source)
+        }
+        bind obj[propName], propertyValue, listener
+      } else {
+        obj[propName] = convert(propertyType, propertyValue)
+      }
+    } else if (convertCollectionElements && (String.isAssignableFrom(propertyValue.class) || Number.isAssignableFrom(propertyValue.class))) {
+      addElementToCollection obj, propName, propertyType, propertyValue, true
+    } else {
+      // If we get here we should probably call the super method.
+      super.setPropertyValue(obj, source, metaProperty, propertyValue, listener, convertCollectionElements)
+    }
   }
   
   @Override
@@ -328,7 +364,6 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
     // Always call the super if we get this far.
     super.setPropertyValue(obj, source, metaProperty, propertyValue, listener)
   }
-
   @CompileStatic
   public static boolean identifierValueDenotesNewObject (def idValue) {
     (NEW_IDENTIFIER_VALUE == ("${idValue ?: ''}").toString().toLowerCase())
