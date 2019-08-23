@@ -37,7 +37,7 @@ class RefdataBinding {
         if (propName == 'values' && RefdataCategory.isAssignableFrom(obj.class)) {
           
           if (!obj.id) {
-            final String norm_value = RefdataValue.normValue( data['label'] ?: data['value'] )
+            final String norm_value = RefdataValue.normValue( data['value'] ?: data['label'] )
             val = new RefdataValue(
               label: data['label'],
               value: norm_value
