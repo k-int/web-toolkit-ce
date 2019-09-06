@@ -21,7 +21,7 @@ class CustomPropertyContainer extends CustomProperty<Set<CustomProperty>> implem
   }
   
   static constraints = {
-    parent nullable: true, blank: false
+    parent nullable: true
     definition nullable: true // The root container can have a null definition.
   }
 }
