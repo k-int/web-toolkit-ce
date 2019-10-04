@@ -5,7 +5,7 @@ import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 
 @Entity
-class AppSetting implements MultiTenant<AppSetting> {
+public class AppSetting implements MultiTenant<AppSetting> {
 
   String id
   String section
