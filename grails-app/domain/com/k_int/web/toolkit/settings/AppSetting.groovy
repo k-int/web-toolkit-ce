@@ -2,9 +2,7 @@ package com.k_int.web.toolkit.settings
 
 
 import grails.gorm.MultiTenant
-import grails.gorm.annotation.Entity
 
-@Entity
 public class AppSetting implements MultiTenant<AppSetting> {
 
   String id
