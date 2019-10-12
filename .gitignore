@@ -12,3 +12,6 @@ build/
 .classpath
 /bin
 /docs
+# Eclipse compiler workaround creates directories here.
+/web-toolkit
+/web-toolkit-ce
