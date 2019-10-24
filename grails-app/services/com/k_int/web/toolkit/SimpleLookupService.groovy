@@ -2,7 +2,7 @@ package com.k_int.web.toolkit
 
 
 import org.hibernate.criterion.*
-
+import org.hibernate.sql.JoinType
 import com.k_int.web.toolkit.utils.DomainUtils
 
 import grails.util.GrailsClassUtils
@@ -33,7 +33,7 @@ class SimpleLookupService {
     }
   }
 
-  private static final String checkAlias(def target, final Map<String, String> aliasStack, String dotNotationString) {
+  private static final String checkAlias(def target, final Map<String, String> aliasStack, String dotNotationString, boolean leftJoin) {
     
     log.debug ("Checking for ${dotNotationString}")
     
@@ -75,7 +75,7 @@ class SimpleLookupService {
 
           // Create the alias.
           log.debug ("Creating alias: ${aliasVal} -> ${alias}")
-          target.criteria.createAlias(aliasVal, alias)
+          target.criteria.createAlias(aliasVal, alias, (leftJoin ? JoinType.LEFT_OUTER_JOIN : JoinType.INNER_JOIN))
 
           // Add to the map.
           propStr = i>0 ? "${propStr}.${props[i]}" : "${props[i]}"
@@ -91,7 +91,7 @@ class SimpleLookupService {
     str
   }
 
-  private static final Map getAliasedProperty (def target, final Map<String, String> aliasStack, final String propname) {
+  private static final Map getAliasedProperty (def target, final Map<String, String> aliasStack, final String propname, final boolean leftJoin = false) {
     
     log.debug "Looking for property ${propname}"
     
@@ -100,7 +100,7 @@ class SimpleLookupService {
 
     PropertyDef ret = new PropertyDef()
     ret.putAll([
-      'alias' : levels.length > 1 ? checkAlias ( target, aliasStack, levels[0..(levels.length - 2)].join('.')) : '',
+      'alias' : levels.length > 1 ? checkAlias ( target, aliasStack, levels[0..(levels.length - 2)].join('.'), leftJoin) : '',
       'property' : levels[levels.length - 1]
     ])
 
@@ -363,7 +363,7 @@ class SimpleLookupService {
         
           if (propDef.search) {
             def propertyType = propDef.type
-            def propName = getAliasedProperty(criteria, aliasStack, prop) as String
+            def propName = getAliasedProperty(criteria, aliasStack, prop, true) as String
             
             // We use equal unless the compared property is a String then we should use iLIKE
             def op = 'eq'
@@ -427,7 +427,7 @@ class SimpleLookupService {
     // Text matching uses ilike ops for string property and eq for all others.
     List<Criterion> textMatches = getTextMatches(criteria, aliasStack, term, match_in)
     
-    // Text searching should be Disjunctive accross all properties specified.
+    // Text searching should be Disjunctive across all properties specified.
     if (textMatches) criterionList << Restrictions.or(textMatches.toArray(new Criterion[textMatches.size()]))
 
     // Conjunction to ensure results returned match any text searches specified and ALL filters specified.
