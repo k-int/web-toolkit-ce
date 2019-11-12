@@ -70,8 +70,6 @@ trait Clonable<D> {
    */
   public D clone( final boolean ignoreRequired = false, final Iterable<String> propertiesToCopy ) {
     
-    final List<String> processed = []
-    
     // Start with a fresh instance.
     final D cloned = this.class.newInstance()
     
