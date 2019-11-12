@@ -48,7 +48,7 @@ trait Clonable<D> {
    * @return A clone of this object
    */
   public D clone(final boolean ignoreRequired) {
-    clone(ignoreRequired, Collections.emptySet())
+    clone(ignoreRequired, null)
   }
   
   /**
@@ -76,7 +76,8 @@ trait Clonable<D> {
     final D cloned = this.class.newInstance()
     
     // Default to all properties.
-    Set<String> propertiesSet = [] + (propertiesToCopy ?: this.properties.keySet())
+    Set<String> propertiesSet = [] + (propertiesToCopy == null ? this.properties.keySet() : propertiesToCopy)
+    log?.debug "Properties to clone initially set to ${propertiesSet}"
     
     // Add any properties that are required.
     if (!ignoreRequired) {
