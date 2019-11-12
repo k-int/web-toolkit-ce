@@ -37,17 +37,7 @@ trait Clonable<D> {
    * @return A clone of this object
    */
   @Override
-  public D clone() {
-    clone(false, Collections.emptySet())
-  }
-  
-  /**
-   * Create a clone of this object.
-   * 
-   * @param ignoreRequired whether persistent properties marked as not nullable are ignored.
-   * @return A clone of this object
-   */
-  public D clone(final boolean ignoreRequired) {
+  public D clone(final boolean ignoreRequired = false) {
     clone(ignoreRequired, null)
   }
   
