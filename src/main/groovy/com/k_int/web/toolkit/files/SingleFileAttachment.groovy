@@ -1,9 +1,11 @@
 package com.k_int.web.toolkit.files
 
 import grails.gorm.MultiTenant
+import grails.gorm.annotation.Entity
 import grails.gorm.dirty.checking.DirtyCheck
 import grails.gorm.multitenancy.Tenants
 
+@Entity
 abstract class SingleFileAttachment implements MultiTenant<SingleFileAttachment> {
   
   // Add transient property for flagging file removal. Transients are ignored by the persistence
