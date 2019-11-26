@@ -10,7 +10,7 @@ buildscript {
     }
 }
 
-version "3.7.1"
+version "3.8.0"
 group "com.k_int.grails"
 
 apply plugin:"eclipse"
@@ -21,7 +21,7 @@ apply plugin:"org.grails.plugins.views-json"
 
 eclipse {
   classpath {
-    defaultOutputDir = file('bin/main')
+    defaultOutputDir = file('bin').canonicalFile
   }
 }
 
