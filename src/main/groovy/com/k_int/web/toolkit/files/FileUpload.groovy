@@ -1,9 +1,13 @@
 package com.k_int.web.toolkit.files
+import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 import grails.gorm.multitenancy.Tenants
+import groovy.util.logging.Slf4j
 
+@Slf4j
 @Entity
+@GrailsCompileStatic
 class FileUpload implements MultiTenant<FileUpload> {
 
   String id

@@ -1,10 +1,12 @@
 package com.k_int.web.toolkit.files
 
+import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 import grails.gorm.dirty.checking.DirtyCheck
 import grails.gorm.multitenancy.Tenants
 
+@GrailsCompileStatic
 @Entity
 abstract class SingleFileAttachment implements MultiTenant<SingleFileAttachment> {
   
