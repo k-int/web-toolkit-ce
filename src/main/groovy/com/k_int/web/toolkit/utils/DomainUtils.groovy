@@ -1,12 +1,12 @@
 package com.k_int.web.toolkit.utils
 
-import java.lang.reflect.Field
-
+import org.apache.commons.collections.map.LRUMap
 import org.grails.core.artefact.ControllerArtefactHandler
 import org.grails.datastore.mapping.model.MappingContext
 import org.grails.datastore.mapping.model.PersistentEntity
 import org.grails.datastore.mapping.model.PersistentProperty
 import org.grails.datastore.mapping.model.types.Association
+import org.omg.CORBA.INTERNAL
 
 import grails.core.GrailsApplication
 import grails.core.GrailsClass
@@ -14,9 +14,22 @@ import grails.core.GrailsControllerClass
 import grails.rest.RestfulController
 import grails.util.Holders
 import groovy.transform.Memoized
+import groovy.util.logging.Slf4j
 
+@Slf4j
 public class DomainUtils {
   
+  public static class InternalPropertyDefinition extends Serializable {
+    boolean cacheable = false
+    boolean searchable = true
+    boolean filterable = true
+    boolean sortable = true
+    boolean domain = false
+    String subQuery = null
+    Class type
+    Class owner
+    String name
+  }
   
   private static GrailsApplication getGrailsApplication() {
     Holders.grailsApplication
@@ -105,14 +118,18 @@ public class DomainUtils {
    * @param searchSubclasses Whether to search for domain classes that extend the target (useful for polymorphic queries)
    * @return definition of the property including the owning class, the type of the property as well as the property name (last part only).
    */  
-  @Memoized(maxCacheSize=500)
-  public static def resolveProperty ( final def target, final String prop, final boolean searchSubclasses = false) {
+  private final static Map<String, InternalPropertyDefinition> propertyDefCache = Collections.synchronizedMap(new LRUMap<String, InternalPropertyDefinition>(100))
+  public static InternalPropertyDefinition resolveProperty ( final def target, final String prop, final boolean searchSubclasses = false) {
     
-    def foundDef = null
+    InternalPropertyDefinition foundDef = null
     def type = resolveDomainClass(target)
-    
+        
     if (type) {
-    
+      final String key = "${type.name}:${prop}"
+      if (propertyDefCache.containsKey(key)) {
+        log.debug "Returning ${key} from cache."
+        return propertyDefCache[key]
+      }
       try {
         if (!(target && prop)) {
           return null
@@ -121,7 +138,7 @@ public class DomainUtils {
         // Cycle through the properties to get to the end target.
         def owner = type.javaClass
         String lastPropName
-        def props = prop.split('\\.')
+        String[] props = prop.split('\\.')
         
         final Map<String,Boolean> searchConfig = [
           value: true,
@@ -129,40 +146,51 @@ public class DomainUtils {
           sort: true
         ]
         
-        final Set<String> keys = [] + searchConfig.keySet()
-        
-        props.each { p ->
-          lastPropName = p
+        for (int i=0; i<props.length; i++) {
+          final String p = props[i]
           owner = type.javaClass
-          PersistentProperty theProp = type.getPropertyByName(p)
+          InternalPropertyDefinition currentDef = propertyDefCache["${owner.name}:${p}"]
           
-          // Special "class" property should be treated as string.
-          if (p == 'class') {
-            type = Class
+          if (!currentDef) {
+            lastPropName = p
+            
+            if (owner.metaClass.respondsTo(owner, 'getPropertyDefByName', p.class)) {
+              currentDef = owner.getPropertyDefByName( p )
+  //            type = resolveDomainClass(currentDef?.type)
+              
+              currentDef.subQuery = (0..(i-1)).collect { props[it] }.join('.')
+              return currentDef
+            } 
+            
+            // Allow attempt to resolve none special field directly.
+            if (!currentDef) {
+              PersistentProperty theProp = type.getPropertyByName(p)
+              
+              // Special "class" property should be treated as string.
+              if (p == 'class') {
+                type = Class
+              } else {
+                type = (theProp instanceof Association) ? ((Association)theProp).associatedEntity : theProp.type
+              }
+            
+              currentDef = new InternalPropertyDefinition()
+              currentDef.cacheable = true
+              currentDef.domain = (type instanceof PersistentEntity || mappingContext.isPersistentEntity(type))
+              currentDef.type   = (type instanceof PersistentEntity ? type.javaClass : type)
+              currentDef.owner  = owner
+              currentDef.name   = lastPropName
+              
+              // We know we can cache the intermediate values.
+              propertyDefCache["${owner.name}:${lastPropName}"] = currentDef
+            }
           } else {
-            type = (theProp instanceof Association) ? ((Association)theProp).associatedEntity : theProp.type
+            // Need to set the type from the cached data.
+            type = resolveDomainClass(currentDef?.type)
           }
           
-          // Check for field annotation.
-          // Some fields don't need to be declared in GORM so we should fail this gracefully.
-          Field classField
-          try {
-            classField = owner.getDeclaredField(p)
-          } catch (NoSuchFieldException ex) {
-            classField = null
-          }
+          if (currentDef) foundDef = currentDef
         }
         
-        searchConfig['search'] = searchConfig['value']
-        searchConfig.remove('value')
-    
-        // Get the class for the type.
-        foundDef = [
-          "domain":  (type instanceof PersistentEntity || mappingContext.isPersistentEntity(type)),
-          "type"  :  (type instanceof PersistentEntity ? type.javaClass : type),
-          "owner" :  owner,
-          "prop"  :  lastPropName
-        ] + searchConfig
       } catch (Exception e) { foundDef = null }
       
       
@@ -184,7 +212,7 @@ public class DomainUtils {
           Class implementor = foundDef.owner.superclass
 
           if (implementor != Object && implementor != type.javaClass) {
-            def superDef = resolveProperty ( implementor, prop, false )
+            InternalPropertyDefinition superDef = resolveProperty ( implementor, prop, false )
             while (superDef && implementor != Object && implementor != type.javaClass) {
               foundDef = superDef
               implementor = implementor.superclass
@@ -192,6 +220,11 @@ public class DomainUtils {
             }
           }
         }
+      }
+    
+      // Cache any found
+      if (foundDef && foundDef.cacheable) {
+        propertyDefCache[key] = foundDef
       }
     }
     

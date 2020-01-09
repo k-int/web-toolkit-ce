@@ -4,7 +4,7 @@ package com.k_int.web.toolkit
 import org.hibernate.criterion.*
 import org.hibernate.sql.JoinType
 import com.k_int.web.toolkit.utils.DomainUtils
-
+import com.k_int.web.toolkit.utils.DomainUtils.InternalPropertyDefinition
 import grails.util.GrailsClassUtils
 import groovy.util.logging.Log4j
 
@@ -221,6 +221,25 @@ class SimpleLookupService {
     newOp
   }
   
+  private DetachedCriteria handleSubquery (InternalPropertyDefinition propDef, final String expr, final String indentation) {
+    // Should produce a new IN clause. The target of the criteria should be propDef.type, with the
+    // return denoting ids for matched propDef.owner
+    
+    final String partialPath = propDef.subQuery
+    String newExp = expr.substring(partialPath.length() + 1)
+    
+    DetachedCriteria dc = propDef.owner.handleLookupViaSubquery(newExp)
+    
+    newExp = newExp.substring(newExp.indexOf('.') + 1)
+    
+    def filterGroup = parseFilterString( dc, [:], newExp, indentation)
+    if (filterGroup) {
+      dc.add( filterGroup )
+    }
+    
+    dc
+  }
+  
   private Criterion parseFilterString ( final DetachedCriteria criteria, final Map<String, String> aliasStack, String filterString, String indentation = null ) {
     
     Criterion crit = null
@@ -302,27 +321,39 @@ class SimpleLookupService {
               }
               
               if (propDef) {
-                if (propDef.filter) {
-                  def propertyType = propDef.type
-                  def propName = getAliasedProperty(criteria, aliasStack, prop) as String
-                  
-                  if (parts.size() == 2) {
+                if (propDef.filterable) {
+                  // If subquery we should call out now.
+                  if (propDef.subQuery) {
                     
-                    log.trace ("${indentation}${op} ${prop}")
-                    crit = Restrictions."${op}" (propName)
-                    
+                    // Call the subquery method on the target.
+                    String propName = getAliasedProperty(criteria, aliasStack, propDef.subQuery) as String
+                    crit = Subqueries.propertyIn(
+                      propName + '.id',
+                      handleSubquery (propDef, filterString, indentation)
+                    )
                   } else {
                   
-                    // Can't ilike on none-strings. So we should change back to eq.
-                    if (op == 'ilike' && !String.class.isAssignableFrom(propertyType)) {
-                      op = 'eqOrIsNull'
+                    def propertyType = propDef.type
+                    def propName = getAliasedProperty(criteria, aliasStack, prop) as String
+                    
+                    if (parts.size() == 2) {
+                      
+                      log.trace ("${indentation}${op} ${prop}")
+                      crit = Restrictions."${op}" (propName)
+                      
+                    } else {
+                    
+                      // Can't ilike on none-strings. So we should change back to eq.
+                      if (op == 'ilike' && !String.class.isAssignableFrom(propertyType)) {
+                        op = 'eqOrIsNull'
+                      }
+                      
+                      log.trace ("${indentation}${op} ${prop}, ${value}")
+                      def val = value ? valueConverterService.attemptConversion(propertyType, value) : null
+                      
+                      log.debug ("Converted ${value} into ${val}")
+                      crit = Restrictions."${op}" (propName, val)
                     }
-                    
-                    log.trace ("${indentation}${op} ${prop}, ${value}")
-                    def val = value ? valueConverterService.attemptConversion(propertyType, value) : null
-                    
-                    log.debug ("Converted ${value} into ${val}")
-                    crit = Restrictions."${op}" (propName, val)
                   }
                 } else {
                   log.debug "Filter on ${parts} has been disallowed."
@@ -361,7 +392,7 @@ class SimpleLookupService {
         
         if (propDef) {
         
-          if (propDef.search) {
+          if (propDef.searchable) {
             def propertyType = propDef.type
             def propName = getAliasedProperty(criteria, aliasStack, prop, true) as String
             
@@ -397,7 +428,7 @@ class SimpleLookupService {
       
       def propDef = DomainUtils.resolveProperty(target.targetClass, prop, true)
       if (propDef) {
-        if (propDef.sort) {
+        if (propDef.sortable) {
         
           // Sort direction for this field.
           final String direction = (sortParts.length > 1 ? sortParts[1] : 'asc')?.toLowerCase() == 'desc' ? 'desc' : 'asc'
