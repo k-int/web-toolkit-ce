@@ -156,8 +156,6 @@ public class DomainUtils {
             
             if (owner.metaClass.respondsTo(owner, 'getPropertyDefByName', p.class)) {
               currentDef = owner.getPropertyDefByName( p )
-  //            type = resolveDomainClass(currentDef?.type)
-              
               currentDef.subQuery = (0..(i-1)).collect { props[it] }.join('.')
               return currentDef
             } 

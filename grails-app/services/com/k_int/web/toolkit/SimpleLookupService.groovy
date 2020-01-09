@@ -221,6 +221,9 @@ class SimpleLookupService {
     newOp
   }
   
+  /**
+   * @TODO: Need to make this more efficient by reusing/extending the existing subqueries.
+   */
   private DetachedCriteria handleSubquery (InternalPropertyDefinition propDef, final String expr, final String indentation) {
     // Should produce a new IN clause. The target of the criteria should be propDef.type, with the
     // return denoting ids for matched propDef.owner
@@ -235,9 +238,10 @@ class SimpleLookupService {
     def filterGroup = parseFilterString( dc, [:], newExp, indentation)
     if (filterGroup) {
       dc.add( filterGroup )
+      return dc
     }
     
-    dc
+    null
   }
   
   private Criterion parseFilterString ( final DetachedCriteria criteria, final Map<String, String> aliasStack, String filterString, String indentation = null ) {
