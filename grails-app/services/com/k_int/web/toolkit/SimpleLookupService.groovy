@@ -232,13 +232,14 @@ class SimpleLookupService {
     String newExp = expr.substring(partialPath.length() + 1)
     
     DetachedCriteria dc = propDef.owner.handleLookupViaSubquery(newExp)
-    
-    newExp = newExp.substring(newExp.indexOf('.') + 1)
-    
-    def filterGroup = parseFilterString( dc, [:], newExp, indentation)
-    if (filterGroup) {
-      dc.add( filterGroup )
-      return dc
+    if (dc) {
+      newExp = newExp.substring(newExp.indexOf('.') + 1)
+      
+      def filterGroup = parseFilterString( dc, [:], newExp, indentation)
+      if (filterGroup) {
+        dc.add( filterGroup )
+        return dc
+      }
     }
     
     null
@@ -331,10 +332,13 @@ class SimpleLookupService {
                     
                     // Call the subquery method on the target.
                     String propName = getAliasedProperty(criteria, aliasStack, propDef.subQuery) as String
-                    crit = Subqueries.propertyIn(
-                      propName + '.id',
-                      handleSubquery (propDef, filterString, indentation)
-                    )
+                    DetachedCriteria dc = handleSubquery (propDef, filterString, indentation)
+                    if (dc) {
+                      crit = Subqueries.propertyIn(
+                        propName + '.id',
+                        handleSubquery (propDef, filterString, indentation)
+                      )
+                    }
                   } else {
                   
                     def propertyType = propDef.type
