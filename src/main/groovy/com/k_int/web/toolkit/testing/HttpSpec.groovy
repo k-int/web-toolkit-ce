@@ -141,8 +141,8 @@ abstract class HttpSpec extends GebSpec {
       setupSpecWithSpring()
       setupSpecDone = true
     }
-
-    cleanupClosure = this.&cleanupSpecWithSpring
+    
+    cleanupClosure = this.metaClass.respondsTo('cleanupSpecWithSpring') ? this.&cleanupSpecWithSpring : null
   }
 
   def cleanupSpec() {
