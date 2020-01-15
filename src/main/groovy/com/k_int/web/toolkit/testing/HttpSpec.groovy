@@ -6,19 +6,20 @@ import static groovyx.net.http.HttpBuilder.configure
 import java.util.concurrent.Executors
 
 import org.junit.Before
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import geb.spock.GebSpec
 import grails.web.http.HttpHeaders
 import groovy.json.StreamingJsonBuilder
-import groovy.util.logging.Slf4j
 import groovyx.net.http.FromServer
 import groovyx.net.http.HttpBuilder
 import groovyx.net.http.HttpConfig
 import groovyx.net.http.NativeHandlers
 import spock.lang.Shared
 
-@Slf4j
 abstract class HttpSpec extends GebSpec {
+  static final Logger log = LoggerFactory.getLogger(HttpSpec)
   
   private static final List<String> EXTRA_JSON_TYPES = [
     'application/vnd.api+json'
