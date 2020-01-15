@@ -10,7 +10,7 @@ buildscript {
     }
 }
 
-version "3.8.1"
+version "3.9.0"
 group "com.k_int.grails"
 
 apply plugin:"eclipse"
@@ -52,7 +52,6 @@ dependencies {
     provided "org.grails:grails-plugin-services"
     provided "org.grails:grails-plugin-domain-class"
     provided "com.h2database:h2"
-    testCompile "org.grails:grails-plugin-testing"
     compile "org.grails.plugins:geb"
     testCompile "org.grails:grails-datastore-rest-client"
     compile "org.seleniumhq.selenium:selenium-htmlunit-driver:2.47.1"
