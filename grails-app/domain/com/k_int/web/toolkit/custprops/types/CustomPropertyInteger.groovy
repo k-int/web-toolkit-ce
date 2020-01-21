@@ -6,9 +6,9 @@ import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 
 @Entity
-class CustomPropertyInteger extends CustomProperty<Integer> implements MultiTenant<CustomPropertyInteger> { 
+class CustomPropertyInteger extends CustomProperty<BigInteger> implements MultiTenant<CustomPropertyInteger> { 
   
-  Integer value
+  BigInteger value
   
   static constraints = {
     value nullable: false, blank: false
