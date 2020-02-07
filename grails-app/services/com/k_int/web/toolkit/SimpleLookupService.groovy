@@ -108,7 +108,7 @@ class SimpleLookupService {
   }
   
   private static final String REGEX_SPECIAL_OP = "(?i)^(.*?)\\s+(is)(Not)?(Null|Empty)\\s*\$"
-  private static final String REGEX_OP = "^(.*?)(=i=|([!=<>]{1,2}))(.*?)\$"
+  private static final String REGEX_OP = "^(.*?)([=!]~|=i=|([!=<>]{1,2}))(.*?)\$"
   private static final String REGEX_BETWEEN = "^(.*?)([<>]=?)(.*?)([<>]=?)(.*?)\$"
   private static final String REGEX_NONE_ESCAPED_PERCENTAGE = "([^\\\\])(%)"
   
@@ -141,6 +141,8 @@ class SimpleLookupService {
         
         
       } else {
+        
+        boolean negate = false
       
         matches = filterString =~ REGEX_OP
         if (matches.size() == 1) {
@@ -167,6 +169,11 @@ class SimpleLookupService {
             case '<=' :
               results << 'le'
               break
+            case '!~' :
+              negate = true
+            case '=~' :
+              // Contains and not contains should use ilike with wilds.
+               
             case '=i=' :
               // Special case insensitive equal. We need to use ilike under the hood and remove
               // and we also need to remeber to escape % signs as they should be matched explicitly 
@@ -179,11 +186,26 @@ class SimpleLookupService {
           
           if (results) {
             
-            def m1 = results[0] == 'ilike' ? "${match[1]}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2') : match[1]
-            def m2 = results[0] == 'ilike' ? "${match[4]}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2') : match[4]
+            // Default to raw values.
+            def m1 = match[1]
+            def m2 = match[4]
+            
+            if (results[0] == 'ilike') {
+              m1 = "${m1}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2')
+              m2 = "${m2}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2')
+            
+              if (['!~','=~'].contains(match[2])) {
+                // Only the LHS can be the property name so the value must be the RHS (match 4).
+                m2 = "%${m2}%"
+              }
+            }
             
             results << (m1.trim() == 'NULL' ? null : m1)
             results << (m2.trim() == 'NULL' ? null : m2)
+            
+            if (negate == true) {
+              results << true
+            }
           }
         }
       }
@@ -286,15 +308,15 @@ class SimpleLookupService {
         log.trace ("${indentation}}")
       } else {
         // Check for negation.
-        if (filterString.startsWith("!")) {
+        if (filterString.startsWith("!")) {          
           
           log.trace ("${indentation}not {")
           crit = Restrictions.not( parseFilterString (criteria, aliasStack, filterString.substring(1), indentation) )
           log.trace ("${indentation}}")
-          
+          log.debug "Negated whole filter entry"
         } else {
           // Then check for comparator type i.e. gt, eq, lt etc..
-          def parts = getComparisonParts (criteria, aliasStack, filterString, indentation)
+          List parts = getComparisonParts (criteria, aliasStack, filterString, indentation)
           log.debug "Got comparision parts ${parts}"
           if (parts) {
             
@@ -306,12 +328,11 @@ class SimpleLookupService {
             } else if (parts.size() > 1) {
             
               // Assume normal op.
-              // part 1 or 2 could be the property name.
-              // the other is the value.
+              // part 1 or 2 could be the property name and, the other is the value.
               def prop = parts[1] ? "${parts[1]}".trim() : null
               def propDef = prop ? DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true) : null
               def value = null
-              if (parts.size() == 3) {
+              if (parts.size() > 2 && parts.size() <= 4) {
               
                 value = parts[2]
                 if (!propDef) {
@@ -361,6 +382,12 @@ class SimpleLookupService {
                       
                       log.debug ("Converted ${value} into ${val}")
                       crit = Restrictions."${op}" (propName, val)
+                      
+                      // The 4th part would be negation for the comparitor. Wrap in a not.
+                      if (parts.size() == 4 && parts[3] == true) {
+                        log.debug ("Negating the filter")
+                        crit = Restrictions.not(crit)
+                      }
                     }
                   }
                 } else {
