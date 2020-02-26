@@ -1,6 +1,8 @@
 package com.k_int.web.toolkit
 
 import com.k_int.web.toolkit.databinding.ExtendedWebDataBinder
+import com.k_int.web.toolkit.databinding.FixedLocaleBigDecimalConverter
+import com.k_int.web.toolkit.databinding.FixedLocaleNumberConverter
 import com.k_int.web.toolkit.links.ProxyAwareCachingLinkGenerator
 import com.k_int.web.toolkit.links.ProxyAwareLinkGenerator
 import com.k_int.web.toolkit.refdata.GrailsDomainRefdataHelpers
@@ -63,6 +65,26 @@ class WebToolkitGrailsPlugin extends Plugin {
       convertEmptyStringsToNull = convertEmptyStringsToNullSetting
       // autoGrowCollectionLimit defaults to 256
       autoGrowCollectionLimit = autoGrowCollectionLimitSetting
+    }
+    
+    final String langTag = grailsApplication.config.getProperty('webtoolkit.converters.numbers.fixedLocale', String, null)
+    if (langTag?.toBoolean()) {
+      // Set the fixed locale converters.
+      [Short,   Short.TYPE,
+       Integer, Integer.TYPE,
+       Float,   Float.TYPE,
+       Long,    Long.TYPE,
+       Double,  Double.TYPE].each { numberType ->
+       
+         "defaultGrails${numberType.simpleName}Converter"(FixedLocaleNumberConverter) {
+             targetType = numberType
+         }
+       }
+       [BigDecimal, BigInteger].each { numberType ->
+         "defaultGrails${numberType.simpleName}Converter"(FixedLocaleBigDecimalConverter) {
+             targetType = numberType
+         }
+       }
     }
   }}
 
