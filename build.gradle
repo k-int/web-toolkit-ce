@@ -10,7 +10,7 @@ buildscript {
     }
 }
 
-version "3.12.0"
+version "3.12.1"
 group "com.k_int.grails"
 
 apply plugin:"eclipse"
