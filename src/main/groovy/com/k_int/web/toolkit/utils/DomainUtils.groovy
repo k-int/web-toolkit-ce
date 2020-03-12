@@ -6,6 +6,7 @@ import org.grails.datastore.mapping.model.MappingContext
 import org.grails.datastore.mapping.model.PersistentEntity
 import org.grails.datastore.mapping.model.PersistentProperty
 import org.grails.datastore.mapping.model.types.Association
+import org.grails.datastore.mapping.model.types.ToOne
 import org.omg.CORBA.INTERNAL
 
 import grails.core.GrailsApplication
@@ -130,6 +131,9 @@ public class DomainUtils {
         log.debug "Returning ${key} from cache."
         return propertyDefCache[key]
       }
+      
+      // Track sortable for entire path.
+      boolean sortable = true
       try {
         if (!(target && prop)) {
           return null
@@ -139,12 +143,6 @@ public class DomainUtils {
         def owner = type.javaClass
         String lastPropName
         String[] props = prop.split('\\.')
-        
-        final Map<String,Boolean> searchConfig = [
-          value: true,
-          filter: true,
-          sort: true
-        ]
         
         for (int i=0; i<props.length; i++) {
           final String p = props[i]
@@ -157,6 +155,10 @@ public class DomainUtils {
             if (owner.metaClass.respondsTo(owner, 'getPropertyDefByName', p.class)) {
               currentDef = owner.getPropertyDefByName( p )
               currentDef.subQuery = (0..(i-1)).collect { props[it] }.join('.')
+              
+              // Ensure sortable is false.
+              currentDef.sortable = false
+              
               return currentDef
             } 
             
@@ -164,11 +166,22 @@ public class DomainUtils {
             if (!currentDef) {
               PersistentProperty theProp = type.getPropertyByName(p)
               
+              sortable = sortable && (foundDef ? foundDef.sortable : true)
+              
               // Special "class" property should be treated as string.
               if (p == 'class') {
                 type = Class
+              } else if (theProp instanceof Association)  {
+                
+                type = ((Association)theProp).associatedEntity
+                
+                if (!(theProp instanceof ToOne)) {
+                  log.debug "Sorting is disabled on XToMany type associations"
+                  sortable = false
+                }
+                
               } else {
-                type = (theProp instanceof Association) ? ((Association)theProp).associatedEntity : theProp.type
+                type = theProp.type
               }
             
               currentDef = new InternalPropertyDefinition()
@@ -222,6 +235,9 @@ public class DomainUtils {
     
       // Cache any found
       if (foundDef && foundDef.cacheable) {
+        
+        foundDef.sortable = sortable
+        
         propertyDefCache[key] = foundDef
       }
     }

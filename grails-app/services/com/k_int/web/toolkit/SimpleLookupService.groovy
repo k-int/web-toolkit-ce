@@ -468,7 +468,7 @@ class SimpleLookupService {
           // Sort direction for this field.
           final String direction = (sortParts.length > 1 ? sortParts[1] : 'asc')?.toLowerCase() == 'desc' ? 'desc' : 'asc'
           
-          def propName = getAliasedProperty(target, aliasStack, prop) as String
+          def propName = getAliasedProperty(target, aliasStack, prop, true) as String
           if (propName) {
             target.addOrder(Order."${direction}"(propName))
             log.debug "Sort on ${propName} ${direction}."
@@ -586,7 +586,7 @@ class SimpleLookupService {
         
         // Add any sorts.
         if (sorts) {
-          addSorts (delegate, [:], sorts)
+          addSorts (delegate, sorts)
         }
       }
       
