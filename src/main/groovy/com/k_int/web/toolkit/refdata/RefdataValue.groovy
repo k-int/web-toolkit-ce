@@ -62,12 +62,18 @@ class RefdataValue implements MultiTenant<RefdataValue> {
    * @param value
    * @return
    */
-  static <T extends RefdataValue> T lookupOrCreate(final String category_name, final String label, final String value=null, Class<T> clazz = this) {
-    final RefdataCategory cat = RefdataCategory.findOrCreateByDesc(category_name).save(flush:true, failOnError:true)
+  static <T extends RefdataValue> T lookupOrCreate(final String category_name, final String label, final String value=null, final boolean defaultCatInternal = RefdataCategory.DEFAULT_INTERNAL, final Class<T> clazz = this) {
+    RefdataCategory cat = RefdataCategory.findByDesc(category_name)
+    if (!cat) {
+      cat = new RefdataCategory()
+      cat.internal = defaultCatInternal
+      cat.save(flush:true, failOnError:true)
+    }
+    
     lookupOrCreate (cat, label, value, clazz)
   }
   
-  static <T extends RefdataValue> T lookupOrCreate(final RefdataCategory cat, final String label, final String value=null, Class<T> clazz = this) {
+  static <T extends RefdataValue> T lookupOrCreate(final RefdataCategory cat, final String label, final String value=null, final Class<T> clazz = this) {
     
     final String norm_value = normValue( value ?: label )
     

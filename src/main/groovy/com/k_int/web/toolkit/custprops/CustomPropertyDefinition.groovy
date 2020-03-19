@@ -65,7 +65,7 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
     tablePerHierarchy false
     id column: 'pd_id', generator: 'uuid', length:36
     name column: 'pd_name', index: 'td_name_idx'
-    description column: 'pd_description'
+    description column: 'pd_description', type: 'text'
     type column: 'pd_type', index: 'td_type_idx'
     label column: 'pd_label', index: 'td_label_idx'
     weight column: 'pd_weight', index: 'td_weight_idx'

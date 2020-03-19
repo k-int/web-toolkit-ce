@@ -10,5 +10,6 @@ import java.lang.annotation.Target
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 @interface CategoryId {
-  String value()
+  String value() default ''
+  boolean defaultInternal() default false
 }

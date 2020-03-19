@@ -4,10 +4,13 @@ import grails.gorm.annotation.Entity
 
 @Entity
 class RefdataCategory implements MultiTenant<RefdataCategory> {
+  
+  public static final boolean DEFAULT_INTERNAL = false
 
   String id
   String desc
   Set<RefdataValue> values
+  boolean internal = DEFAULT_INTERNAL
   
   static hasMany = [
     values: RefdataValue
