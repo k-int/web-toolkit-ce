@@ -66,6 +66,7 @@ class RefdataValue implements MultiTenant<RefdataValue> {
     RefdataCategory cat = RefdataCategory.findByDesc(category_name)
     if (!cat) {
       cat = new RefdataCategory()
+      cat.desc = category_name
       cat.internal = defaultCatInternal
       cat.save(flush:true, failOnError:true)
     }
