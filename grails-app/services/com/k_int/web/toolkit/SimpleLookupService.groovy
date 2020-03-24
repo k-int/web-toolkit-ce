@@ -107,7 +107,7 @@ class SimpleLookupService {
     ret
   }
   
-  private static final String REGEX_SPECIAL_OP = "(?i)^(.*?)\\s+(is)(Not)?(Null|Empty)\\s*\$"
+  private static final String REGEX_SPECIAL_OP = "(?i)^(.*?)\\s+(is)(Not)?(Null|Empty|Set)\\s*\$"
   private static final String REGEX_OP = "^(.*?)([=!]~|=i=|([!=<>]{1,2}))(.*?)\$"
   private static final String REGEX_BETWEEN = "^(.*?)([<>]=?)(.*?)([<>]=?)(.*?)\$"
   private static final String REGEX_NONE_ESCAPED_PERCENTAGE = "([^\\\\])(%)"
@@ -134,11 +134,40 @@ class SimpleLookupService {
         log.debug('Single op like isEmpty or isNotNull.')
         
         def match = matches[0]
-        String op = "${match[2]?.trim()?.toLowerCase()}${match[3]?.trim()?.toLowerCase()?.capitalize() ?: ''}${match[4]?.trim()?.toLowerCase()?.capitalize()}"
+        final String rootOp = match[4]?.trim()?.toLowerCase()?.capitalize()
+        final String negated = match[3]?.trim()?.toLowerCase()?.capitalize() ?: ''
         
-        results << op
-        results << match[1]
+        String op = "${match[2]?.trim()?.toLowerCase()}${negated}${rootOp}"
         
+        if (rootOp == 'Set') {
+          log.debug "Special 2 part operation ${op}"
+          
+          // Add the criterion directly.
+          if (negated) {
+            // Actually specially maps to NOT ( isNotNull ), which is not the same as isNull
+            // and hence this special case. Let's use our string parsing to build up the query so as to
+            // take care of joins.
+            
+            final String critString = "!${match[1]} isNotNull"
+            log.debug "Alias of ${critString}"
+            
+            Criterion c = parseFilterString(criteria, aliasStack, "!${match[1]} isNotNull", indentation)
+            if (c) {
+              results << c
+            }
+          } else {
+            log.debug "Alias of ${match[1]} isNotNull"
+            
+            // Just return the strings in the normal manner.
+            results << 'isNotNull'
+            results << match[1]
+          }
+          
+        } else {
+          log.debug "Normal 2 part operation ${op}"
+          results << op
+          results << match[1]
+        }
         
       } else {
         
@@ -289,31 +318,54 @@ class SimpleLookupService {
       entries.each { 
         criterionList << parseFilterString (criteria, aliasStack, it, indentation)
       }
-      crit = Restrictions.and( criterionList as Criterion[] )
+      
+      if (criterionList) {
+        crit = Restrictions.and( criterionList as Criterion[] )
+        
+      } else {
+        log.trace ("${indentation}  // Failed to evaluate criteria. Ignore this AND")
+      }
       log.trace ("${indentation}}")
     } else {
       entries = filterString.split (/\|\|/)
       if (entries.length > 1) {
+        
         // Start an OR.
         log.trace ("${indentation}or {")
-        
         List<Criterion> criterionList = []
         
         // Now call out to this method again with each entry.
-        entries.each { 
-          criterionList << parseFilterString (criteria, aliasStack, it, indentation)
+        entries.each {
+          
+          // If the value is blank we should not add to thee list.
+          Criterion c = parseFilterString (criteria, aliasStack, it, indentation)
+          if (c) {
+            criterionList << c
+          }
         }
         
-        crit = Restrictions.or( criterionList as Criterion[] )
+        if (criterionList) {
+          crit = Restrictions.or( criterionList as Criterion[] )
+        } else {
+          log.trace ("${indentation}  // Failed to evaluate criteria. Ignore this OR")
+        }
         log.trace ("${indentation}}")
       } else {
         // Check for negation.
-        if (filterString.startsWith("!")) {          
+        if (filterString.startsWith("!")) {
           
           log.trace ("${indentation}not {")
           crit = Restrictions.not( parseFilterString (criteria, aliasStack, filterString.substring(1), indentation) )
+          Criterion c = parseFilterString (criteria, aliasStack, filterString.substring(1), indentation)
+          
+          if (c) {
+            crit = Restrictions.not( c )
+          } else {
+            log.trace ("${indentation}  // Failed to evaluate criteria. Ignore this NOT")
+          }
           log.trace ("${indentation}}")
-          log.debug "Negated whole filter entry"
+          
+          if (c) log.debug "Negated whole filter entry"
         } else {
           // Then check for comparator type i.e. gt, eq, lt etc..
           List parts = getComparisonParts (criteria, aliasStack, filterString, indentation)
