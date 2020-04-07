@@ -204,7 +204,7 @@ class GrailsDomainRefdataHelpers {
       
       for (final PropertyDescriptor pd : props) {
         PersistentProperty pp = pe.getPropertyByName ("${pd.name}")
-        Class<?> genericClass = pp ? ((pp instanceof Association) ? pp.associatedEntity.javaClass : pp.type) : null
+        Class<?> genericClass = pp ? ((pp instanceof Association) ? pp.associatedEntity?.javaClass : pp.type) : null
         if (genericClass && GrailsClassUtils.isAssignableOrConvertibleFrom(RefdataValue.class, genericClass)) {
 
           // The ClassName representation of the property name.
