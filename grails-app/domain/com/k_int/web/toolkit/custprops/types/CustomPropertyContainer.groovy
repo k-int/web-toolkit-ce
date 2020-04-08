@@ -8,6 +8,7 @@ import com.k_int.web.toolkit.custprops.CustomPropertiesBinder
 import com.k_int.web.toolkit.custprops.CustomProperty
 import com.k_int.web.toolkit.custprops.CustomPropertyDefinition
 import com.k_int.web.toolkit.databinding.BindUsingWhenRef
+import com.k_int.web.toolkit.domain.traits.Clonable
 import com.k_int.web.toolkit.utils.DomainUtils.InternalPropertyDefinition
 
 import grails.gorm.MultiTenant
@@ -15,7 +16,7 @@ import grails.gorm.annotation.Entity
 
 @Entity
 @BindUsingWhenRef({ obj, String propName, source -> CustomPropertiesBinder.bind (obj, propName, source) })
-class CustomPropertyContainer extends CustomProperty<Set<CustomProperty>> implements MultiTenant<CustomPropertyContainer> {
+class CustomPropertyContainer extends CustomProperty<Set<CustomProperty>> implements MultiTenant<CustomPropertyContainer>, Clonable<CustomPropertyContainer> {
   Set<CustomProperty> value = []
   static hasMany = [
     value: CustomProperty
@@ -69,5 +70,10 @@ class CustomPropertyContainer extends CustomProperty<Set<CustomProperty>> implem
   static constraints = {
     parent nullable: true
     definition nullable: true // The root container can have a null definition.
+  }
+  
+  @Override
+  public CustomPropertyContainer clone () {
+    Clonable.super.clone()
   }
 }

@@ -1,13 +1,14 @@
 package com.k_int.web.toolkit.custprops.types
 
 import com.k_int.web.toolkit.custprops.CustomProperty
+import com.k_int.web.toolkit.domain.traits.Clonable
 import com.k_int.web.toolkit.refdata.RefdataCategory
 import com.k_int.web.toolkit.refdata.RefdataValue
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 
 @Entity
-class CustomPropertyRefdata extends CustomProperty<RefdataValue> implements MultiTenant<CustomPropertyRefdata> {
+class CustomPropertyRefdata extends CustomProperty<RefdataValue> implements MultiTenant<CustomPropertyRefdata>,Clonable<CustomPropertyRefdata> {
   RefdataValue value
   RefdataValue lookupValue ( final String refDataValueString ) {
     def catId = definition.refresh().category
@@ -18,6 +19,11 @@ class CustomPropertyRefdata extends CustomProperty<RefdataValue> implements Mult
   static Class definitionClass = CustomPropertyRefdataDefinition
   static constraints = {
     value nullable: false, blank: false
+  }
+  
+  @Override
+  public CustomPropertyRefdata clone () {
+    Clonable.super.clone()
   }
   
 }
