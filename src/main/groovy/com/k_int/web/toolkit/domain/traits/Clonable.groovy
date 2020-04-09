@@ -64,7 +64,7 @@ trait Clonable<D> {
     final D cloned = this.class.newInstance()
     
     // Default to all properties.
-    Set<String> propertiesSet = [] + (propertiesToCopy == null ? this.properties.keySet() : propertiesToCopy)
+    final Set<String> propertiesSet = [] + (propertiesToCopy == null ? this.properties.keySet() : propertiesToCopy)
     log?.debug "Properties to clone initially set to ${propertiesSet}"
     
     // Add any properties that are required.
@@ -73,38 +73,43 @@ trait Clonable<D> {
         if (pp instanceof ToMany) {
           // For collections we should check the size.
           final Property mappedForm = pp.mapping.mappedForm
-          if (mappedForm.minSize > 0) {
-            log?.warn "Adding ${pp.name} to list of properties to clone as it has a minimum size of ${mappedForm.minSize}"
+          if (mappedForm.minSize > 0 && !cloned[pp.name]) {
+            log?.warn "Adding ${pp.name} to list of properties to clone as it has a minimum size of ${mappedForm.minSize}, and no default supplied."
             // Add to the list.
             propertiesSet << pp.name
           }
-        } else if (!pp.isNullable()) {
-          log?.warn "Adding ${pp.name} to list of properties to clone as it is a required property"
+        } else if (!pp.isNullable() && cloned[pp.name] == null) {
+          log?.warn "Adding ${pp.name} to list of properties to clone as it is a required property, and no default was supplied."
           // Add to the list.
           propertiesSet << pp.name
-          
         } 
       }
     }
     
+    final Map<String, Closure> statics = getCloneStaticValues()
+    
     // Cycle through each property. And copy each one in turn.
     for ( final String prop : propertiesSet ) {
-      cloneSingleProperty(cloned, prop)
+      Closure finalValue = null
+      if (statics.containsKey(prop)) {
+        log?.debug "Static value supplied for ${prop}"
+        finalValue = statics[prop]
+      }
+      
+      cloneSingleProperty(cloned, prop, finalValue)
     }
     
     // Return the final product.
     cloned
   }
   
-  private void cloneSingleProperty( final D to, final String propertyName ) {
+  private void cloneSingleProperty( final D to, final String propertyName, final Closure finalValue ) {
     
     try {
       
-      // Lets handle any values that have been defined as static values.
-      final Map<String, Closure> statics = getCloneStaticValues()
-      if (statics.containsKey(propertyName)) {
-        log?.debug "Property ${FIELD_CLONE_STATIC_VALUES} contained value for ${propertyName}."
-        to[propertyName] = statics.get(propertyName).rehydrate(to, this, this).call(to)
+      if (finalValue) {
+        log?.debug "Setting property to result of closure."
+        to[propertyName] = finalValue.rehydrate(to, this, this).call(to)
         return
       }
      
@@ -112,46 +117,46 @@ trait Clonable<D> {
       boolean deepClone = getCopiedByCloning().contains(propertyName)
       
       // Is this property a none-persistent one.
-  //    if (!pp) {
-        if (this[propertyName]) {
-          if (deepClone) {
-          
-            log?.debug "Copying property ${propertyName} by cloned value"
-            if (this[propertyName] instanceof Collection) {
-              log?.debug "${propertyName} is a collection"
-              def values = this[propertyName].collect({ it.clone() })
-              if (to instanceof GormEntity) {
-                log?.debug "Using the addTo method"
-                values.each {
-                  to.addTo(propertyName, it.clone() )
-                }
-              } else {
-                to[propertyName] = values
+      if (this[propertyName]) {
+        if (deepClone) {
+        
+          log?.debug "Copying property ${propertyName} by cloned value"
+          if (this[propertyName] instanceof Collection) {
+            log?.debug "${propertyName} is a collection"
+            def values = this[propertyName].collect({ it.clone() })
+            if (to instanceof GormEntity) {
+              log?.debug "Using the addTo method"
+              values.each {
+                to.addTo(propertyName, it.clone() )
               }
             } else {
-              to[propertyName] = this[propertyName].clone()
+              to[propertyName] = values
             }
           } else {
-          
-            // Just copy it
-            log?.debug "Copying property ${propertyName} by reference"
-            if (this[propertyName] instanceof Collection) {
-              log?.debug "${propertyName} is a collection"
-              def values = this[propertyName]
-              if (to instanceof GormEntity) {
-                log?.debug "Using the addTo method"
-                values.each {
-                  to.addTo(propertyName, it)
-                }
-              } else {
-                to[propertyName] = values.collect() // New collection of same elements.
+            to[propertyName] = this[propertyName].clone()
+          }
+        } else {
+        
+          // Just copy it
+          log?.debug "Shallow copying property ${propertyName}. Will be reference if not primitive."
+          if (this[propertyName] instanceof Collection) {
+            log?.debug "${propertyName} is a collection"
+            def values = this[propertyName]
+            if (to instanceof GormEntity) {
+              log?.debug "Using the addTo method for association"
+              values.each {
+                to.addTo(propertyName, it)
               }
             } else {
-              to[propertyName] = this[propertyName]
+              log?.debug "Cloning collection with same elements"
+              to[propertyName] = values.collect() // New collection of same elements.
             }
+          } else {
+            
+            to[propertyName] = this[propertyName]
           }
         }
-  //    }
+      }
     } catch ( ReadOnlyPropertyException e ) {
       log?.warn "Attempting to set read only property failed"
     } catch ( Exception e ) {
