@@ -17,6 +17,9 @@ import grails.gorm.annotation.Entity
 @Entity
 @BindUsingWhenRef({ obj, String propName, source -> CustomPropertiesBinder.bind (obj, propName, source) })
 class CustomPropertyContainer extends CustomProperty<Set<CustomProperty>> implements MultiTenant<CustomPropertyContainer>, Clonable<CustomPropertyContainer> {
+  
+  static copyByCloning = ['value']
+  
   Set<CustomProperty> value = []
   static hasMany = [
     value: CustomProperty
