@@ -5,13 +5,16 @@ import javax.persistence.Lob
 
 import org.hibernate.engine.jdbc.BlobProxy
 import org.springframework.web.multipart.MultipartFile
+
+import com.k_int.web.toolkit.domain.traits.Clonable
+
 import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 
 @Entity
 @GrailsCompileStatic
-class FileObject implements MultiTenant<FileObject> {
+class FileObject implements MultiTenant<FileObject>, Clonable<FileObject> {
 
   String id
   FileUpload fileUpload
@@ -41,5 +44,10 @@ class FileObject implements MultiTenant<FileObject> {
   static mapping = {
                   id column: 'fo_id', generator: 'uuid2', length: 36
          fileContent column: 'fo_contents'
+  }
+  
+  @Override
+  public FileObject clone () {
+    Clonable.super.clone()
   }
 }

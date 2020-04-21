@@ -1,4 +1,6 @@
 package com.k_int.web.toolkit.files
+import com.k_int.web.toolkit.custprops.types.CustomPropertyBoolean
+import com.k_int.web.toolkit.domain.traits.Clonable
 import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
@@ -8,7 +10,7 @@ import groovy.util.logging.Slf4j
 @Slf4j
 @Entity
 @GrailsCompileStatic
-class FileUpload implements MultiTenant<FileUpload> {
+class FileUpload implements MultiTenant<FileUpload>, Clonable<FileUpload> {
 
   String id
   FileObject fileObject
@@ -18,6 +20,8 @@ class FileUpload implements MultiTenant<FileUpload> {
   Long fileSize
   Date lastUpdated
   SingleFileAttachment owner
+  
+  static copyByCloning = ['fileObject']
 
   static constraints = {
     fileObject nullable: false
@@ -51,5 +55,9 @@ class FileUpload implements MultiTenant<FileUpload> {
       }
     }
   }
-
+  
+  @Override
+  public FileUpload clone () {
+    Clonable.super.clone()
+  }
 }
