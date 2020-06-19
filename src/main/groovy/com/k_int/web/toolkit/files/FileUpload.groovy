@@ -1,7 +1,6 @@
 package com.k_int.web.toolkit.files
-import com.k_int.web.toolkit.custprops.types.CustomPropertyBoolean
 import com.k_int.web.toolkit.domain.traits.Clonable
-import grails.compiler.GrailsCompileStatic
+
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 import grails.gorm.multitenancy.Tenants
@@ -9,7 +8,6 @@ import groovy.util.logging.Slf4j
 
 @Slf4j
 @Entity
-@GrailsCompileStatic
 class FileUpload implements MultiTenant<FileUpload>, Clonable<FileUpload> {
 
   String id

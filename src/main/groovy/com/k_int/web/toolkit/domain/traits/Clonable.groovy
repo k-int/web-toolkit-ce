@@ -64,25 +64,31 @@ trait Clonable<D> {
     final D cloned = this.class.newInstance()
     
     // Default to all properties.
-    final Set<String> propertiesSet = [] + (propertiesToCopy == null ? this.properties.keySet() : propertiesToCopy)
+    final List<PersistentProperty> props = currentGormEntity().persistentProperties
+    final idProp = currentGormEntity().identity
+    final Set<String> propertiesSet = [] + (propertiesToCopy == null ? props.findResults { it.name != idProp.name ? it.name : null } : propertiesToCopy)
     log?.debug "Properties to clone initially set to ${propertiesSet}"
     
     // Add any properties that are required.
     if (!ignoreRequired) {
-      for (PersistentProperty pp : currentGormEntity().persistentProperties) {
-        if (pp instanceof ToMany) {
-          // For collections we should check the size.
-          final Property mappedForm = pp.mapping.mappedForm
-          if (mappedForm.minSize > 0 && !cloned[pp.name]) {
-            log?.warn "Adding ${pp.name} to list of properties to clone as it has a minimum size of ${mappedForm.minSize}, and no default supplied."
+      for (PersistentProperty pp : props) {
+        if (pp != idProp) {
+          if (pp instanceof ToMany) {
+            // For collections we should check the size.
+            final Property mappedForm = pp.mapping.mappedForm
+            if (mappedForm.minSize > 0 && !cloned[pp.name]) {
+              log?.warn "Adding ${pp.name} to list of properties to clone as it has a minimum size of ${mappedForm.minSize}, and no default supplied."
+              // Add to the list.
+              propertiesSet << pp.name
+            }
+          } else if (!pp.isNullable() && cloned[pp.name] == null) {
+            log?.warn "Adding ${pp.name} to list of properties to clone as it is a required property, and no default was supplied."
             // Add to the list.
             propertiesSet << pp.name
           }
-        } else if (!pp.isNullable() && cloned[pp.name] == null) {
-          log?.warn "Adding ${pp.name} to list of properties to clone as it is a required property, and no default was supplied."
-          // Add to the list.
-          propertiesSet << pp.name
-        } 
+        } else {
+          log.debug "Property {pp.name} is the identifier property. Skipping"
+        }
       }
     }
     
@@ -108,7 +114,7 @@ trait Clonable<D> {
     try {
       
       if (finalValue) {
-        log?.debug "Setting property to result of closure."
+        log?.debug "Setting property ${propertyName} to result of closure."
         to[propertyName] = finalValue.rehydrate(to, this, this).call(to)
         return
       }
@@ -116,30 +122,32 @@ trait Clonable<D> {
       // Should this be a deep clone
       boolean deepClone = getCopiedByCloning().contains(propertyName)
       
-      // Is this property a none-persistent one.
-      if (this[propertyName]) {
+      // get value
+      def val = this[propertyName]
+      
+      if (val != null) {
         if (deepClone) {
         
           log?.debug "Copying property ${propertyName} by cloned value"
-          if (this[propertyName] instanceof Collection) {
+          if (val instanceof Collection) {
             log?.debug "${propertyName} is a collection"
-            def values = this[propertyName].collect({ it.clone() })
+            def values = val.collect({ it.clone() })
             if (to instanceof GormEntity) {
               log?.debug "Using the addTo method"
               values.each {
-                to.addTo(propertyName, it.clone() )
+                to.addTo(propertyName, it )
               }
             } else {
               to[propertyName] = values
             }
           } else {
-            to[propertyName] = this[propertyName].clone()
+            to[propertyName] = val.clone()
           }
         } else {
         
           // Just copy it
           log?.debug "Shallow copying property ${propertyName}. Will be reference if not primitive."
-          if (this[propertyName] instanceof Collection) {
+          if (val instanceof Collection) {
             log?.debug "${propertyName} is a collection"
             def values = this[propertyName]
             if (to instanceof GormEntity) {
@@ -153,9 +161,11 @@ trait Clonable<D> {
             }
           } else {
             
-            to[propertyName] = this[propertyName]
+            to[propertyName] = val
           }
         }
+      } else {
+        log.debug "No value for ${propertyName}, skipping."
       }
     } catch ( ReadOnlyPropertyException e ) {
       log?.warn "Attempting to set read only property failed"

@@ -11,8 +11,10 @@ import com.k_int.web.toolkit.domain.traits.Clonable
 import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
+import groovy.util.logging.Slf4j
 
 @Entity
+@Slf4j
 @GrailsCompileStatic
 class FileObject implements MultiTenant<FileObject>, Clonable<FileObject> {
 
@@ -20,6 +22,12 @@ class FileObject implements MultiTenant<FileObject>, Clonable<FileObject> {
   FileUpload fileUpload
   
   static belongsTo = [fileUpload: FileUpload]
+  
+  static cloneStaticValues = [
+    fileContents: { 
+      BlobProxy.generateProxy(owner.fileContents.getBinaryStream(), owner.fileContents.length()) 
+    }
+  ]
   
   @Lob
   Blob fileContents

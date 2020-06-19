@@ -16,6 +16,14 @@ abstract class SingleFileAttachment implements MultiTenant<SingleFileAttachment>
   static hasOne = [fileUpload: FileUpload]
   static mappedBy = [fileUpload: 'owner']
   
+  public void setFileUpload(FileUpload fileUpload) {
+    this.fileUpload = fileUpload
+    
+    if (fileUpload.owner?.id != this.id) {
+      fileUpload.owner = this
+    }
+  }
+  
   static mapping = {
     tablePerHierarchy false
     id generator: 'uuid2', length:36
