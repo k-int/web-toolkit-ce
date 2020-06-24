@@ -19,7 +19,7 @@ abstract class SingleFileAttachment implements MultiTenant<SingleFileAttachment>
   public void setFileUpload(FileUpload fileUpload) {
     this.fileUpload = fileUpload
     
-    if (fileUpload.owner?.id != this.id) {
+    if (fileUpload != null && fileUpload.owner?.id != this.id) {
       fileUpload.owner = this
     }
   }
