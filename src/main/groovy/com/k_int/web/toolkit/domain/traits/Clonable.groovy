@@ -1,8 +1,6 @@
 package com.k_int.web.toolkit.domain.traits
 
-import org.grails.datastore.gorm.GormEnhancer
 import org.grails.datastore.gorm.GormEntity
-import org.grails.datastore.gorm.GormStaticApi
 import org.grails.datastore.mapping.config.Property
 import org.grails.datastore.mapping.model.PersistentEntity
 import org.grails.datastore.mapping.model.PersistentProperty
@@ -12,7 +10,10 @@ import org.grails.datastore.mapping.model.types.OneToOne
 import org.grails.datastore.mapping.model.types.ToMany
 import org.slf4j.Logger
 
+import com.k_int.web.toolkit.utils.GormUtils
+
 import grails.util.GrailsClassUtils
+import groovy.transform.CompileStatic
 import groovy.transform.SelfType
 
 /**
@@ -21,13 +22,17 @@ import groovy.transform.SelfType
  * @author Steve Osguthorpe<steve.osguthorpe@k-int.com>
  * @since 3.7.0
  */
+
 @SelfType(GormEntity)
+@CompileStatic
 trait Clonable<D> {
   public static final String FIELD_COPY_BY_CLONING = 'copyByCloning'
   public static final String FIELD_CLONE_STATIC_VALUES = 'cloneStaticValues'
   
+  
+  @CompileStatic
   private Logger getLog() {
-    this['log'] ? this['log'] as Logger : null
+    this.getAt('log') ? this.getAt('log') as Logger : null
   }
   
   /**
@@ -63,11 +68,14 @@ trait Clonable<D> {
     // Start with a fresh instance.
     final D cloned = this.class.newInstance()
     
+    // Persistent entity
+    PersistentEntity pe = GormUtils.currentGormEntity(this.class)
+    
     // Default to all properties.
-    final List<PersistentProperty> props = currentGormEntity().persistentProperties
-    final idProp = currentGormEntity().identity
-    final Set<String> propertiesSet = [] + (propertiesToCopy == null ? props.findResults { it.name != idProp.name ? it.name : null } : propertiesToCopy)
-    log?.debug "Properties to clone initially set to ${propertiesSet}"
+    final List<PersistentProperty> props = pe.persistentProperties
+    final PersistentProperty idProp = pe.identity
+    final Set<String> propertiesSet = [] + (propertiesToCopy == null ? props.findResults { it.name != idProp.name ? it.name : null } : propertiesToCopy) as Set
+    getLog()?.debug "Properties to clone initially set to ${propertiesSet}"
     
     // Add any properties that are required.
     if (!ignoreRequired) {
@@ -77,17 +85,17 @@ trait Clonable<D> {
             // For collections we should check the size.
             final Property mappedForm = pp.mapping.mappedForm
             if (mappedForm.minSize > 0 && !cloned[pp.name]) {
-              log?.warn "Adding ${pp.name} to list of properties to clone as it has a minimum size of ${mappedForm.minSize}, and no default supplied."
+              getLog()?.warn "Adding ${pp.name} to list of properties to clone as it has a minimum size of ${mappedForm.minSize}, and no default supplied."
               // Add to the list.
               propertiesSet << pp.name
             }
           } else if (!pp.isNullable() && cloned[pp.name] == null) {
-            log?.warn "Adding ${pp.name} to list of properties to clone as it is a required property, and no default was supplied."
+            getLog()?.warn "Adding ${pp.name} to list of properties to clone as it is a required property, and no default was supplied."
             // Add to the list.
             propertiesSet << pp.name
           }
         } else {
-          log.debug "Property {pp.name} is the identifier property. Skipping"
+          getLog()?.debug "Property {pp.name} is the identifier property. Skipping"
         }
       }
     }
@@ -98,7 +106,7 @@ trait Clonable<D> {
     for ( final String prop : propertiesSet ) {
       Closure finalValue = null
       if (statics.containsKey(prop)) {
-        log?.debug "Static value supplied for ${prop}"
+        getLog()?.debug "Static value supplied for ${prop}"
         finalValue = statics[prop]
       }
       
@@ -114,7 +122,7 @@ trait Clonable<D> {
     try {
       
       if (finalValue) {
-        log?.debug "Setting property ${propertyName} to result of closure."
+        getLog()?.debug "Setting property ${propertyName} to result of closure."
         to[propertyName] = finalValue.rehydrate(to, this, this).call(to)
         return
       }
@@ -123,17 +131,17 @@ trait Clonable<D> {
       boolean deepClone = getCopiedByCloning().contains(propertyName)
       
       // get value
-      def val = this[propertyName]
+      def val = this.getAt(propertyName)
       
       if (val != null) {
         if (deepClone) {
         
-          log?.debug "Copying property ${propertyName} by cloned value"
+          getLog()?.debug "Copying property ${propertyName} by cloned value"
           if (val instanceof Collection) {
-            log?.debug "${propertyName} is a collection"
+            getLog()?.debug "${propertyName} is a collection"
             def values = val.collect({ it.clone() })
             if (to instanceof GormEntity) {
-              log?.debug "Using the addTo method"
+              getLog()?.debug "Using the addTo method"
               values.each {
                 to.addTo(propertyName, it )
               }
@@ -141,22 +149,22 @@ trait Clonable<D> {
               to[propertyName] = values
             }
           } else {
-            to[propertyName] = val.clone()
+            to[propertyName] = val.invokeMethod('clone', [])
           }
         } else {
         
           // Just copy it
-          log?.debug "Shallow copying property ${propertyName}. Will be reference if not primitive."
+          getLog()?.debug "Shallow copying property ${propertyName}. Will be reference if not primitive."
           if (val instanceof Collection) {
-            log?.debug "${propertyName} is a collection"
-            def values = this[propertyName]
+            getLog()?.debug "${propertyName} is a collection"
+            def values = this.getAt(propertyName)
             if (to instanceof GormEntity) {
-              log?.debug "Using the addTo method for association"
+              getLog()?.debug "Using the addTo method for association"
               values.each {
                 to.addTo(propertyName, it)
               }
             } else {
-              log?.debug "Cloning collection with same elements"
+              getLog()?.debug "Cloning collection with same elements"
               to[propertyName] = values.collect() // New collection of same elements.
             }
           } else {
@@ -165,22 +173,23 @@ trait Clonable<D> {
           }
         }
       } else {
-        log.debug "No value for ${propertyName}, skipping."
+        getLog()?.debug "No value for ${propertyName}, skipping."
       }
     } catch ( ReadOnlyPropertyException e ) {
-      log?.warn "Attempting to set read only property failed"
+      getLog()?.warn "Attempting to set read only property failed"
     } catch ( Exception e ) {
-      log?.error "Error copying property ${propertyName}", e
+      getLog()?.error "Error copying property ${propertyName}", e
     }
   }
   
   private Set<String> copyByCloning = null
+  
   private Set<String> getCopiedByCloning () {
     if (copyByCloning == null) {
       copyByCloning = [] as Set<String>
       
       // We should also add any 1-1 or 1 to many type props.
-      PersistentEntity pe = currentGormEntity()
+      PersistentEntity pe = GormUtils.currentGormEntity( this.class )
       for (final PersistentProperty pp : pe.getPersistentProperties()) {
         if (pp instanceof OneToOne || pp instanceof OneToMany ) {
           
@@ -188,10 +197,10 @@ trait Clonable<D> {
           // Force these to be copied by creating new value so that we don't accidentally
           // move ownership of something.
           if (ass.isBidirectional() && ass.isOwningSide()) {
-            log?.debug "Adding property ${pp} to copy by cloning as this property is a OneToX type."
+            getLog()?.debug "Adding property ${pp} to copy by cloning as this property is a OneToX type."
             copyByCloning << pp.name
           } else {
-            log?.debug "property ${pp} OneToX type but is reference."
+            getLog()?.debug "property ${pp} OneToX type but is reference."
           }
         }
       }
@@ -201,16 +210,7 @@ trait Clonable<D> {
     copyByCloning
   }
   
-  
-  private Map<String, ?> getCloneStaticValues () {
-    GrailsClassUtils.getStaticPropertyValue(this.class, FIELD_CLONE_STATIC_VALUES) as Map<String, ?> ?: Collections.EMPTY_MAP
-  }
-  
-  private static PersistentEntity currentGormEntity() {
-    currentGormStaticApi().persistentEntity
-  }
-  
-  private static GormStaticApi<D> currentGormStaticApi() {
-    (GormStaticApi<D>)GormEnhancer.findStaticApi( this )
+  private Map<String, Closure> getCloneStaticValues () {
+    GrailsClassUtils.getStaticPropertyValue(this.class, FIELD_CLONE_STATIC_VALUES) as Map<String, Closure> ?: Collections.EMPTY_MAP
   }
 }

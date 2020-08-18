@@ -7,9 +7,9 @@ import org.grails.web.servlet.mvc.GrailsWebRequest
 
 import com.k_int.web.toolkit.utils.RequestUtils
 
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 
-@Log4j
+@Slf4j
 class ProxyAwareLinkGenerator extends DefaultLinkGenerator {
   
   ProxyAwareLinkGenerator(String serverBaseURL, String contextPath) {

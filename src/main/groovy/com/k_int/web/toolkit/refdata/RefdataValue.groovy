@@ -63,31 +63,37 @@ class RefdataValue implements MultiTenant<RefdataValue> {
    * @return
    */
   static <T extends RefdataValue> T lookupOrCreate(final String category_name, final String label, final String value=null, final boolean defaultCatInternal = RefdataCategory.DEFAULT_INTERNAL, final Class<T> clazz = this) {
-    RefdataCategory cat = RefdataCategory.findByDesc(category_name)
-    if (!cat) {
-      cat = new RefdataCategory()
-      cat.desc = category_name
-      cat.internal = defaultCatInternal
-      cat.save(flush:true, failOnError:true)
-    }
     
-    lookupOrCreate (cat, label, value, clazz)
+    RefdataValue.withTransaction {
+    
+      RefdataCategory cat = RefdataCategory.findByDesc(category_name)
+      if (!cat) {
+        cat = new RefdataCategory()
+        cat.desc = category_name
+        cat.internal = defaultCatInternal
+        cat.save(flush:true, failOnError:true)
+      }
+      
+      lookupOrCreate (cat, label, value, clazz)
+    }
   }
   
   static <T extends RefdataValue> T lookupOrCreate(final RefdataCategory cat, final String label, final String value=null, final Class<T> clazz = this) {
     
-    final String norm_value = normValue( value ?: label )
-    
-    T result = clazz.findByOwnerAndValue(cat, norm_value) 
-    
-    if (!result) {
-      result = clazz.newInstance()
-      result.label = label
-      result.value = norm_value
-      result.owner = cat
-      result.save(flush:true, failOnError:true)
+    RefdataValue.withTransaction {
+      final String norm_value = normValue( value ?: label )
+      
+      T result = clazz.findByOwnerAndValue(cat, norm_value) 
+      
+      if (!result) {
+        result = clazz.getDeclaredConstructor().newInstance()
+        result.label = label
+        result.value = norm_value
+        result.owner = cat
+        result.save(flush:true, failOnError:true)
+      }
+      result
     }
-    result
   }
 
 }

@@ -1,16 +1,17 @@
 package com.k_int.web.toolkit.databinding
 
-import static groovy.transform.TypeCheckingMode.SKIP
-
 import java.lang.reflect.Field
 
 import javax.persistence.ManyToOne
 
 import org.grails.databinding.ClosureValueConverter
 import org.grails.databinding.xml.GPathResultMap
+import org.grails.datastore.gorm.GormEnhancer
+import org.grails.datastore.gorm.GormStaticApi
 import org.grails.datastore.mapping.model.PersistentProperty
 import org.grails.datastore.mapping.model.types.Association
 import org.grails.datastore.mapping.model.types.OneToOne
+
 import com.k_int.web.toolkit.utils.ClassUtils
 import com.k_int.web.toolkit.utils.DomainUtils
 
@@ -19,23 +20,30 @@ import grails.databinding.DataBindingSource
 import grails.databinding.SimpleMapDataBindingSource
 import grails.databinding.converters.ValueConverter
 import grails.databinding.events.DataBindingListener
-import grails.util.GrailsMetaClassUtils
-import grails.validation.DeferredBindingActions
 import grails.web.databinding.GrailsWebDataBinder
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 
-
-@Log4j
+@Slf4j
 @CompileStatic
 class ExtendedWebDataBinder extends GrailsWebDataBinder {
 
   protected static final String NEW_IDENTIFIER_VALUE = "__new__"
-
-  ExtendedWebDataBinder(GrailsApplication grailsApplication) {
+  
+  ExtendedWebDataBinder(GrailsApplication grailsApplication, GrailsWebDataBinder existingBinder) {
     super(grailsApplication)
-    log.debug "Replaceing default grails databinder"
+    log.debug "Create our new databinder"
+    
+    this.structuredEditors = existingBinder.structuredEditors
+    this.conversionHelpers = existingBinder.conversionHelpers
+    this.formattedValueConversionHelpers = existingBinder.formattedValueConversionHelpers 
+    this.listeners = existingBinder.listeners
+    this.messageSource = existingBinder.messageSource
+    
+    this.trimStrings = existingBinder.trimStrings
+    this.convertEmptyStringsToNull = convertEmptyStringsToNull
+    this.autoGrowCollectionLimit = autoGrowCollectionLimit
   }
 
   @Memoized(maxCacheSize=10)
@@ -51,19 +59,20 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
     }
 
     false
-  }
+  }  
   
-  @CompileStatic(SKIP)
   protected boolean processCollectionEntryAction (final obj, final String propertyName, final collectionEntry, Class collectionEntryTargetType) {
     
     boolean processed = false
     if (collectionEntryTargetType && collectionEntry && collectionEntry instanceof Map && collectionEntry['_delete']) {
       final PersistentProperty pId = DomainUtils.resolveDomainClass(collectionEntryTargetType)?.getIdentity()
       
+      GormStaticApi sapi = GormEnhancer.findStaticApi(collectionEntryTargetType)
+      
       // We need an identifier.
       if (collectionEntry[pId.name]) {
         // Do the delete.
-        def toRemove = collectionEntryTargetType.read(collectionEntry[pId.name])
+        def toRemove = sapi.read(collectionEntry[pId.name] as Serializable)
         
         if (toRemove) {
           removeElementFromCollection ( obj, propertyName, toRemove )
@@ -205,7 +214,6 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
    * @see grails.web.databinding.GrailsWebDataBinder#processProperty(java.lang.Object, groovy.lang.MetaProperty, java.lang.Object, grails.databinding.DataBindingSource, grails.databinding.events.DataBindingListener, java.lang.Object)
    */
   @Override
-  @CompileStatic
   protected processProperty(obj, MetaProperty metaProperty, val, DataBindingSource source, DataBindingListener listener, errors) {
     if(Collection.isAssignableFrom(metaProperty.type)) {
       if (listener == null || listener.beforeBinding(obj, metaProperty.name, val, errors) != false) {
@@ -318,10 +326,8 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
   }
   
   @Override
-  @CompileStatic
   protected setPropertyValue(obj, DataBindingSource source, MetaProperty metaProperty, propertyValue, DataBindingListener listener) {
     def propName = metaProperty.name
-//    boolean isSet = false
     def domainClass = DomainUtils.resolveDomainClass(obj.getClass())
     PersistentProperty otherSide
     if (domainClass != null) {
@@ -364,7 +370,6 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
     // Always call the super if we get this far.
     super.setPropertyValue(obj, source, metaProperty, propertyValue, listener)
   }
-  @CompileStatic
   public static boolean identifierValueDenotesNewObject (def idValue) {
     (NEW_IDENTIFIER_VALUE == ("${idValue ?: ''}").toString().toLowerCase())
   }
@@ -388,13 +393,11 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
   }
   
   @Override
-  @CompileStatic
   protected Field getField(Class clazz, String fieldName) {
     ClassUtils.getField(clazz, fieldName)
   }
 
   @Override
-  @CompileStatic
   protected ValueConverter getValueConverterForField(obj, String propName) {
 
     // Allow the normal per property annotation to take precedence
@@ -433,7 +436,6 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
     converter
   }
 
-  @CompileStatic
   protected ValueConverter getValueConverterForCollectionItems(obj, String propName) {
     ValueConverter converter = null
     try {

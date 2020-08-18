@@ -9,6 +9,7 @@ import com.k_int.web.toolkit.SimpleLookupService
 import grails.gorm.transactions.Transactional
 import grails.web.http.HttpHeaders
 
+@SuppressWarnings("deprecation")
 public class RestfulController<T> extends grails.rest.RestfulController<T> {
 
   static responseFormats = ['json', 'xml']

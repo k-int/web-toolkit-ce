@@ -1,17 +1,14 @@
 docs
 Thumbs.db
 .DS_Store
-.gradle
 build/
 .idea
 *.iml
 *.ipr
 *.iws
-.project
-.settings
-.classpath
+.*
+!.gitignore
 /bin
 /docs
-# Eclipse compiler workaround creates directories here.
-/web-toolkit
-/web-toolkit-ce
+/web-toolkit-v4
+/bin-default/

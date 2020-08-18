@@ -2,9 +2,9 @@ package com.k_int.web.toolkit.databinding
 
 import grails.databinding.SimpleMapDataBindingSource
 import groovy.transform.CompileStatic
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 
-@Log4j
+@Slf4j
 @CompileStatic
 class ExtendedSimpleMapDataBindingSource extends SimpleMapDataBindingSource {
   

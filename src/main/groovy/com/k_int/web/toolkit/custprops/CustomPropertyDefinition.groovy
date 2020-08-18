@@ -11,9 +11,9 @@ import grails.gorm.annotation.Entity
 import grails.util.GrailsClassUtils
 import grails.util.GrailsNameUtils
 import grails.web.databinding.DataBindingUtils
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 
-@Log4j
+@Slf4j
 @Entity
 class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> {
   

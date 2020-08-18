@@ -8,17 +8,21 @@ import java.util.concurrent.Executors
 import org.junit.Before
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
-import geb.spock.GebSpec
+import org.springframework.beans.factory.annotation.Value
+import grails.testing.mixin.integration.Integration
 import grails.web.http.HttpHeaders
 import groovy.json.StreamingJsonBuilder
+import groovy.transform.CompileStatic
+import groovyx.net.http.ChainedHttpConfig
 import groovyx.net.http.FromServer
 import groovyx.net.http.HttpBuilder
-import groovyx.net.http.HttpConfig
 import groovyx.net.http.NativeHandlers
 import spock.lang.Shared
+import spock.lang.Specification
 
-abstract class HttpSpec extends GebSpec {
+@CompileStatic
+@Integration
+abstract class HttpSpec extends Specification {
   static final Logger log = LoggerFactory.getLogger(HttpSpec)
   
   private static final List<String> EXTRA_JSON_TYPES = [
@@ -73,7 +77,7 @@ abstract class HttpSpec extends GebSpec {
     httpClient.get({
       request.uri = cleanUri(uri)
       request.uri.query = params
-      request.headers = (specDefaultHeaders + headersOverride)
+      request.headers = (specDefaultHeaders + headersOverride) as Map
       
       if (expand) {
         expand.rehydrate(delegate, expand.owner, thisObject)()
@@ -86,7 +90,7 @@ abstract class HttpSpec extends GebSpec {
       request.uri = cleanUri(uri)
       request.uri.query = params
       request.body = buildJson(jsonData)
-      request.headers = (specDefaultHeaders + headersOverride)
+      request.headers = (specDefaultHeaders + headersOverride) as Map
       
       if (expand) {
         expand.rehydrate(delegate, expand.owner, thisObject)()
@@ -99,7 +103,7 @@ abstract class HttpSpec extends GebSpec {
       request.uri = cleanUri(uri)
       request.uri.query = params
       request.body = buildJson(jsonData)
-      request.headers = (specDefaultHeaders + headersOverride)
+      request.headers = (specDefaultHeaders + headersOverride) as Map
       
       if (expand) {
         expand.rehydrate(delegate, expand.owner, thisObject)()
@@ -112,7 +116,7 @@ abstract class HttpSpec extends GebSpec {
       request.uri = cleanUri(uri)
       request.uri.query = params
       request.body = buildJson(jsonData)
-      request.headers = (specDefaultHeaders + headersOverride)
+      request.headers = (specDefaultHeaders + headersOverride) as Map
       
       if (expand) {
         expand.rehydrate(delegate, expand.owner, thisObject)()
@@ -124,7 +128,7 @@ abstract class HttpSpec extends GebSpec {
     httpClient.delete({
       request.uri = cleanUri(uri)
       request.uri.query = params
-      request.headers = (specDefaultHeaders + headersOverride)
+      request.headers = (specDefaultHeaders + headersOverride) as Map
       
       if (expand) {
         expand.rehydrate(delegate, expand.owner, thisObject)()
@@ -150,9 +154,23 @@ abstract class HttpSpec extends GebSpec {
     cleanupClosure?.run()
   }
   
+  @Value('${server.servlet.context-path:/}')
+  private String internalContextValue
+  private String internalBaseUrl
+  
+  String getBaseUrl() {
+    
+    if (!internalBaseUrl) {
+      internalBaseUrl = "http://localhost:${this.getAt('serverPort')}${internalContextValue}"
+    }
+    
+    internalBaseUrl
+  }
+  
+  
   def setupSpecWithSpring() {
     
-    final String root = "${baseUrl}"
+    final String root = "$baseUrl"
     httpClient = configure {
       
       // Default root as specified in config.
@@ -169,7 +187,7 @@ abstract class HttpSpec extends GebSpec {
       request.contentType = JSON[0]
       
       // Register vnd.api+json as parsable json.
-      response.parser(HttpSpec.EXTRA_JSON_TYPES) { HttpConfig cfg, FromServer fs ->
+      response.parser(HttpSpec.EXTRA_JSON_TYPES) { ChainedHttpConfig cfg, FromServer fs ->
         NativeHandlers.Parsers.json(cfg, fs)
       }
       

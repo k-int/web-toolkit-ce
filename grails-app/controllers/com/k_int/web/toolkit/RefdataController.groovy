@@ -5,11 +5,13 @@ import com.k_int.web.toolkit.refdata.GrailsDomainRefdataHelpers
 import com.k_int.web.toolkit.refdata.RefdataCategory
 import com.k_int.web.toolkit.rest.RestfulController
 import com.k_int.web.toolkit.utils.DomainUtils
+
+import grails.artefact.Artefact
 import grails.web.Controller
 import groovy.util.logging.Slf4j
 
 @Slf4j
-@Controller
+@Artefact('Controller')
 class RefdataController extends RestfulController<RefdataCategory>  {
 
   RefdataController() {

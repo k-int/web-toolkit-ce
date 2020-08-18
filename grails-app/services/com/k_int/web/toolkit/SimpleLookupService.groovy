@@ -6,9 +6,9 @@ import org.hibernate.sql.JoinType
 import com.k_int.web.toolkit.utils.DomainUtils
 import com.k_int.web.toolkit.utils.DomainUtils.InternalPropertyDefinition
 import grails.util.GrailsClassUtils
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 
-@Log4j
+@Slf4j
 class SimpleLookupService {
   
   ValueConverterService valueConverterService
@@ -246,7 +246,7 @@ class SimpleLookupService {
   }
   
   private String invertOp(final String op) {
-    final String newOp = op
+    String newOp = op
     switch (op) {
       case 'eqOrIsNull' :
       case 'neOrIsNotNull' :

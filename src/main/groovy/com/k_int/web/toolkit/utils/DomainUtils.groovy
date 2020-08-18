@@ -7,8 +7,6 @@ import org.grails.datastore.mapping.model.PersistentEntity
 import org.grails.datastore.mapping.model.PersistentProperty
 import org.grails.datastore.mapping.model.types.Association
 import org.grails.datastore.mapping.model.types.ToOne
-import org.omg.CORBA.INTERNAL
-
 import grails.core.GrailsApplication
 import grails.core.GrailsClass
 import grails.core.GrailsControllerClass
@@ -119,7 +117,15 @@ public class DomainUtils {
    * @param searchSubclasses Whether to search for domain classes that extend the target (useful for polymorphic queries)
    * @return definition of the property including the owning class, the type of the property as well as the property name (last part only).
    */  
-  private final static Map<String, InternalPropertyDefinition> propertyDefCache = Collections.synchronizedMap(new LRUMap<String, InternalPropertyDefinition>(100))
+  /**
+   * Resolves the dot-notated property name starting from the target.
+   * 
+   * @param target The starting domain class
+   * @param prop The property name
+   * @param searchSubclasses Whether to search for domain classes that extend the target (useful for polymorphic queries)
+   * @return definition of the property including the owning class, the type of the property as well as the property name (last part only).
+   */  
+  private final static Map<String, InternalPropertyDefinition> propertyDefCache = Collections.synchronizedMap(new LRUMap(100))
   public static InternalPropertyDefinition resolveProperty ( final def target, final String prop, final boolean searchSubclasses = false) {
     
     InternalPropertyDefinition foundDef = null

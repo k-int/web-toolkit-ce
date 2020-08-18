@@ -1,0 +1,25 @@
+= Web Toolkit Community Edition
+Steve Osguthorpe <steve.osguthorpe@k-int.com>
+
+Grails plugin that adds tooling, sensible defaults, functionality and conventions to help in the development of web APIs in the Grails framework.
+
+.Compatibility
+NOTE: This documentation is for version 5 and up of the plugin which is compatible with Grails 4 only.
+
+[[install]]
+== Installation
+
+Add the following to your `build.gradle` file, in your grails 4 project.
+
+.build.gradle
+[source,groovy,subs="attributes+"]
+----
+repositories {
+  maven { url "http://maven.k-int.com/content/repositories/releases" }
+}
+
+dependencies {
+  compile '{project-group}:{project-name}:{project-version}'
+}
+----
+
