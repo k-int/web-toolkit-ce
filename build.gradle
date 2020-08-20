@@ -24,22 +24,6 @@ apply plugin: "org.grails.plugins.views-json"
 apply plugin: "com.k_int.gradle.plugin"
 apply plugin: "com.k_int.gradle.conventional-git"
 
-eclipse {
-  classpath {
-    defaultOutputDir = file('build/main')
-    file {
-      whenMerged {
-        entries.each {
-          if (it.hasProperty('output') && it.output.startsWith('bin/')) {
-            it.output = 'build/' + it.output.substring(4)
-          }
-        }
-      }
-    }
-  }
-  //synchronizationTasks 'compileAstGroovy', 'compileAstJava'
-}
-
 repositories {
   jcenter()
   maven { url "https://repo.grails.org/grails/core" }
@@ -108,7 +92,7 @@ dependencies {
 //  provided "org.seleniumhq.selenium:selenium-chrome-driver:3.14.0"
   
   
-  astCompile "org.grails:grails-core"
+//  astCompile "org.grails:grails-core"
 }
 
 bootRun {
@@ -159,5 +143,24 @@ withConfig(configuration) {
   }
 }""")
   }
+}
+
+eclipse {
+  classpath {
+    defaultOutputDir = file('build/main')
+    file {
+      whenMerged {
+        entries.each {
+          if (it.hasProperty('output') && it.output.startsWith('bin/')) {
+            it.output = 'build/' + it.output.substring(4)
+          }
+        }
+      }
+    }
+  }
+}
+
+compileGsonViews {
+  packageName = "web-toolkit"
 }
 
