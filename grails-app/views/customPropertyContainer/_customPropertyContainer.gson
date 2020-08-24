@@ -1,7 +1,8 @@
+import org.grails.core.artefact.DomainClassArtefactHandler
+import org.hibernate.Hibernate
+
 import com.k_int.web.toolkit.custprops.CustomProperty
 import com.k_int.web.toolkit.custprops.types.CustomPropertyContainer
-import groovy.transform.*
-import org.grails.core.artefact.DomainClassArtefactHandler
 
 @Field CustomPropertyContainer customPropertyContainer
 
@@ -20,7 +21,7 @@ json {
   propMap.each { final String propName, Set<CustomProperty> props ->
     call propName, props, { CustomProperty p ->
       g.inline( p , [excludes: ['definition', 'parent', 'value'] ]) {
-        if (p.value && DomainClassArtefactHandler.isDomainClass(p.value.class)) {
+        if (DomainClassArtefactHandler.isDomainClass(Hibernate.getClass(p.value))) {
           value g.render (p.value, [excludes: ['owner'] ])
         } else {
           value p.value
