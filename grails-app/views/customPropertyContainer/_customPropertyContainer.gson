@@ -3,6 +3,7 @@ import org.hibernate.Hibernate
 
 import com.k_int.web.toolkit.custprops.CustomProperty
 import com.k_int.web.toolkit.custprops.types.CustomPropertyContainer
+import groovy.transform.*
 
 @Field CustomPropertyContainer customPropertyContainer
 
