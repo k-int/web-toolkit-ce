@@ -13,7 +13,7 @@ class CustomPropertiesBinder {
   }
   
   
-  private static doBind (Map propSource, CustomPropertyContainer cpc) {
+  private static CustomPropertyContainer doBind (Map propSource, CustomPropertyContainer cpc) {
     
     if (propSource && propSource.size() > 0) {
       // Each supplied property. We only allow predefined types.
@@ -90,7 +90,7 @@ class CustomPropertiesBinder {
       // with the same def.
     }
     
-    cpc.save(failOnError: true, flush:true)
+    cpc.save(failOnError: true)
     cpc
   }
 
