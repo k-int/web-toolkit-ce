@@ -1,6 +1,7 @@
 package com.k_int.web.toolkit.utils
 
 import org.grails.datastore.gorm.GormEnhancer
+import org.grails.datastore.gorm.GormInstanceApi
 import org.grails.datastore.gorm.GormStaticApi
 import org.grails.datastore.mapping.model.PersistentEntity
 import org.springframework.transaction.PlatformTransactionManager
@@ -33,10 +34,14 @@ class GormUtils {
   }
   
   public static <D>PersistentEntity currentGormEntity( Class<D> entityClass ) {
-    currentGormStaticApi(entityClass).persistentEntity
+    gormStaticApi(entityClass).persistentEntity
   }
   
-  public static <D> GormStaticApi<D> currentGormStaticApi( Class<D> entityClass ) {
-    (GormStaticApi<D>)GormEnhancer.findStaticApi( entityClass )
+  public static <D> GormStaticApi<D> gormStaticApi( Class<D> entityClass ) {
+    GormEnhancer.findStaticApi( entityClass )
+  }
+  
+  public static <D> GormInstanceApi<D> gormInstanceApi( Class<D> entityClass ) {
+    GormEnhancer.findInstanceApi(entityClass)
   }
 }
