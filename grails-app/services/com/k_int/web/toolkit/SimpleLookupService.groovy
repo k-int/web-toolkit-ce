@@ -473,6 +473,10 @@ class SimpleLookupService {
   private List<Criterion> getTextMatches (final DetachedCriteria criteria, final Map<String, String> aliasStack, final String term, final match_in, MatchMode textMatching = MatchMode.ANYWHERE) {
     List<Criterion> textMatches = []
     if (term) {
+      //First we split out the incoming query into multiple terms by whitespace, treating quoted chunks as a whole
+      String[] splitTerm = term.split( /(?!\B"[^"]*)\s(?![^"]*"\B)/ )
+      // We have now turned something like: `Elvis "The King" Presley` into [Elvis, "The King", Presley]
+
       // Add a condition for each parameter we wish to search.
       match_in.each { String prop ->
         def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true)
@@ -486,13 +490,24 @@ class SimpleLookupService {
             // We use equal unless the compared property is a String then we should use iLIKE
             def op = 'eq'
             if (String.class.isAssignableFrom(propertyType)) {
-              textMatches << Restrictions.ilike("${propName}", "${term}", textMatching)
-              log.debug ("Looking for term '${term}' in ${propName}" )
+              // Create a conjunction to AND all the split terms together
+              Conjunction termByTermRestrictions = Restrictions.conjunction();
+              splitTerm.each{String t->
+                // Remember to replace any leftover quotes with empty space
+                termByTermRestrictions.add(Restrictions.ilike("${propName}", "${t.replace("\"", "")}", textMatching))
+                log.debug ("Looking for term '${t}' in ${propName}" )
+              }
+              textMatches << termByTermRestrictions
             } else {
-              // Attempt to convert the value into one comparable with the target. 
-              def val = valueConverterService.attemptConversion(propertyType, term)
-              textMatches << Restrictions.eq("${propName}", val)
-              log.debug ("Converted ${term} into ${val} as type '${propertyType}'")
+              // Create a conjunction to AND all the split terms together
+              Conjunction termByTermRestrictions = Restrictions.conjunction();
+              splitTerm.each{String t->
+                // Attempt to convert the value into one comparable with the target.
+                def val = valueConverterService.attemptConversion(propertyType, t.replace("\"", ""))
+                termByTermRestrictions.add(Restrictions.eq("${propName}", val))
+                log.debug ("Converted ${t} into ${val} as type '${propertyType}'")
+              }
+              textMatches << termByTermRestrictions
             }
           } else {
             log.debug "Search on ${prop} has been disallowed."
