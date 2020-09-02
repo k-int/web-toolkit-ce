@@ -474,11 +474,11 @@ class SimpleLookupService {
     List<Criterion> textMatches = []
     if (term) {
       //First we split out the incoming query into multiple terms by whitespace, treating quoted chunks as a whole
-      String[] splitTerm = term.split( /(?!\B"[^"]*)\s(?![^"]*"\B)/ )
+      String[] splitTerm = term.split( /(?!\B"[^"]*)\s+(?![^"]*"\B)/ )
       // We have now turned something like: `Elvis "The King" Presley` into [Elvis, "The King", Presley]
 
       // Add a condition for each parameter we wish to search.
-      match_in.each { String prop ->
+      for (String prop : match_in) {
         def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true)
         
         if (propDef) {
@@ -492,7 +492,7 @@ class SimpleLookupService {
             if (String.class.isAssignableFrom(propertyType)) {
               // Create a conjunction to AND all the split terms together
               Conjunction termByTermRestrictions = Restrictions.conjunction();
-              splitTerm.each{String t->
+              for (String t : splitTerm) {
                 // Remember to replace any leftover quotes with empty space
                 termByTermRestrictions.add(Restrictions.ilike("${propName}", "${t.replace("\"", "")}", textMatching))
                 log.debug ("Looking for term '${t}' in ${propName}" )
@@ -501,7 +501,7 @@ class SimpleLookupService {
             } else {
               // Create a conjunction to AND all the split terms together
               Conjunction termByTermRestrictions = Restrictions.conjunction();
-              splitTerm.each{String t->
+              for (String t : splitTerm) {
                 // Attempt to convert the value into one comparable with the target.
                 def val = valueConverterService.attemptConversion(propertyType, t.replace("\"", ""))
                 termByTermRestrictions.add(Restrictions.eq("${propName}", val))
