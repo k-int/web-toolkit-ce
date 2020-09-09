@@ -73,6 +73,18 @@ class CustomPropertyContainer extends CustomProperty<Set<CustomProperty>> implem
   static constraints = {
     parent nullable: true
     definition nullable: true // The root container can have a null definition.
+    value validator: { Set<CustomProperty> val, obj ->
+      boolean valid = true
+      if (val == null || val.isEmpty()) {
+        return valid
+      }
+      
+      // Run for all properties to collect all error messages.
+      for (CustomProperty prop : val) {
+        valid = valid && prop.validate()
+      }
+      valid
+    }
   }
   
   @Override
