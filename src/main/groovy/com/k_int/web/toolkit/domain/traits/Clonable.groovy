@@ -28,6 +28,7 @@ import groovy.transform.SelfType
 trait Clonable<D> {
   public static final String FIELD_COPY_BY_CLONING = 'copyByCloning'
   public static final String FIELD_CLONE_STATIC_VALUES = 'cloneStaticValues'
+  public static final String FIELD_CLONE_DEFAULT_PROPERTIES = 'cloneDefaultProperties'
   
   
   @CompileStatic
@@ -76,6 +77,11 @@ trait Clonable<D> {
     final PersistentProperty idProp = pe.identity
     final Set<String> propertiesSet = [] + (propertiesToCopy == null ? props.findResults { it.name != idProp.name ? it.name : null } : propertiesToCopy) as Set
     getLog()?.debug "Properties to clone initially set to ${propertiesSet}"
+
+    if (propertiesSet.size() == 0) {
+      propertiesSet.addAll(getCloneDefaultProperties())
+      getLog()?.debug "Properties to clone empty, using defaults: ${propertiesSet}"
+    }
     
     // Add any properties that are required.
     if (!ignoreRequired) {
@@ -212,5 +218,9 @@ trait Clonable<D> {
   
   private Map<String, Closure> getCloneStaticValues () {
     GrailsClassUtils.getStaticPropertyValue(this.class, FIELD_CLONE_STATIC_VALUES) as Map<String, Closure> ?: Collections.EMPTY_MAP
+  }
+
+  private Set<String> getCloneDefaultProperties () {
+    GrailsClassUtils.getStaticPropertyValue(this.class, FIELD_CLONE_DEFAULT_PROPERTIES) as Set<String> ?: Collections.EMPTY_SET
   }
 }
