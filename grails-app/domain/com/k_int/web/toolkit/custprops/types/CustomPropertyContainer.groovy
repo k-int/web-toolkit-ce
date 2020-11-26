@@ -19,6 +19,8 @@ import grails.gorm.annotation.Entity
 class CustomPropertyContainer extends CustomProperty<Set<CustomProperty>> implements MultiTenant<CustomPropertyContainer>, Clonable<CustomPropertyContainer> {
   
   static copyByCloning = ['value']
+
+  static cloneDefaultProperties = ['value']
   
   Set<CustomProperty> value = []
   static hasMany = [
