@@ -1,5 +1,6 @@
 package com.k_int.web.toolkit.testing
 
+import static groovy.transform.TypeCheckingMode.SKIP
 import static groovyx.net.http.ContentTypes.JSON
 import static groovyx.net.http.HttpBuilder.configure
 
@@ -140,6 +141,7 @@ abstract class HttpSpec extends Specification {
   @Shared private boolean setupSpecDone = false
   @Shared private Closure cleanupClosure = null
   
+  @CompileStatic(SKIP)
   @Before
   def setupSpecWithSpringWorkaround() {
     if (!setupSpecDone) {
