@@ -3,6 +3,7 @@ package com.k_int.web.toolkit
 
 import org.hibernate.criterion.*
 import org.hibernate.sql.JoinType
+
 import com.k_int.web.toolkit.utils.DomainUtils
 import com.k_int.web.toolkit.utils.DomainUtils.InternalPropertyDefinition
 import grails.util.GrailsClassUtils
@@ -574,6 +575,146 @@ class SimpleLookupService {
     criteria
   }
 
+  private final class BatchedStreamIterator implements Iterator {
+    
+    private final Closure originalQuery
+    private final int chunkMaxSize
+    private final Class targetClass
+    
+    private long totalResults = 0
+    
+    private List currentChunk = null
+    private long position = -1
+    
+    private int currentChunkEnd = 0
+    private int currentChunkPosition = -1
+    
+    private int offset = 0
+    
+    public BatchedStreamIterator (
+        final Class targetClass,
+        final int batchSizeSuggestion = 1000,
+        final Closure lookupQuery) {
+      
+      this.targetClass = targetClass
+      this.originalQuery = lookupQuery
+      this.chunkMaxSize = batchSizeSuggestion
+    }
+    
+    private void fetch() {      
+      if (position > -1) {
+        // If we still have results do nothing.
+        if (currentChunkPosition < currentChunkEnd) return
+        
+        // Increase the offset.
+        offset += (currentChunkEnd + 1)
+      } else {
+        offset = 0 // First page.
+      }
+      
+      def res = doList (targetClass, ['offset': offset, 'max': chunkMaxSize], {
+        // Ensure the owner isn't changed. And run.
+        originalQuery.rehydrate(delegate, owner.originalQuery, thisObject).call()
+        
+        // Cache to help speed up future calls.
+        readOnly true
+        cache true
+      })
+      
+      // Every time we fetch results we should ensure the total is updated to
+      // the current understanding. It's possible for the results-size to change
+      // while we chunk things up but that is an acceptable caveat here.
+      totalResults = res?.totalCount ?: 0
+      
+      // Update the chunk vars.
+      currentChunk = res
+      currentChunkPosition = -1
+      currentChunkEnd = currentChunk.size() - 1
+    }
+    
+    // Initialize the values.
+    boolean initialized = false
+    private void ensureInit() {
+      if (!initialized) {
+        
+        // We should grab the first page of results
+        fetch()
+        initialized = true
+      }
+    }
+
+    @Override
+    public boolean hasNext () {
+      
+      // Ensure we have initialized with an intial run at least.
+      ensureInit()
+      
+      // Easiest case is the current chunk has data beyond our pointer.
+      if (currentChunkPosition < currentChunkEnd) return true;
+      
+      // Current chunk exhausted but there are more to fetch.
+      // Because of the volatile nature of the query results changing over time,
+      // we should fetch the next chunk first to prevent a false positive.
+      if (position < totalResults) {
+        fetch()
+        
+        // Providing we got results.
+        return (currentChunkEnd > -1)   
+      }
+      
+      // Default is no more results.
+      false
+    }
+
+    @Override
+    public Object next () {
+      
+      if (!hasNext()) {
+        throw new NoSuchElementException("Item chunks exhausted.")
+      }
+      
+      // Otherwise forward pointers
+      position++
+      currentChunkPosition++
+      
+      // Return the element.
+      
+      return currentChunk.get(currentChunkPosition)
+    }
+    
+  }
+  
+  public Iterator lookupAsBatchedStream (
+    final Class c, final String term, final Integer chunkSize = 10, final List filters = [], final List match_in = [], final List sorts = [], final Closure base = null) {
+    
+    // Results per page, cap at 1000 for safety here.
+    final int chunkSizeSuggestion = Math.min(chunkSize, 1000)
+
+
+    // Return our special wrapper class that should allow for forward iteration
+    // through the results.  
+    new BatchedStreamIterator (c, chunkSizeSuggestion, {
+      // Change the delegate and execute.
+      if (base) {
+        base.setDelegate(delegate)
+        base()
+      }
+
+      // Add lookup.
+      criteria.add(
+        Subqueries.propertyIn(
+          'id',
+          buildLookupCriteria(DetachedCriteria.forClass(targetClass, 'uniques'), term, match_in, filters)
+        )
+      )
+      
+      // Add any sorts.
+      if (sorts) {
+        addSorts (delegate, sorts)
+      }
+    })
+  }
+  
   public def lookup (final Class c, final String term, final Integer perPage = 10, final Integer page = 1, final List filters = [], final List match_in = [], final List sorts = [], final Closure base = null) {
 
     // Results per page, cap at 1000 for safety here. This will probably be capped by the implementing controller to a lower value.
@@ -611,7 +752,7 @@ class SimpleLookupService {
 
     Map aliasStack = [:]
 
-    // Results per page, cap at 1000 for safety here. This will probably be capped by the implementing controller to a lower value.
+    // Results per page, cap at 1000 for safety here.This will probably be capped by the implementing controller to a lower value.
     int pageSize = Math.min(perPage, 1000)
     
     def statMap = [

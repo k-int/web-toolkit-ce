@@ -24,6 +24,7 @@ import grails.web.databinding.GrailsWebDataBinder
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
 import groovy.util.logging.Slf4j
+import io.micronaut.core.annotation.Introspected
 
 @Slf4j
 @CompileStatic
