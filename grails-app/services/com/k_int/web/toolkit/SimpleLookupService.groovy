@@ -690,9 +690,8 @@ class SimpleLookupService {
     // Results per page, cap at 1000 for safety here.
     final int chunkSizeSuggestion = Math.min(chunkSize, 1000)
 
-
     // Return our special wrapper class that should allow for forward iteration
-    // through the results.  
+    // through the results.
     new BatchedStreamIterator (c, chunkSizeSuggestion, {
       // Change the delegate and execute.
       if (base) {
