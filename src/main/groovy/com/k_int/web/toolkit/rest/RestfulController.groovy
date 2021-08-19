@@ -9,7 +9,6 @@ import com.k_int.web.toolkit.SimpleLookupService
 import grails.gorm.transactions.Transactional
 import grails.web.http.HttpHeaders
 
-@SuppressWarnings("deprecation")
 public class RestfulController<T> extends grails.rest.RestfulController<T> {
 
   static responseFormats = ['json', 'xml']
@@ -22,24 +21,38 @@ public class RestfulController<T> extends grails.rest.RestfulController<T> {
   public RestfulController (Class<T> resource, boolean readOnly) {
     super(resource, readOnly)
   }
-    
-  protected def doTheLookup (NamedCriteriaProxy namedQuery = null, Class res = this.resource) {
+  
+  protected def doTheLookup (@SuppressWarnings("deprecation") NamedCriteriaProxy namedQuery = null, Class res = this.resource) {
     doTheLookup ( res , namedQuery?.criteriaClosure as Closure)
   }
   
-  protected def doTheLookup (Class res = this.resource, Closure baseQuery) {
+  protected List getParamList(final String name) {
+    params.list("${name}[]") ?: params.list("${name}")
+  } 
+  
+  protected def doTheLookup (Class<T> res = this.resource, Closure baseQuery) {
     final int offset = params.int("offset") ?: 0
     final int perPage = Math.min(params.int('perPage') ?: params.int('max') ?: 10, 100)
     final int page = params.int("page") ?: (offset ? (offset / perPage) + 1 : 1)
-    final List<String> filters = params.list("filters[]") ?: params.list("filters")
-    final List<String> match_in = params.list("match[]") ?: params.list("match")
-    final List<String> sorts = params.list("sort[]") ?: params.list("sort")
+    final List<String> filters = getParamList("filters")
+    final List<String> match_in = getParamList("match")
+    final List<String> sorts = getParamList("sort")
     
     if (params.boolean('stats')) {
       return simpleLookupService.lookupWithStats(res, params.term, perPage, page, filters, match_in, sorts, null, baseQuery)
     } else {
       return simpleLookupService.lookup(res, params.term, perPage, page, filters, match_in, sorts, baseQuery)
     }
+  }
+  
+  protected Iterator doChunkedStreamingLookup (Class<T> res = this.resource, final int maxChunkSize, Closure baseQuery) {
+    final int offset = params.int("offset") ?: 0
+    final int page = params.int("page") ?: (offset ? (offset / perPage) + 1 : 1)
+    final List<String> filters = getParamList("filters")
+    final List<String> match_in = getParamList("match")
+    final List<String> sorts = getParamList("sort")
+    
+    simpleLookupService.lookupAsBatchedStream(res, params.term, maxChunkSize, filters, match_in, sorts, baseQuery)
   }
   
   def index(Integer max) {
