@@ -141,8 +141,8 @@ abstract class HttpSpec extends Specification {
   @Shared private boolean setupSpecDone = false
   @Shared private Closure cleanupClosure = null
   
-  @CompileStatic(SKIP)
   @Before
+  @CompileStatic(SKIP)
   def setupSpecWithSpringWorkaround() {
     if (!setupSpecDone) {
       setupSpecWithSpring()
