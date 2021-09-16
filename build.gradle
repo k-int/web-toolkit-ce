@@ -1,15 +1,16 @@
 buildscript {
-    repositories {
-        jcenter()
-        maven { url "https://repo.grails.org/grails/core" }
-        maven { url "http://maven.k-int.com/content/repositories/releases" }
-    }
-    dependencies {
+  repositories {
+    mavenCentral()
+    maven { url "https://repo.grails.org/grails/core" }
+    maven { url "https://repo.grails.org/artifactory/core" }
+    maven { url "http://maven.k-int.com/content/repositories/releases" }
+  }
+  dependencies {
 	    classpath "org.grails:grails-gradle-plugin:$grailsVersion"
 	    classpath "org.grails.plugins:hibernate5:7.0.4"
 	    classpath "org.grails.plugins:views-gradle:2.0.2"
 	    classpath "com.k_int.gradle:kint-gradle-plugin:2.0.0"
-    }
+  }
 }
 
 group "com.k_int.grails"
@@ -23,9 +24,10 @@ apply plugin: "com.k_int.gradle.plugin"
 apply plugin: "com.k_int.gradle.conventional-git"
 
 repositories {
-  jcenter()
-  maven { url "https://repo.grails.org/grails/core" }
-  maven { url "https://dl.bintray.com/grails/plugins" }
+  mavenCentral()
+  maven { url 'https://repo.grails.org/grails/core' }
+  maven { url 'https://maven.indexdata.com/' }
+  maven { url "https://maven.k-int.com/content/repositories/public" }
 }
 
 configurations {
