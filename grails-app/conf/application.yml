@@ -67,3 +67,11 @@ grails:
         defaultScope: singleton
     converters:
         encoding: UTF-8
+---
+environments:
+    test:
+        dataSource:
+            dbCreate: create
+            dialect: com.k_int.hibernate.dialects.postgres.KIPostgres94Dialect
+            url: jdbc:tc:postgresql:12:///test_db
+            driverClassName: org.testcontainers.jdbc.ContainerDatabaseDriver

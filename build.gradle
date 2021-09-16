@@ -1,7 +1,8 @@
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
         maven { url "https://repo.grails.org/grails/core" }
+        maven { url "https://repo.grails.org/artifactory/core" }
         maven { url "http://maven.k-int.com/content/repositories/releases" }
     }
     dependencies {
@@ -23,8 +24,9 @@ apply plugin: "com.k_int.gradle.plugin"
 apply plugin: "com.k_int.gradle.conventional-git"
 
 repositories {
-  jcenter()
-  maven { url "https://repo.grails.org/grails/core" }
+  mavenCentral()
+  maven { url 'https://repo.grails.org/grails/core' }
+  maven { url 'https://maven.indexdata.com/' }
   maven { url "https://dl.bintray.com/grails/plugins" }
 }
 
@@ -45,7 +47,6 @@ configurations {
 //}
 
 dependencies {
-//  developmentOnly("org.springframework.boot:spring-boot-devtools")
   provided "org.springframework.boot:spring-boot-starter-logging"
   provided "org.springframework.boot:spring-boot-autoconfigure"
   provided "org.grails:grails-core"
@@ -56,15 +57,12 @@ dependencies {
   provided "org.grails:grails-plugin-interceptors"
   provided "org.grails:grails-plugin-services"
   provided "org.grails:grails-plugin-datasource"
-//  compile "org.grails:grails-plugin-databinding"
   provided "org.grails:grails-web-boot"
   provided "org.grails:grails-logging"
-  
-//  compile "org.grails.plugins:cache"
-//  compile "org.grails.plugins:async"
   provided "org.grails.plugins:hibernate5"
   compile "org.hibernate:hibernate-core:5.4.18.Final"
   compile "org.grails.plugins:views-json"
+  provided "org.grails:grails-plugin-databinding"
   
   compileOnly "io.micronaut:micronaut-inject-groovy"
   console "org.grails:grails-console"
@@ -72,29 +70,21 @@ dependencies {
 
 
   provided "javax.xml.bind:jaxb-api:2.3.1"
-  
   provided "org.grails:grails-gorm-testing-support"
-  //    testCompile "org.mockito:mockito-core"
-  // testCompile "io.micronaut:micronaut-http-client"
   provided "org.grails:grails-web-testing-support"
-  // testCompile "io.micronaut:micronaut-http-client:1.0.3"
-
-
   provided "org.postgresql:postgresql:42.2.14"
   
   compile 'com.ibm.icu:icu4j:62.1'
 
-//  provided 'org.grails.plugins:spring-security-core:4.0.0'
   provided 'org.springframework.security:spring-security-web:5.1.8.RELEASE'
   
   compile 'io.github.http-builder-ng:http-builder-ng-core:1.0.4'
 
   provided "org.grails.plugins:geb"
   provided "org.seleniumhq.selenium:selenium-api:3.14.0"
-//  provided "org.seleniumhq.selenium:selenium-chrome-driver:3.14.0"
   
-  
-//  astCompile "org.grails:grails-core"
+  testCompile group: 'org.testcontainers', name: 'postgresql', version: '1.16.0'
+  testRuntime "org.postgresql:postgresql:42.2.23"
 }
 
 bootRun {
