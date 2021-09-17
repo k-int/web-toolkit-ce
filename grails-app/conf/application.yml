@@ -71,7 +71,28 @@ grails:
 environments:
     test:
         dataSource:
-            dbCreate: create
+            dbCreate: none
             dialect: com.k_int.hibernate.dialects.postgres.KIPostgres94Dialect
-            url: jdbc:tc:postgresql:12:///test_db
-            driverClassName: org.testcontainers.jdbc.ContainerDatabaseDriver
+            # url: jdbc:tc:postgresql:12:///test_db
+            # driverClassName: org.testcontainers.jdbc.ContainerDatabaseDriver
+            username: "test"
+            password: "test"
+            driverClassName: org.postgresql.Driver
+            url: "jdbc:postgresql://localhost:5432/test1"
+
+        dataSources:
+            test:
+                # dbCreate: create
+                # url: jdbc:tc:postgresql:12:///test_db
+                dbCreate: create
+                url: "jdbc:postgresql://localhost:5432/test2"
+                username: "test"
+                password: "test"
+                driverClassName: org.postgresql.Driver
+                dialect: com.k_int.hibernate.dialects.postgres.KIPostgres94Dialect
+        grails:
+            gorm:
+                multiTenancy:
+                    # For testing it's OK to use the DISCRIMINATOR mode
+                    mode: DATABASE
+                    tenantResolverClass: org.grails.datastore.mapping.multitenancy.web.SystemPropertyTenantResolver
