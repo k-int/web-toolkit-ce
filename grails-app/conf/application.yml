@@ -73,8 +73,6 @@ environments:
         dataSource:
             dbCreate: none
             dialect: com.k_int.hibernate.dialects.postgres.KIPostgres94Dialect
-            # url: jdbc:tc:postgresql:12:///test_db
-            # driverClassName: org.testcontainers.jdbc.ContainerDatabaseDriver
             username: "test"
             password: "test"
             driverClassName: org.postgresql.Driver
@@ -82,8 +80,6 @@ environments:
 
         dataSources:
             test:
-                # dbCreate: create
-                # url: jdbc:tc:postgresql:12:///test_db
                 dbCreate: create
                 url: "jdbc:postgresql://localhost:5432/test2"
                 username: "test"
