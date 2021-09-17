@@ -27,9 +27,7 @@ class FileUploadService {
 
     return result;
   }
-
   private FileUpload LOBsave(MultipartFile file) {
-
     // Create our object to house our file data.
     FileObject fobject = new LOBFileObject ()
     fobject.fileContents = file

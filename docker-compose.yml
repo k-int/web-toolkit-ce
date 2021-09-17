@@ -1,0 +1,23 @@
+version: "2.1"
+
+volumes:
+  lsp_pgdata:
+    driver: local
+
+services:
+  postgres:
+    container_name: wt_testing_pg
+    hostname: postgres
+    # image: postgres:12
+    image: postgres:10
+    restart: "no"
+    command: postgres -c 'max_connections=200'
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pa55w0rd
+      - POSTGRES_DB=postgres
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5432:5432
+      - 54321:5432
