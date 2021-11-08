@@ -22,6 +22,33 @@ appender('STDOUT', ConsoleAppender) {
     }
 }
 
+
+boolean devEnv = Environment.isDevelopmentMode() || Environment.currentEnvironment.name == 'vagrant-db'
+
+if (devEnv || Environment.currentEnvironment == Environment.TEST) {
+
+  // Change default verbosity to INFO for dev/test
+  root(INFO, ['STDOUT'])
+
+  // Increase specific levels to debug
+  logger 'grails.app.init', DEBUG
+  logger 'grails.app.controllers', DEBUG
+  logger 'grails.app.domains', DEBUG
+  logger 'grails.app.jobs', DEBUG
+  logger 'grails.app.services', DEBUG
+  logger 'com.zaxxer.hikari.pool.HikariPool', WARN
+
+  logger 'com.k_int', DEBUG
+  logger 'com.k_int.web.toolkit', DEBUG
+  logger 'org.olf', DEBUG
+
+
+  if (Environment.currentEnvironment == Environment.TEST) {
+    // Test only.
+  }
+}
+
+
 def targetDir = BuildSettings.TARGET_DIR
 if (Environment.isDevelopmentMode() && targetDir != null) {
     appender("FULL_STACKTRACE", FileAppender) {

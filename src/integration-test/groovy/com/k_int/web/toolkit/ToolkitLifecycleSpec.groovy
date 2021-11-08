@@ -25,7 +25,14 @@ import com.k_int.web.toolkit.testing.HttpSpec
  *              https://www.infoq.com/presentations/grails-plugin-testing/
  */
 
-// @Rollback
+import groovy.util.logging.Slf4j
+
+import spock.lang.Stepwise
+
+
+
+@Slf4j
+@Stepwise
 @Integration
 class ToolkitLifecycleSpec extends HttpSpec {
 
@@ -47,14 +54,19 @@ class ToolkitLifecycleSpec extends HttpSpec {
         [ 'fileStorage', 'S3BucketUser', 'String', null, 'testuser' ],
         [ 'fileStorage', 'S3BucketPass', 'String', null, 'testpass' ],
       ].each { st_row ->
+        log.debug("Adding setting ${st_row}");
         AppSetting new_as = new AppSetting( 
                                         section:st_row[0], 
                                         key:st_row[1], 
                                         settingType:st_row[2], 
                                         vocab:st_row[3], 
-                                        defValue:st_row[4]).save(flush:true, failOnError:true);
+                                        value:st_row[4]).save(flush:true, failOnError:true);
+
       }
 
+      AppSetting.list().each { as_entry ->
+        log.debug("App setting ${as_entry} ${as_entry.section}/${as_entry.key} = ${as_entry.value}");
+      }
     }
 
     void "test LOB file upload"() {
