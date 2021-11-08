@@ -50,9 +50,12 @@ class ToolkitLifecycleSpec extends HttpSpec {
     def setupData() {
       [
         [ 'fileStorage', 'storageEngine', 'String', 'FileStorageEngines', 'LOB' ],
-        [ 'fileStorage', 'S3BucketName', 'String', null, 'KITWBlobStore' ],
-        [ 'fileStorage', 'S3BucketUser', 'String', null, 'testuser' ],
-        [ 'fileStorage', 'S3BucketPass', 'String', null, 'testpass' ],
+        [ 'fileStorage', 'S3Endpoint',    'String', null,                 'localhost' ],
+        [ 'fileStorage', 'S3AccessKey',   'String', null,                 '123' ],
+        [ 'fileStorage', 'S3SecretKey',   'String', null,                 '123' ],
+        [ 'fileStorage', 'S3BucketName',  'String', null,                 'KITWBlobStore' ],
+        [ 'fileStorage', 'S3BucketUser',  'String', null,                 'testuser' ],
+        [ 'fileStorage', 'S3BucketPass',  'String', null,                 'testpass' ],
       ].each { st_row ->
         log.debug("Adding setting ${st_row}");
         AppSetting new_as = new AppSetting( 

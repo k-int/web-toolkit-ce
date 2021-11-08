@@ -1,6 +1,7 @@
 package com.k_int.web.toolkit.files
 
 import org.springframework.web.multipart.MultipartFile
+import com.k_int.web.toolkit.settings.AppSetting
 
 class FileUploadService {
 
@@ -8,7 +9,10 @@ class FileUploadService {
   public static final String S3_STORAGE_ENGINE='S3';
 
   public FileUpload save(MultipartFile file) {
-    return save(file, LOB_STORAGE_ENGINE);
+    // See if a default storage engine app-setting has been set
+    String default_storage_engine = AppSetting.getSettingValue('fileStorage', 'storageEngine');
+    // If so, save using that, default back to LOB storage engine
+    return save(file, default_storage_engine ?: LOB_STORAGE_ENGINE);
   }
 
   public FileUpload save(MultipartFile file, String storageEngine) {
@@ -43,11 +47,17 @@ class FileUploadService {
   }
 
   private FileUpload S3save(MultipartFile file) {
-    // https://www.baeldung.com/aws-s3-java
 
-    // Fetch (And possibly cache) S3 settings needed
-
-    // perform load
+    // https://docs.min.io/docs/java-client-quickstart-guide.html
+    // MinioClient = getMinioClient()
+    // if ( minio_client ) {
+      // See if the S3 credentials check out and the bucket exists
+      // if ( verifyBucket(AppSettings.getAppSetting('BucketName') ) {
+        // https://www.baeldung.com/aws-s3-java
+        // Fetch (And possibly cache) S3 settings needed
+        // perform load
+      //}
+    //}
     throw new RuntimeException('not implemented')
   }
 
