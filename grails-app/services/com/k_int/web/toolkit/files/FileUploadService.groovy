@@ -44,6 +44,10 @@ class FileUploadService {
 
   private FileUpload S3save(MultipartFile file) {
     // https://www.baeldung.com/aws-s3-java
+
+    // Fetch (And possibly cache) S3 settings needed
+
+    // perform load
     throw new RuntimeException('not implemented')
   }
 
