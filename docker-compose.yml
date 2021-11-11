@@ -1,8 +1,6 @@
 version: "2.1"
 
 volumes:
-  lsp_pgdata:
-    driver: local
   minio_data:
     driver: local
 
@@ -31,8 +29,11 @@ services:
     environment:
       - MINIO_ROOT_USER=DEVDEVDEV001
       - MINIO_ROOT_PASSWORD=DEVDEVDEV001
+      - MINIO_DEFAULT_BUCKETS=my-first-bucket,my-second-bucket
+      - MINIO_CONFIG_DIR=/minio_config
     volumes:
       - minio_data:/data
+      - ./minio_config:/minio_config
     ports:
       - 9000:9000
       - 9001:9001
