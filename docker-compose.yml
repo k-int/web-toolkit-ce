@@ -38,3 +38,16 @@ services:
       - 9000:9000
       - 9001:9001
 
+  setup:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 20;
+      /usr/bin/mc config host add myminio http://minio:9000 DEVDEVDEV001 DEVDEVDEV001;
+      /usr/bin/mc rm -r --force myminio/somebucketname;
+      /usr/bin/mc mb myminio/somebucketname;
+      /usr/bin/mc policy download myminio/somebucketname;
+      exit 0;
+      "
