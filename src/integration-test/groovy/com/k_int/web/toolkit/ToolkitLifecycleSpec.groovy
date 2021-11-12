@@ -50,13 +50,9 @@ class ToolkitLifecycleSpec extends HttpSpec {
   def setupData() {
     [
       [ 'fileStorage', 'storageEngine', 'String', 'FileStorageEngines', 'LOB' ],
-      // [ 'fileStorage', 'S3Endpoint',    'String', null,                 'https://play.min.io' ],
-      // [ 'fileStorage', 'S3Endpoint',    'String', null,                 '192.168.1.23' ],
       [ 'fileStorage', 'S3Endpoint',    'String', null,                 'http://localhost:9000' ],
       [ 'fileStorage', 'S3AccessKey',   'String', null,                 'DIKU_AGG_ACCESS_KEY' ],
-      // [ 'fileStorage', 'S3AccessKey',   'String', null,                 'Q3AM3UQ867SPQQA43P2F' ],
       [ 'fileStorage', 'S3SecretKey',   'String', null,                 'DIKU_AGG_SECRET_KEY' ],
-      // [ 'fileStorage', 'S3SecretKey',   'String', null,                 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG' ],
       [ 'fileStorage', 'S3BucketName',  'String', null,                 'diku-shared' ],
     ].each { st_row ->
       log.debug("Adding setting ${st_row}");
