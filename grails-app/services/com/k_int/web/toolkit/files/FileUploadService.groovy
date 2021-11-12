@@ -93,6 +93,7 @@ class FileUploadService {
        //  PutObjectArgs.builder().bucket("my-bucketname").object("my-objectname").stream( bais, bais.available(), -1)
 
       FileObject fobject = new S3FileObject()
+      fobject.s3ref="filename_in_bucket"
 
       fileUpload = new FileUpload()
       fileUpload.fileContentType = file.contentType
