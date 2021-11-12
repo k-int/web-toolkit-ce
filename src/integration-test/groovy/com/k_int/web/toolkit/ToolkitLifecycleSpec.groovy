@@ -50,7 +50,7 @@ class ToolkitLifecycleSpec extends HttpSpec {
   def setupData() {
     [
       [ 'fileStorage', 'storageEngine', 'String', 'FileStorageEngines', 'LOB' ],
-      [ 'fileStorage', 'S3Endpoint',    'String', null,                 'localhost' ],
+      [ 'fileStorage', 'S3Endpoint',    'String', null,                 'http://localhost:9000' ],
       [ 'fileStorage', 'S3AccessKey',   'String', null,                 'DIKU_AGG_ACCESS_KEY' ],
       [ 'fileStorage', 'S3SecretKey',   'String', null,                 'DIKU_AGG_SECRET_KEY' ],
       [ 'fileStorage', 'S3BucketName',  'String', null,                 'diku-shared' ],
