@@ -7,6 +7,7 @@ import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.UploadObjectArgs;
+import io.minio.PutObjectArgs;
 import io.minio.errors.MinioException;
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -86,9 +87,10 @@ class FileUploadService {
          PutObjectArgs.builder()
            .bucket(s3_bucket)
            .object("filename_in_bucket")
-           .stream(file.getInputStream())
+           .stream(file.getInputStream(), file.size, -1)
            .build());
        // putObject / PutObjectArgs takes an inputStream
+       //  PutObjectArgs.builder().bucket("my-bucketname").object("my-objectname").stream( bais, bais.available(), -1)
 
       FileObject fobject = new S3FileObject()
 

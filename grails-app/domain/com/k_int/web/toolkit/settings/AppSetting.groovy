@@ -35,7 +35,7 @@ public class AppSetting implements MultiTenant<AppSetting> {
 
   public static String getSettingValue(String section, String key) {
     String result = AppSetting.executeQuery('select coalesce(a.value, a.defValue) from AppSetting as a where a.section=:s and a.key=:k',
-                                            [s:section, k:key]);
+                                            [s:section, k:key]).get(0);
     return result;
   }
   
