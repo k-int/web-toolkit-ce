@@ -18,7 +18,9 @@ class S3FileObject extends FileObject implements MultiTenant<S3FileObject>, Clon
   }
 
   static mapping = {
+    discriminator "S3"
          s3ref column: 'fo_s3ref'
+
   }
   
   @Override

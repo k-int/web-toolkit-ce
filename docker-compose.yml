@@ -51,6 +51,7 @@ services:
       /usr/bin/mc admin policy add minio/ diku-readwrite /minio_config/diku-readwrite-policy.json;
       /usr/bin/mc admin user add minio DIKU_AGG_ACCESS_KEY DIKU_AGG_SECRET_KEY;
       /usr/bin/mc admin policy set minio diku-readwrite user=DIKU_AGG_ACCESS_KEY;
+      /usr/bin/mc mb minio/diku-shared;
       /usr/bin/mc mb minio/diku-mod-agreements;
       echo List policies known;
       /usr/bin/mc admin policy list minio/;

@@ -48,6 +48,13 @@ class FileUploadService {
 
   private FileUpload S3save(MultipartFile file) {
 
+    String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
+    String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
+    String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
+    String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
+
+    log.debug("S3save ${s3_endpoint} ${s3_access_key} ${s3_secret_key} ${s3_bucket}");
+
     // https://docs.min.io/docs/java-client-quickstart-guide.html
     // MinioClient = getMinioClient()
     // if ( minio_client ) {
@@ -58,7 +65,8 @@ class FileUploadService {
         // perform load
       //}
     //}
-    throw new RuntimeException('not implemented')
+    // throw new RuntimeException('not implemented')
+    return null
   }
 
 }

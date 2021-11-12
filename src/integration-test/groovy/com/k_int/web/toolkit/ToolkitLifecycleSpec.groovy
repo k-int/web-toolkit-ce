@@ -36,60 +36,73 @@ import spock.lang.Stepwise
 @Integration
 class ToolkitLifecycleSpec extends HttpSpec {
 
-    @Autowired
-    FileUploadService fileUploadService
+  @Autowired
+  FileUploadService fileUploadService
 
-    def setup() {
-       System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, 'test') 
-    }
+  def setup() {
+    System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, 'test') 
+  }
 
-    def cleanup() {
-       System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, '')
-    }
+  def cleanup() {
+    System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, '')
+  }
 
-    def setupData() {
-      [
-        [ 'fileStorage', 'storageEngine', 'String', 'FileStorageEngines', 'LOB' ],
-        [ 'fileStorage', 'S3Endpoint',    'String', null,                 'localhost' ],
-        [ 'fileStorage', 'S3AccessKey',   'String', null,                 '123' ],
-        [ 'fileStorage', 'S3SecretKey',   'String', null,                 '123' ],
-        [ 'fileStorage', 'S3BucketName',  'String', null,                 'KITWBlobStore' ],
-        [ 'fileStorage', 'S3BucketUser',  'String', null,                 'testuser' ],
-        [ 'fileStorage', 'S3BucketPass',  'String', null,                 'testpass' ],
-      ].each { st_row ->
-        log.debug("Adding setting ${st_row}");
-        AppSetting new_as = new AppSetting( 
+  def setupData() {
+    [
+      [ 'fileStorage', 'storageEngine', 'String', 'FileStorageEngines', 'LOB' ],
+      [ 'fileStorage', 'S3Endpoint',    'String', null,                 'localhost' ],
+      [ 'fileStorage', 'S3AccessKey',   'String', null,                 'DIKU_AGG_ACCESS_KEY' ],
+      [ 'fileStorage', 'S3SecretKey',   'String', null,                 'DIKU_AGG_SECRET_KEY' ],
+      [ 'fileStorage', 'S3BucketName',  'String', null,                 'diku-shared' ],
+    ].each { st_row ->
+      log.debug("Adding setting ${st_row}");
+      AppSetting new_as = new AppSetting( 
                                         section:st_row[0], 
                                         key:st_row[1], 
                                         settingType:st_row[2], 
                                         vocab:st_row[3], 
                                         value:st_row[4]).save(flush:true, failOnError:true);
 
-      }
-
-      AppSetting.list().each { as_entry ->
-        log.debug("App setting ${as_entry} ${as_entry.section}/${as_entry.key} = ${as_entry.value}");
-      }
     }
 
-    void "test LOB file upload"() {
-      given:
-        Tenants.withId('test') {
-          AppSetting.withTransaction { status ->
-            setupData();
-          }
-        }
+    AppSetting.list().each { as_entry ->
+      log.debug("App setting ${as_entry} ${as_entry.section}/${as_entry.key} = ${as_entry.value}");
+    }
+  }
 
-      when:"We ask the file upload service to upload a file and store it as a LOB"
+  void "test LOB file upload"() {
+    given:
+      Tenants.withId('test') {
+        AppSetting.withTransaction { status ->
+          setupData();
+        }
+      }
+
+    when:"We ask the file upload service to upload a file and store it as a LOB"
+      FileUpload fu = null;
+      Tenants.withId('test') {
+        FileUpload.withTransaction { status ->
+          MultipartFile mf = new MockMultipartFile("foo", "foo.txt", "text/plain", "Hello World".getBytes())
+          fu = fileUploadService.save(mf);
+        }
+      }
+
+    then:"The FileUpload is properly returned"
+      fu != null
+  }
+
+  void "test S3 file upload"() {
+    when:"We ask the file upload service to upload a file and store it as a LOB"
         FileUpload fu = null;
         Tenants.withId('test') {
           FileUpload.withTransaction { status ->
             MultipartFile mf = new MockMultipartFile("foo", "foo.txt", "text/plain", "Hello World".getBytes())
-            fu = fileUploadService.save(mf);
+            fu = fileUploadService.save(mf, FileUploadService.S3_STORAGE_ENGINE);
           }
         }
 
       then:"The FileUpload is properly returned"
         fu != null
-    }
+
+  }
 }

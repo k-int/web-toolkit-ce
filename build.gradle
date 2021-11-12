@@ -82,6 +82,9 @@ dependencies {
   provided "org.grails.plugins:geb"
   provided "org.seleniumhq.selenium:selenium-api:3.14.0"
   testRuntime "org.postgresql:postgresql:42.2.23"
+
+  // Minio for file storage to S3
+  compile "io.minio:minio:8.3.3"
 }
 
 bootRun {
