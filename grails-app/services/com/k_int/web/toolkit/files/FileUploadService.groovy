@@ -3,6 +3,15 @@ package com.k_int.web.toolkit.files
 import org.springframework.web.multipart.MultipartFile
 import com.k_int.web.toolkit.settings.AppSetting
 
+import io.minio.BucketExistsArgs;
+import io.minio.MakeBucketArgs;
+import io.minio.MinioClient;
+import io.minio.UploadObjectArgs;
+import io.minio.errors.MinioException;
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
 class FileUploadService {
 
   public static final String LOB_STORAGE_ENGINE='LOB';
@@ -48,12 +57,53 @@ class FileUploadService {
 
   private FileUpload S3save(MultipartFile file) {
 
+    FileUpload fileUpload = null;
+
     String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
     String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
     String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
     String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
 
     log.debug("S3save ${s3_endpoint} ${s3_access_key} ${s3_secret_key} ${s3_bucket}");
+
+    try {
+      // Create a minioClient with the MinIO server playground, its access key and secret key.
+      // See https://blogs.ashrithgn.com/spring-boot-uploading-and-downloading-file-from-minio-object-store/
+      MinioClient minioClient =
+          MinioClient.builder()
+              .endpoint(s3_endpoint)
+              .credentials(s3_access_key, s3_secret_key)
+              .build();
+
+       // minioClient.uploadObject(
+       //    UploadObjectArgs.builder()
+       //        .bucket(s3_bucket)
+       //        .object("filename_in_bucket")
+       //        .filename("/home/user/Photos/asiaphotos.zip")
+       //        .build());
+
+       minioClient.putObject(
+         PutObjectArgs.builder()
+           .bucket(s3_bucket)
+           .object("filename_in_bucket")
+           .stream(file.getInputStream())
+           .build());
+       // putObject / PutObjectArgs takes an inputStream
+
+      FileObject fobject = new S3FileObject()
+
+      fileUpload = new FileUpload()
+      fileUpload.fileContentType = file.contentType
+      fileUpload.fileName = file.originalFilename
+      fileUpload.fileSize = file.size
+      fileUpload.fileObject = fobject
+  
+      fileUpload.save(flush:true)
+    }
+    catch ( Exception e ) {
+      log.error("Problem with S3 updload",e);
+    }
+
 
     // https://docs.min.io/docs/java-client-quickstart-guide.html
     // MinioClient = getMinioClient()
@@ -66,7 +116,7 @@ class FileUploadService {
       //}
     //}
     // throw new RuntimeException('not implemented')
-    return null
+    return fileUpload
   }
 
 }
