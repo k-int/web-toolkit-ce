@@ -28,7 +28,8 @@ abstract class FileObject implements MultiTenant<FileObject>, Clonable<FileObjec
   }
 
   static mapping = {
-    tablePerHierarchy false
+    tablePerHierarchy true
+    discriminator "fo_engine"
     id column: 'fo_id', generator: 'uuid2', length: 36
   }
   

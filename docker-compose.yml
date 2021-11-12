@@ -48,7 +48,9 @@ services:
       sleep 20;
       echo This command adds an alias to the mc config file so we can refer to the server as minio;
       /usr/bin/mc config host add minio http://minio:9000 DEVDEVDEV001 DEVDEVDEV001;
+      /usr/bin/mc admin policy add minio/ diku-readwrite /minio_config/diku-readwrite-policy.json;
       /usr/bin/mc admin user add minio DIKU_AGG_ACCESS_KEY DIKU_AGG_SECRET_KEY;
+      /usr/bin/mc admin policy set minio diku-readwrite user=DIKU_AGG_ACCESS_KEY;
       /usr/bin/mc mb minio/diku-mod-agreements;
       echo List policies known;
       /usr/bin/mc admin policy list minio/;
@@ -59,5 +61,8 @@ services:
       # /usr/bin/mc policy download tn-diku/somebucketname;
       # /usr/bin/mc admin config export
       # echo Minio user creation: https://docs.min.io/docs/minio-multi-user-quickstart-guide.html
+      # echo https://github.com/minio/minio/issues/6811 - policy example
       exit 0;
       "
+    volumes:
+      - ./minio_config:/minio_config
