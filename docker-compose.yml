@@ -44,10 +44,20 @@ services:
       - minio
     entrypoint: >
       /bin/sh -c "
+      echo sleeping;
       sleep 20;
-      /usr/bin/mc config host add myminio http://minio:9000 DEVDEVDEV001 DEVDEVDEV001;
-      /usr/bin/mc rm -r --force myminio/somebucketname;
-      /usr/bin/mc mb myminio/somebucketname;
-      /usr/bin/mc policy download myminio/somebucketname;
+      echo This command adds an alias to the mc config file so we can refer to the server as minio;
+      /usr/bin/mc config host add minio http://minio:9000 DEVDEVDEV001 DEVDEVDEV001;
+      /usr/bin/mc admin user add minio DIKU_AGG_ACCESS_KEY DIKU_AGG_SECRET_KEY;
+      /usr/bin/mc mb minio/diku-mod-agreements;
+      echo List policies known;
+      /usr/bin/mc admin policy list minio/;
+      echo List users using json
+      /usr/bin/mc admin user list --json minio/;
+      # /usr/bin/mc rm -r --force tn-diku/somebucketname;
+      # /usr/bin/mc mb tn-diku/somebucketname;
+      # /usr/bin/mc policy download tn-diku/somebucketname;
+      # /usr/bin/mc admin config export
+      # echo Minio user creation: https://docs.min.io/docs/minio-multi-user-quickstart-guide.html
       exit 0;
       "
