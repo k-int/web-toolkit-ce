@@ -56,51 +56,53 @@ class FileUploadService {
     fileUpload
   }
 
-  private FileUpload S3save(MultipartFile file) {
-
-    FileUpload fileUpload = null;
+  // Create a FileObject from the given stream details
+  private FileObject s3FileObjectFromStream(String object_key,
+                                            InputStream is,
+                                            long stream_size,
+                                            long offset) {
 
     String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
     String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
     String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
     String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
-    String s3_object_prefix = AppSetting.getSettingValue('fileStorage', 'S3ObjectPrefix');
 
-    log.debug("S3save ${s3_endpoint} ${s3_access_key} ${s3_secret_key} ${s3_bucket}");
+    log.debug("s3FileObjectFromStream ${s3_endpoint} ${s3_access_key} ${s3_secret_key} ${s3_bucket}");
 
-    try {
-
-      // Maybe we should grab a random UUID here
-      String object_key = "${s3_object_prefix?:''}${file.originalFilename}"
-
-      // Create a minioClient with the MinIO server playground, its access key and secret key.
-      // See https://blogs.ashrithgn.com/spring-boot-uploading-and-downloading-file-from-minio-object-store/
-      MinioClient minioClient =
+    // Create a minioClient with the MinIO server playground, its access key and secret key.
+    // See https://blogs.ashrithgn.com/spring-boot-uploading-and-downloading-file-from-minio-object-store/
+    MinioClient minioClient =
           MinioClient.builder()
               .endpoint(s3_endpoint)
               .credentials(s3_access_key, s3_secret_key)
               .build();
 
-       // minioClient.uploadObject(
-       //    UploadObjectArgs.builder()
-       //        .bucket(s3_bucket)
-       //        .object("filename_in_bucket")
-       //        .filename("/home/user/Photos/asiaphotos.zip")
-       //        .build());
+     minioClient.putObject(
+       PutObjectArgs.builder()
+         .bucket(s3_bucket)
+         .object(object_key)
+         .stream(is, stream_size, offset)
+         .build());
 
-       minioClient.putObject(
-         PutObjectArgs.builder()
-           .bucket(s3_bucket)
-           .object(object_key)
-           .stream(file.getInputStream(), file.size, -1)
-           .build());
-       // putObject / PutObjectArgs takes an inputStream
-       //  PutObjectArgs.builder().bucket("my-bucketname").object("my-objectname").stream( bais, bais.available(), -1)
+    FileObject fobject = new S3FileObject()
+    fobject.s3ref=object_key
+
+    return fobject
+  }
+
+  private FileUpload S3save(MultipartFile file) {
+
+    FileUpload fileUpload = null;
 
 
-      FileObject fobject = new S3FileObject()
-      fobject.s3ref=object_key
 
+    try {
+
+      String object_uuid = java.util.UUID.randomUUID().toString()
+      String s3_object_prefix = AppSetting.getSettingValue('fileStorage', 'S3ObjectPrefix');
+      String object_key = "${s3_object_prefix?:''}${object_uuid}-${file.originalFilename}"
+
+      FileObject fobject = s3FileObjectFromStream(object_key, file.getInputStream(), file.size, -1);
       fileUpload = new FileUpload()
       fileUpload.fileContentType = file.contentType
       fileUpload.fileName = file.originalFilename
@@ -128,4 +130,22 @@ class FileUploadService {
     return fileUpload
   }
 
+
+  // Take the identified file_upload and move it's storage engine
+  public boolean migrate(FileUpload file_upload, String target_engine) {
+    boolean result = true;
+    switch ( target_engine ) {
+      case LOB_STORAGE_ENGINE:
+        if ( ! ( file_upload.fobject instanceof LOBFileObject ) ) {  // Don't migrate if it's already LOB
+          throw new RuntimeException("Migration to LOB storage not implemented");
+        }
+        break;
+      case S3_STORAGE_ENGINE:
+        if ( ! ( file_upload.fobject instanceof S3FileObject ) ) { // Don't migrate if it's already S3
+
+        }
+        break;
+    }
+    return result;
+  }
 }
