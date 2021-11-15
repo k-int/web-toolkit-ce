@@ -173,22 +173,10 @@ class FileUploadService {
                                                             file_object_to_migrate.fileSize, -1)
           
             if ( replacement ) {
-              // file_object_to_migrate.fileObject = replacement;
               replacement.fileUpload = file_object_to_migrate;
               replacement.save(flush:true, failOnError:true);
-  
               FileUpload.executeUpdate('update FileUpload set fileObject=:a where id=:b',[a:replacement, b:file_object_to_migrate.id]);
               FileObject.executeUpdate('delete from FileObject where id = :a',[a:original.id]);
-  
-              // This seems to cause the owning object to become deleted
-              // file_object_to_migrate.fileObject = replacement;
-              // file_object_to_migrate.save(flush:true, failOnError:true);
-              // log.debug("Saved replacement ${file_object_to_migrate}");
-  
-              // Unlink the original fileObject
-              // original.fileUpload = null;
-              // original.save(flush:true, failOnError:true);
-              // original.delete(flush:true, failOnError:true);
             }
           }
         }
