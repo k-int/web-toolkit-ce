@@ -136,7 +136,7 @@ class ToolkitLifecycleSpec extends HttpSpec {
         post_migration_lob_count = LOBFileObject.executeQuery('select count(*) from LOBFileObject').get(0);
         post_migration_s3_count = S3FileObject.executeQuery('select count(*) from S3FileObject').get(0);
       }
-      // post_migration_lob_count == 0;
-      // post_migration_s3_count == 26;
+      post_migration_lob_count == 0;
+      post_migration_s3_count == 27;
   }
 }

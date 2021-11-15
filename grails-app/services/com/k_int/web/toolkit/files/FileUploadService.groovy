@@ -172,6 +172,7 @@ class FileUploadService {
             replacement.save(flush:true, failOnError:true);
 
             FileUpload.executeUpdate('update FileUpload set fileObject=:a where id=:b',[a:replacement, b:file_object_to_migrate.id]);
+            FileObject.executeUpdate('delete from FileObject where id = :a',[a:original.id]);
 
             // This seems to cause the owning object to become deleted
             // file_object_to_migrate.fileObject = replacement;
