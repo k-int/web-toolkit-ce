@@ -41,6 +41,7 @@ class FileUploadService {
 
     return result;
   }
+
   private FileUpload LOBsave(MultipartFile file) {
     // Create our object to house our file data.
     FileObject fobject = new LOBFileObject ()
@@ -94,8 +95,6 @@ class FileUploadService {
 
     FileUpload fileUpload = null;
 
-
-
     try {
 
       String object_uuid = java.util.UUID.randomUUID().toString()
@@ -115,18 +114,6 @@ class FileUploadService {
       log.error("Problem with S3 updload",e);
     }
 
-
-    // https://docs.min.io/docs/java-client-quickstart-guide.html
-    // MinioClient = getMinioClient()
-    // if ( minio_client ) {
-      // See if the S3 credentials check out and the bucket exists
-      // if ( verifyBucket(AppSettings.getAppSetting('BucketName') ) {
-        // https://www.baeldung.com/aws-s3-java
-        // Fetch (And possibly cache) S3 settings needed
-        // perform load
-      //}
-    //}
-    // throw new RuntimeException('not implemented')
     return fileUpload
   }
 
@@ -162,8 +149,42 @@ class FileUploadService {
         break;
     }
 
-    list_to_migrate.each { file_object_to_migrate ->
-      log.debug("Migrate ${file_object_to_migrate}");
+    switch ( to ) { 
+      case LOB_STORAGE_ENGINE:
+        throw new RuntimeException("Migration TO LOB storage not implemented");
+        break;
+      case S3_STORAGE_ENGINE:
+        String s3_object_prefix = AppSetting.getSettingValue('fileStorage', 'S3ObjectPrefix');
+        list_to_migrate.each { file_object_to_migrate ->
+
+          String object_uuid = java.util.UUID.randomUUID().toString()
+          String object_key = "${s3_object_prefix?:''}${object_uuid}-${file_object_to_migrate.fileName}"
+          log.debug("Migrate ${file_object_to_migrate} to S3: ${object_key}");
+          log.debug("Create S3 object for LOB object size=${file_object_to_migrate.fileSize}");
+          FileObject original = file_object_to_migrate.fileObject
+          FileObject replacement = s3FileObjectFromStream(object_key, 
+                                                          file_object_to_migrate.fileObject.fileContents.getBinaryStream(), 
+                                                          file_object_to_migrate.fileSize, -1)
+        
+          if ( replacement ) {
+            // file_object_to_migrate.fileObject = replacement;
+            replacement.fileUpload = file_object_to_migrate;
+            replacement.save(flush:true, failOnError:true);
+
+            FileUpload.executeUpdate('update FileUpload set fileObject=:a where id=:b',[a:replacement, b:file_object_to_migrate.id]);
+
+            // This seems to cause the owning object to become deleted
+            // file_object_to_migrate.fileObject = replacement;
+            // file_object_to_migrate.save(flush:true, failOnError:true);
+            // log.debug("Saved replacement ${file_object_to_migrate}");
+
+            // Unlink the original fileObject
+            // original.fileUpload = null;
+            // original.save(flush:true, failOnError:true);
+            // original.delete(flush:true, failOnError:true);
+          }
+        }
+        break;
     }
   }
 }

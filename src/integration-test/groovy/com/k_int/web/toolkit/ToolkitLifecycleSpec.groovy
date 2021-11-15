@@ -7,6 +7,8 @@ import spock.lang.Specification
 
 import com.k_int.web.toolkit.files.FileUploadService
 import com.k_int.web.toolkit.files.FileUpload;
+import com.k_int.web.toolkit.files.LOBFileObject;
+import com.k_int.web.toolkit.files.S3FileObject;
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.mock.web.MockMultipartFile;
@@ -18,6 +20,7 @@ import org.grails.datastore.mapping.multitenancy.resolvers.SystemPropertyTenantR
 import grails.gorm.multitenancy.Tenants
 import com.k_int.web.toolkit.settings.AppSetting
 import com.k_int.web.toolkit.testing.HttpSpec
+
 
 
 /**
@@ -108,7 +111,18 @@ class ToolkitLifecycleSpec extends HttpSpec {
   }
 
   void "test migration"() {
-    when: "We ask for files to be migrated"
+    when: "We create lots of LOB objects"
+      Tenants.withId('test') {
+        FileUpload.withTransaction { status ->
+          for ( int i=0; i<25; i++ ) {
+            MultipartFile mf = new MockMultipartFile("foo-${i}", "foo-${i}.txt", "text/plain", "Hello World {i}".getBytes())
+            FileUpload fu = fileUploadService.save(mf, FileUploadService.LOB_STORAGE_ENGINE);
+            log.debug("Created LOB test record: ${i}");
+          }
+        }
+      }
+
+    then: "We ask for files to be migrated"
       Tenants.withId('test') {
         FileUpload.withTransaction { status ->
           fileUploadService.migrateAtMost(5,'LOB','S3');
@@ -116,5 +130,13 @@ class ToolkitLifecycleSpec extends HttpSpec {
       }
 
     then: "Files migrated"
+      long post_migration_lob_count = 0;
+      long post_migration_s3_count = 0;
+      Tenants.withId('test') {
+        post_migration_lob_count = LOBFileObject.executeQuery('select count(*) from LOBFileObject').get(0);
+        post_migration_s3_count = S3FileObject.executeQuery('select count(*) from S3FileObject').get(0);
+      }
+      // post_migration_lob_count == 0;
+      // post_migration_s3_count == 26;
   }
 }
