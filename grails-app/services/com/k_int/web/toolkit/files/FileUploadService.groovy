@@ -142,10 +142,10 @@ class FileUploadService {
 
     switch ( from ) {
       case LOB_STORAGE_ENGINE:
-        list_to_migrate = LOBFileObject.executeQuery('select l.fileUpload from LOBFileObject as l');
+        list_to_migrate = LOBFileObject.executeQuery('select l.fileUpload from LOBFileObject as l', [:], [max:n]);
         break;
       case S3_STORAGE_ENGINE:
-        list_to_migrate = LOBFileObject.executeQuery('select l.fileUpload from S3FileObject as l');
+        list_to_migrate = LOBFileObject.executeQuery('select l.fileUpload from S3FileObject as l', [:], [max:n]);
         break;
     }
 

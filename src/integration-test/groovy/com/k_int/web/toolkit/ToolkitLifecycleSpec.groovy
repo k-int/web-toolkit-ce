@@ -125,7 +125,7 @@ class ToolkitLifecycleSpec extends HttpSpec {
     then: "We ask for files to be migrated"
       Tenants.withId('test') {
         FileUpload.withTransaction { status ->
-          fileUploadService.migrateAtMost(5,'LOB','S3');
+          fileUploadService.migrateAtMost(100,'LOB','S3');
         }
       }
 
