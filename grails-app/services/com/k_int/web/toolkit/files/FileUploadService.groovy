@@ -139,13 +139,16 @@ class FileUploadService {
   public boolean migrateAtMost(int n, String from, String to) {
 
     List<FileUpload> list_to_migrate = null;
-
+    Map meta_params = [:]
+    if ( n > 0 ) {
+      meta_params.max = n
+    }
     switch ( from ) {
       case LOB_STORAGE_ENGINE:
-        list_to_migrate = LOBFileObject.executeQuery('select l.fileUpload from LOBFileObject as l', [:], [max:n]);
+        list_to_migrate = LOBFileObject.executeQuery('select l.fileUpload from LOBFileObject as l', [:], meta_params);
         break;
       case S3_STORAGE_ENGINE:
-        list_to_migrate = LOBFileObject.executeQuery('select l.fileUpload from S3FileObject as l', [:], [max:n]);
+        list_to_migrate = LOBFileObject.executeQuery('select l.fileUpload from S3FileObject as l', [:], meta_params);
         break;
     }
 
