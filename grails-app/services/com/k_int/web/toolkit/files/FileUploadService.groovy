@@ -148,4 +148,22 @@ class FileUploadService {
     }
     return result;
   }
+
+  public boolean migrateAtMost(int n, String from, String to) {
+
+    List<FileUpload> list_to_migrate = null;
+
+    switch ( from ) {
+      case LOB_STORAGE_ENGINE:
+        list_to_migrate = LOBFileObject.executeQuery('select l.fileUpload from LOBFileObject as l');
+        break;
+      case S3_STORAGE_ENGINE:
+        list_to_migrate = LOBFileObject.executeQuery('select l.fileUpload from S3FileObject as l');
+        break;
+    }
+
+    list_to_migrate.each { file_object_to_migrate ->
+      log.debug("Migrate ${file_object_to_migrate}");
+    }
+  }
 }

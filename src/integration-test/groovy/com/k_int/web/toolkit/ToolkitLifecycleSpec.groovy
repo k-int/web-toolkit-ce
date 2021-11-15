@@ -102,8 +102,19 @@ class ToolkitLifecycleSpec extends HttpSpec {
           }
         }
 
-      then:"The FileUpload is properly returned"
-        fu != null
+    then:"The FileUpload is properly returned"
+      fu != null
 
+  }
+
+  void "test migration"() {
+    when: "We ask for files to be migrated"
+      Tenants.withId('test') {
+        FileUpload.withTransaction { status ->
+          fileUploadService.migrateAtMost(5,'LOB','S3');
+        }
+      }
+
+    then: "Files migrated"
   }
 }
