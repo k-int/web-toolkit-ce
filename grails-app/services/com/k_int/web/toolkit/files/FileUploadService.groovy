@@ -158,37 +158,53 @@ class FileUploadService {
         break;
       case S3_STORAGE_ENGINE:
         String s3_object_prefix = AppSetting.getSettingValue('fileStorage', 'S3ObjectPrefix');
-        list_to_migrate.each { file_object_to_migrate ->
 
-          String object_uuid = java.util.UUID.randomUUID().toString()
-          String object_key = "${s3_object_prefix?:''}${object_uuid}-${file_object_to_migrate.fileName}"
-          log.debug("Migrate ${file_object_to_migrate} to S3: ${object_key}");
-          log.debug("Create S3 object for LOB object size=${file_object_to_migrate.fileSize}");
-          FileObject original = file_object_to_migrate.fileObject
-          FileObject replacement = s3FileObjectFromStream(object_key, 
-                                                          file_object_to_migrate.fileObject.fileContents.getBinaryStream(), 
-                                                          file_object_to_migrate.fileSize, -1)
-        
-          if ( replacement ) {
-            // file_object_to_migrate.fileObject = replacement;
-            replacement.fileUpload = file_object_to_migrate;
-            replacement.save(flush:true, failOnError:true);
-
-            FileUpload.executeUpdate('update FileUpload set fileObject=:a where id=:b',[a:replacement, b:file_object_to_migrate.id]);
-            FileObject.executeUpdate('delete from FileObject where id = :a',[a:original.id]);
-
-            // This seems to cause the owning object to become deleted
-            // file_object_to_migrate.fileObject = replacement;
-            // file_object_to_migrate.save(flush:true, failOnError:true);
-            // log.debug("Saved replacement ${file_object_to_migrate}");
-
-            // Unlink the original fileObject
-            // original.fileUpload = null;
-            // original.save(flush:true, failOnError:true);
-            // original.delete(flush:true, failOnError:true);
+        // Firstly - check that S3 is configured properly
+        if ( checkS3Configured() ) {
+          list_to_migrate.each { file_object_to_migrate ->
+  
+            String object_uuid = java.util.UUID.randomUUID().toString()
+            String object_key = "${s3_object_prefix?:''}${object_uuid}-${file_object_to_migrate.fileName}"
+            log.debug("Migrate ${file_object_to_migrate} to S3: ${object_key}");
+            log.debug("Create S3 object for LOB object size=${file_object_to_migrate.fileSize}");
+            FileObject original = file_object_to_migrate.fileObject
+            FileObject replacement = s3FileObjectFromStream(object_key, 
+                                                            file_object_to_migrate.fileObject.fileContents.getBinaryStream(), 
+                                                            file_object_to_migrate.fileSize, -1)
+          
+            if ( replacement ) {
+              // file_object_to_migrate.fileObject = replacement;
+              replacement.fileUpload = file_object_to_migrate;
+              replacement.save(flush:true, failOnError:true);
+  
+              FileUpload.executeUpdate('update FileUpload set fileObject=:a where id=:b',[a:replacement, b:file_object_to_migrate.id]);
+              FileObject.executeUpdate('delete from FileObject where id = :a',[a:original.id]);
+  
+              // This seems to cause the owning object to become deleted
+              // file_object_to_migrate.fileObject = replacement;
+              // file_object_to_migrate.save(flush:true, failOnError:true);
+              // log.debug("Saved replacement ${file_object_to_migrate}");
+  
+              // Unlink the original fileObject
+              // original.fileUpload = null;
+              // original.save(flush:true, failOnError:true);
+              // original.delete(flush:true, failOnError:true);
+            }
           }
         }
         break;
     }
+  }
+  
+  private boolean checkS3Configured() {
+    String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
+    String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
+    String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
+    String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
+
+    return ( ( s3_endpoint != null ) &&
+             ( s3_access_key != null ) &&
+             ( s3_secret_key != null ) &&
+             ( s3_bucket != null ) )
   }
 }
