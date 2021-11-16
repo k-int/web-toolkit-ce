@@ -195,4 +195,24 @@ class FileUploadService {
              ( s3_secret_key != null ) &&
              ( s3_bucket != null ) )
   }
+
+  /**
+   * Return the inputStream for the given S3FileObject so we can stream the contents to a user
+   */
+  private InputStream getS3FileStream(S3FileObject fo) {
+    String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
+    String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
+    String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
+    String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
+
+    // Create a minioClient with the MinIO server playground, its access key and secret key.
+    // See https://blogs.ashrithgn.com/spring-boot-uploading-and-downloading-file-from-minio-object-store/
+    MinioClient minioClient =
+          MinioClient.builder()
+              .endpoint(s3_endpoint)
+              .credentials(s3_access_key, s3_secret_key)
+              .build();
+
+    return minioClient.getObject(s3_bucket, fi.s3ref)
+  }
 }
