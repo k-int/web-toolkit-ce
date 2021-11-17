@@ -8,6 +8,7 @@ import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.UploadObjectArgs;
 import io.minio.PutObjectArgs;
+import io.minio.GetObjectArgs;
 import io.minio.errors.MinioException;
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -213,7 +214,12 @@ class FileUploadService {
               .credentials(s3_access_key, s3_secret_key)
               .build();
 
-    return minioClient.getObject(s3_bucket, fi.s3ref)
+    // return minioClient.getObject(s3_bucket, fo.s3ref)
+    return minioClient.getObject(
+             GetObjectArgs.builder()
+             .bucket(s3_bucket)
+             .object(fo.s3ref)
+             .build());
   }
 
   private InputStream getInputStreamFor(FileObject fo) {
@@ -223,7 +229,7 @@ class FileUploadService {
     if ( fo instanceof S3FileObject ) {
       result = getS3FileStream(fo);
     }
-    else if ( fi instanceof LOBFileObject ) {
+    else if ( fo instanceof LOBFileObject ) {
       result = fo.fileContents.binaryStream
     }
 

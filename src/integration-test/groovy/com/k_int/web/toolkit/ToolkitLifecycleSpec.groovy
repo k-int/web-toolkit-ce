@@ -102,6 +102,9 @@ class ToolkitLifecycleSpec extends HttpSpec {
           FileUpload.withTransaction { status ->
             MultipartFile mf = new MockMultipartFile("foo", "foo.txt", "text/plain", "Hello World".getBytes())
             fu = fileUploadService.save(mf, FileUploadService.S3_STORAGE_ENGINE);
+
+            String retrieved_file_contents = fileUploadService.getInputStreamFor(fu.fileObject).getText("UTF-8")
+            log.debug("Retrieved file content: ${retrieved_file_contents}");
           }
         }
 
@@ -115,9 +118,15 @@ class ToolkitLifecycleSpec extends HttpSpec {
       Tenants.withId('test') {
         FileUpload.withTransaction { status ->
           for ( int i=0; i<25; i++ ) {
-            MultipartFile mf = new MockMultipartFile("foo-${i}", "foo-${i}.txt", "text/plain", "Hello World {i}".getBytes())
+            String file_content = "Hello World ${i}";
+            MultipartFile mf = new MockMultipartFile("foo-${i}", "foo-${i}.txt", "text/plain", file_content.getBytes())
             FileUpload fu = fileUploadService.save(mf, FileUploadService.LOB_STORAGE_ENGINE);
             log.debug("Created LOB test record: ${i}");
+
+            // Retrieve content
+            String retrieved_file_contents = fileUploadService.getInputStreamFor(fu.fileObject).getText("UTF-8") 
+            log.debug("Retrieved file content: ${retrieved_file_contents}");
+            assert file_content.equals(retrieved_file_contents)
           }
         }
       }
