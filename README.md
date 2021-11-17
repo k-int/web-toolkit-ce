@@ -38,3 +38,53 @@ A root level docker-compose file is provided that provisions the components need
       * fileStorage.S3BucketName - S3 Bucket to use
       * fileStorage.S3ObjectPrefix - The path prefix this service should use - which will allow different contexts to share a single bucket if that is wanted
 
+
+## Migrations
+
+  If you are using liquibase migrations, the following section outlines the migrations needed by web-toolkit
+
+```
+  changeSet(author: "web-toolkit-1 (manual)", id: "202011101241-001") {
+    createTable(tableName: "app_setting") {
+      column(name: "st_id", type: "VARCHAR(36)") { constraints(nullable: "false") }
+      column(name: "st_version", type: "BIGINT") { constraints(nullable: "false") }
+      column(name: 'st_section', type: "VARCHAR(255)")
+      column(name: 'st_key', type: "VARCHAR(255)")
+      column(name: 'st_setting_type', type: "VARCHAR(255)")
+      column(name: 'st_vocab', type: "VARCHAR(255)")
+      column(name: 'st_default_value', type: "VARCHAR(255)")
+      column(name: 'st_value', type: "VARCHAR(255)")
+    }
+
+    createTable(tableName: "file_upload") {
+      column(name: "fu_id", type: "VARCHAR(36)") { constraints(nullable: "false") }
+      column(name: "version", type: "BIGINT") { constraints(nullable: "false") }
+      column(name: "fu_filesize", type: "BIGINT") { constraints(nullable: "false") }
+      column(name: "fu_last_mod", type: "timestamp")
+      column(name: "file_content_type", type: "VARCHAR(255)")
+      column(name: "fu_owner", type: "VARCHAR(36)")
+      column(name: "fu_filename", type: "VARCHAR(255)") { constraints(nullable: "false") }
+      column(name: "fu_bytes", type: "bytea")
+      column(name: "file_object_id", type: "varchar(36)")
+    }
+
+    createTable(tableName: "file_object") {
+      column(name: "fo_id", type: "VARCHAR(36)") { constraints(nullable: "false") }
+      column(name: "version", type: "BIGINT") { constraints(nullable: "false") }
+      column(name: "file_contents", type: "OID")
+      column(name: "class", type: "VARCHAR(255)")
+      column(name: "fo_s3ref", type: "VARCHAR(255)")
+    }
+
+    addPrimaryKey(columnNames: "fo_id", constraintName: "file_objectPK", tableName: "file_object")
+
+    grailsChange {
+      change {
+        sql.execute("UPDATE ${database.defaultSchemaName}.file_object SET class = 'LOB' where class is null".toString());
+      }
+    }
+
+  }
+
+
+```
