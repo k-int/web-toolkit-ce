@@ -13,6 +13,7 @@ import io.minio.errors.MinioException;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import org.hibernate.Hibernate;
 
 class FileUploadService {
 
@@ -214,6 +215,8 @@ class FileUploadService {
               .credentials(s3_access_key, s3_secret_key)
               .build();
 
+    log.debug("Attempt to retrieve file ${fo.s3ref} from bucket ${s3_bucket}");
+
     // return minioClient.getObject(s3_bucket, fo.s3ref)
     return minioClient.getObject(
              GetObjectArgs.builder()
@@ -226,11 +229,16 @@ class FileUploadService {
 
     InputStream result = null;
 
-    if ( fo instanceof S3FileObject ) {
-      result = getS3FileStream(fo);
-    }
-    else if ( fo instanceof LOBFileObject ) {
-      result = fo.fileContents.binaryStream
+    if ( fo != null ) {
+      if ( S3FileObject.isAssignableFrom(fo.class) ) {
+        result = getS3FileStream(Hibernate.unproxy(fo));
+      }
+      else if ( LOBFileObject.isAssignableFrom(fo.class) ) {
+        result = fo.fileContents.binaryStream
+      }
+      else {
+        throw new RuntimeException("Unknown class for file object: ${fo?.class?.name}");
+      }
     }
 
     return result;

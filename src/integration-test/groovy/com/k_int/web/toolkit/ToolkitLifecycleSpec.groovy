@@ -86,8 +86,9 @@ class ToolkitLifecycleSpec extends HttpSpec {
       FileUpload fu = null;
       Tenants.withId('test') {
         FileUpload.withTransaction { status ->
-          MultipartFile mf = new MockMultipartFile("foo", "foo.txt", "text/plain", "Hello World".getBytes())
+          MultipartFile mf = new MockMultipartFile("foo-lob.txt", "foo-lob.txt", "text/plain", "Hello World - LOB version".getBytes())
           fu = fileUploadService.save(mf);
+          log.debug("Saved LOB test file as ${fu.fileName}");
         }
       }
 
@@ -100,11 +101,13 @@ class ToolkitLifecycleSpec extends HttpSpec {
         FileUpload fu = null;
         Tenants.withId('test') {
           FileUpload.withTransaction { status ->
-            MultipartFile mf = new MockMultipartFile("foo", "foo.txt", "text/plain", "Hello World".getBytes())
+            String initial_upload = "Hello World"
+            MultipartFile mf = new MockMultipartFile("foo", "foo.txt", "text/plain", initial_upload.getBytes())
             fu = fileUploadService.save(mf, FileUploadService.S3_STORAGE_ENGINE);
 
             String retrieved_file_contents = fileUploadService.getInputStreamFor(fu.fileObject).getText("UTF-8")
-            log.debug("Retrieved file content: ${retrieved_file_contents}");
+            log.debug("Saved file upload with name ${fu.fileName} - Retrieved file content: ${retrieved_file_contents}");
+            assert retrieved_file_contents.equals(initial_upload)
           }
         }
 
@@ -147,5 +150,46 @@ class ToolkitLifecycleSpec extends HttpSpec {
       }
       post_migration_lob_count == 0;
       post_migration_s3_count == 27;
+  }
+
+  void "test object retrieval post migration"() {
+    when: "We create lots of LOB objects"
+
+      String retrieved_content = null;
+
+      Tenants.withId('test') {
+        FileUpload.withTransaction { status ->
+          FileUpload.list().each { fu ->
+            log.debug("[${fu.id}] ${fu.fileName} ${fu.fileObject.class.name}");
+            if ( fu.fileObject != null ) {
+              InputStream is = fileUploadService.getInputStreamFor(fu.fileObject)
+              if ( is ) {
+                String s = is.getText("UTF-8")
+                log.debug(s);
+              }
+              else {
+                log.warn("getInputStreamFor returned NULL");
+              }
+            }
+            else {
+              log.warn("MISSING file object");
+            }
+          }
+
+          FileUpload fu = FileUpload.findByFileName('foo-lob.txt');
+          if ( fu != null ) {
+            InputStream is = fileUploadService.getInputStreamFor(fu.fileObject)
+            if ( is ) {
+              retrieved_content = is.getText("UTF-8")
+            }
+          }
+          else {
+            log.warn("Unable to locate foo-lob.txt");
+          }
+        }
+      }
+
+    then: "Check content is as expected"
+      retrieved_content.equals('Hello World - LOB version')
   }
 }
