@@ -215,4 +215,18 @@ class FileUploadService {
 
     return minioClient.getObject(s3_bucket, fi.s3ref)
   }
+
+  private InputStream getInputStreamFor(FileObject fo) {
+
+    InputStream result = null;
+
+    if ( fo instanceof S3FileObject ) {
+      result = getS3FileStream(fo);
+    }
+    else if ( fi instanceof LOBFileObject ) {
+      result = fo.fileContents.binaryStream
+    }
+
+    return result;
+  }
 }
