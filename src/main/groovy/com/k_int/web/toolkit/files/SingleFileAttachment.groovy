@@ -12,8 +12,9 @@ abstract class SingleFileAttachment implements MultiTenant<SingleFileAttachment>
   // layer.
   
   String id
-  FileUpload fileUpload
-  static hasOne = [fileUpload: FileUpload]
+  // static hasOne = [fileUpload: FileUpload]
+  // FileUpload fileUpload
+  static belongsTo = [fileUpload: FileUpload]
   static mappedBy = [fileUpload: 'owner']
   
   public void setFileUpload(FileUpload fileUpload) {

@@ -14,6 +14,8 @@ import grails.util.Environment
 import grails.web.databinding.DataBindingUtils
 import groovy.util.logging.Slf4j
 
+import grails.web.databinding.GrailsWebDataBinder
+
 @Slf4j
 class WebToolkitGrailsPlugin extends Plugin {
 
@@ -71,6 +73,9 @@ class WebToolkitGrailsPlugin extends Plugin {
     
     
     // Replace the default data binder with out custom version.
+    // println("Get existing data binder...");
+    // GrailsWebDataBinder existingDataBinder = application.mainContext.getBean(GrailsWebDataBinder.class)
+    // println("replace data binder...");
     "${DataBindingUtils.DATA_BINDER_BEAN_NAME}"(ExtendedWebDataBinder, grailsApplication)
     
 //    "someValue"(TestBean)

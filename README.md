@@ -18,3 +18,89 @@ APL license so it can be reused in other open source projects.
   compile "com.k_int.grails:web-toolkit-ce:5.0.0"
 ```
 _NOTE:_ You may need to substitute the version number with the latest release.
+
+# Other Notes
+
+## Releasing
+```
+./gradlew cgTagFinal to tag a final "release"
+```
+
+or
+
+```
+./gradlew cgTagPre to try a pre-release...
+```
+
+Then to publish that:
+```
+./gradlew publishMavenPublicationToKIntRepository
+```
+
+## Testing
+
+A root level docker-compose file is provided that provisions the components needed for the integration tests to run. Test with
+
+    docker-compose down -v   # To clear any previous data
+    docker-compose up
+    ./gradlew clean build
+
+## MINIO/S3 File Storage
+
+    MINIO File storage has been added. The following AppSetting entries control file uploads now
+      * fileStorage.S3Endpoint  - The S3 endpoint - e.g. http://localhost:9000 for MINIO in the test system
+      * fileStorage.S3AccessKey - S3 Access Key
+      * fileStorage.S3SecretKey - S3 Secret Key
+      * fileStorage.S3BucketName - S3 Bucket to use
+      * fileStorage.S3ObjectPrefix - The path prefix this service should use - which will allow different contexts to share a single bucket if that is wanted
+
+
+## Migrations
+
+  If you are using liquibase migrations, the following section outlines the migrations needed by web-toolkit
+
+```
+  changeSet(author: "web-toolkit-1 (manual)", id: "202011101241-001") {
+    createTable(tableName: "app_setting") {
+      column(name: "st_id", type: "VARCHAR(36)") { constraints(nullable: "false") }
+      column(name: "st_version", type: "BIGINT") { constraints(nullable: "false") }
+      column(name: 'st_section', type: "VARCHAR(255)")
+      column(name: 'st_key', type: "VARCHAR(255)")
+      column(name: 'st_setting_type', type: "VARCHAR(255)")
+      column(name: 'st_vocab', type: "VARCHAR(255)")
+      column(name: 'st_default_value', type: "VARCHAR(255)")
+      column(name: 'st_value', type: "VARCHAR(255)")
+    }
+
+    createTable(tableName: "file_upload") {
+      column(name: "fu_id", type: "VARCHAR(36)") { constraints(nullable: "false") }
+      column(name: "version", type: "BIGINT") { constraints(nullable: "false") }
+      column(name: "fu_filesize", type: "BIGINT") { constraints(nullable: "false") }
+      column(name: "fu_last_mod", type: "timestamp")
+      column(name: "file_content_type", type: "VARCHAR(255)")
+      column(name: "fu_owner", type: "VARCHAR(36)")
+      column(name: "fu_filename", type: "VARCHAR(255)") { constraints(nullable: "false") }
+      column(name: "fu_bytes", type: "bytea")
+      column(name: "file_object_id", type: "varchar(36)")
+    }
+
+    createTable(tableName: "file_object") {
+      column(name: "fo_id", type: "VARCHAR(36)") { constraints(nullable: "false") }
+      column(name: "version", type: "BIGINT") { constraints(nullable: "false") }
+      column(name: "file_contents", type: "OID")
+      column(name: "class", type: "VARCHAR(255)")
+      column(name: "fo_s3ref", type: "VARCHAR(255)")
+    }
+
+    addPrimaryKey(columnNames: "fo_id", constraintName: "file_objectPK", tableName: "file_object")
+
+    grailsChange {
+      change {
+        sql.execute("UPDATE ${database.defaultSchemaName}.file_object SET class = 'LOB' where class is null".toString());
+      }
+    }
+
+  }
+
+
+```

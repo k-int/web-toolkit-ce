@@ -16,42 +16,21 @@ import groovy.util.logging.Slf4j
 @Entity
 @Slf4j
 @GrailsCompileStatic
-class FileObject implements MultiTenant<FileObject>, Clonable<FileObject> {
+abstract class FileObject implements MultiTenant<FileObject>, Clonable<FileObject> {
 
   String id
   FileUpload fileUpload
   
   static belongsTo = [fileUpload: FileUpload]
   
-  static cloneStaticValues = [
-    fileContents: { 
-      BlobProxy.generateProxy(owner.fileContents.getBinaryStream(), owner.fileContents.length()) 
-    }
-  ]
-  
-  @Lob
-  Blob fileContents
-    
-  void setFileContents ( Blob fileContents ) {
-    this.fileContents = fileContents
-  }
-  
-  void setFileContents( InputStream is, long length ) {
-    setFileContents( BlobProxy.generateProxy(is, length) )
-  }
-  
-  void setFileContents( MultipartFile file ) {
-    setFileContents( file.inputStream, file.size )
-  }
-
   static constraints = {
-    fileContents nullable: false
     fileUpload   nullable: false
   }
 
   static mapping = {
-                  id column: 'fo_id', generator: 'uuid2', length: 36
-         fileContent column: 'fo_contents'
+    tablePerHierarchy true
+    // discriminator "fo_engine"
+    id column: 'fo_id', generator: 'uuid2', length: 36
   }
   
   @Override

@@ -22,10 +22,10 @@ class FileUpload implements MultiTenant<FileUpload>, Clonable<FileUpload> {
   static copyByCloning = ['fileObject']
 
   static constraints = {
-    fileObject nullable: false
-    fileContentType nullable: true
-    lastUpdated nullable: true
-    owner nullable: true
+         fileObject(nullable: false)
+    fileContentType(nullable: true)
+        lastUpdated(nullable: true)
+              owner(nullable: true)
   }
 
   static mapping = {
@@ -33,8 +33,8 @@ class FileUpload implements MultiTenant<FileUpload>, Clonable<FileUpload> {
     fileContentBytes column: 'fu_file_object'
             fileName column: 'fu_filename'
             fileSize column: 'fu_filesize'
-        lastUpdated column: 'fu_last_mod'
-               owner column: 'fu_owner', type: 'string', length: 36
+         lastUpdated column: 'fu_last_mod'
+               owner column: 'fu_owner'
   }
 
   def afterUpdate() {
