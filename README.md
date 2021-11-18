@@ -21,6 +21,22 @@ _NOTE:_ You may need to substitute the version number with the latest release.
 
 # Other Notes
 
+## Releasing
+```
+./gradlew cgTagFinal to tag a final "release"
+```
+
+or
+
+```
+./gradlew cgTagPre to try a pre-release...
+```
+
+Then to publish that:
+```
+./gradlew publishMavenPublicationToKIntRepository
+```
+
 ## Testing
 
 A root level docker-compose file is provided that provisions the components needed for the integration tests to run. Test with
