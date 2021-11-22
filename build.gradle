@@ -79,9 +79,11 @@ dependencies {
   compile 'com.ibm.icu:icu4j:62.1'
   provided 'org.springframework.security:spring-security-web:5.1.8.RELEASE'
   compile 'io.github.http-builder-ng:http-builder-ng-core:1.0.4'
-  provided "org.grails.plugins:geb"
-  provided "org.seleniumhq.selenium:selenium-api:3.14.0"
+  
+  
+  testRuntime "org.seleniumhq.selenium:selenium-api:3.14.0"
   testRuntime "org.postgresql:postgresql:42.2.23"
+  testRuntime "org.grails.plugins:geb"
 
   // Minio for file storage to S3
   compile "io.minio:minio:8.3.3"
