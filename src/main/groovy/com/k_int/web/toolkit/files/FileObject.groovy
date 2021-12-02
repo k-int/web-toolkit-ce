@@ -13,9 +13,8 @@ import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 import groovy.util.logging.Slf4j
 
-@Entity
-@Slf4j
 @GrailsCompileStatic
+@Entity
 abstract class FileObject implements MultiTenant<FileObject>, Clonable<FileObject> {
 
   String id
