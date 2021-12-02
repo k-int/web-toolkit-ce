@@ -6,9 +6,8 @@ import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 import groovy.util.logging.Slf4j
 
-@Entity
-@Slf4j
 @GrailsCompileStatic
+@Entity
 class S3FileObject extends FileObject implements MultiTenant<S3FileObject>, Clonable<S3FileObject> {
 
   String s3ref

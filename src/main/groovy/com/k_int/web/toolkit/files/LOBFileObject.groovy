@@ -13,9 +13,8 @@ import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 import groovy.util.logging.Slf4j
 
-@Entity
-@Slf4j
 @GrailsCompileStatic
+@Entity
 class LOBFileObject extends FileObject implements MultiTenant<LOBFileObject>, Clonable<LOBFileObject> {
 
   static cloneStaticValues = [
