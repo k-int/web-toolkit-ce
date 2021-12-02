@@ -41,10 +41,15 @@ class FileUploadService {
         break;
     }
 
+    log.debug("FileUploadService::save(...,${storageEngine}) returning ${result}");
+
     return result;
   }
 
   private FileUpload LOBsave(MultipartFile file) {
+
+    log.debug("LOBsave...");
+
     // Create our object to house our file data.
     FileObject fobject = new LOBFileObject ()
     fobject.fileContents = file
@@ -95,6 +100,7 @@ class FileUploadService {
 
   private FileUpload S3save(MultipartFile file) {
 
+    log.debug("S3save....");
     FileUpload fileUpload = null;
 
     try {
@@ -231,10 +237,12 @@ class FileUploadService {
 
     if ( fo != null ) {
       if ( S3FileObject.isAssignableFrom(fo.class) ) {
-        result = getS3FileStream(Hibernate.unproxy(fo));
+        S3FileObject s3_file_object = (S3FileObject) Hibernate.unproxy(fo);
+        result = getS3FileStream(s3_file_object);
       }
       else if ( LOBFileObject.isAssignableFrom(fo.class) ) {
-        result = fo.fileContents.binaryStream
+        LOBFileObject lob_file_object = (LOBFileObject) Hibernate.unproxy(fo)
+        result = lob_file_object.fileContents.binaryStream
       }
       else {
         throw new RuntimeException("Unknown class for file object: ${fo?.class?.name}");
