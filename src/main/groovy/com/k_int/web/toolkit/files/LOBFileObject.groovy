@@ -44,7 +44,6 @@ class LOBFileObject extends FileObject implements MultiTenant<LOBFileObject>, Cl
 
   static mapping = {
     discriminator "DB"
-         fileContent column: 'fo_contents'
   }
   
   @Override
