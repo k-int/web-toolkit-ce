@@ -191,7 +191,7 @@ public class DomainUtils {
               }
             
               currentDef = new InternalPropertyDefinition()
-              currentDef.cacheable = true
+              currentDef.cacheable = false // ERM-1931 -- this caching was causing issues with nested sortable properties of unsortable properties
               currentDef.domain = (type instanceof PersistentEntity || mappingContext.isPersistentEntity(type))
               currentDef.type   = (type instanceof PersistentEntity ? type.javaClass : type)
               currentDef.owner  = owner
