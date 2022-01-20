@@ -24,6 +24,7 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
   String name
   String label
   String description
+  String ctx
   Class<? extends CustomProperty> type
   
   // Denotes primary. This is the primary sort, then weight, then id.
@@ -58,6 +59,7 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
     description     (nullable: true, blank: false)
     type            (bindable: false, nullable: false)
     label           (nullable: false, blank: false)
+    ctx             (nullable: true)
     primary         (nullable: false)
   }
 
@@ -70,6 +72,7 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
     label column: 'pd_label', index: 'td_label_idx'
     weight column: 'pd_weight', index: 'td_weight_idx'
     primary column: 'pd_primary', index: 'td_primary_idx'
+    ctx column: 'pd_ctx'
     sort 'primary': 'asc', 'weight':'asc', 'id':'asc'
   }
   
