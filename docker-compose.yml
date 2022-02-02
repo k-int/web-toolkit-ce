@@ -1,7 +1,7 @@
 version: "2.1"
 
 volumes:
-  minio_data:
+  wt_minio_data:
     driver: local
 
 services:
@@ -23,7 +23,7 @@ services:
       - 54321:5432
 
   minio:
-    container_name: minio
+    container_name: wt_minio
     hostname: minio
     image:  docker.io/bitnami/minio:2021
     environment:
@@ -32,7 +32,7 @@ services:
       - MINIO_DEFAULT_BUCKETS=my-first-bucket,my-second-bucket
       - MINIO_CONFIG_DIR=/minio_config
     volumes:
-      - minio_data:/data
+      - wt_minio_data:/data
       - ./minio_config:/minio_config
     ports:
       - 9000:9000
