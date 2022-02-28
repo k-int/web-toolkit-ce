@@ -58,6 +58,7 @@ class ToolkitLifecycleSpec extends HttpSpec {
       [ 'fileStorage', 'S3SecretKey',   'String', null,                 'DIKU_AGG_SECRET_KEY' ],
       [ 'fileStorage', 'S3BucketName',  'String', null,                 'diku-shared' ],
       [ 'fileStorage', 'S3ObjectPrefix','String', null,                 '/diku/test-module/' ],
+      [ 'fileStorage', 'S3BucketRegion','String', null,                 'us-east-1' ],
     ].each { st_row ->
       log.debug("Adding setting ${st_row}");
       AppSetting new_as = new AppSetting( 
