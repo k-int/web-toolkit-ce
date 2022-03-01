@@ -73,7 +73,7 @@ public class RestfulController<T> extends grails.rest.RestfulController<T> {
         return
     }
 
-    log.debug("RestfulController.update() :: DB Version: ${instance?.version} request version: ${getObjectToBind()?.version}");
+    // log.debug("RestfulController.update() :: DB Version: ${instance?.version} request version: ${getObjectToBind()?.version}");
 
     // This is the properties assigning that does not work for entities not in the
     // domain folder. Replace it with a bindData instead.
