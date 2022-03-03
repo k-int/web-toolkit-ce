@@ -214,6 +214,7 @@ class FileUploadService {
     String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
     String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
     String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
+    String s3_region = AppSetting.getSettingValue('fileStorage', 'S3BucketRegion') ?: 'us-east-1';
 
     // Create a minioClient with the MinIO server playground, its access key and secret key.
     // See https://blogs.ashrithgn.com/spring-boot-uploading-and-downloading-file-from-minio-object-store/
@@ -229,6 +230,7 @@ class FileUploadService {
     return minioClient.getObject(
              GetObjectArgs.builder()
              .bucket(s3_bucket)
+             .region(s3_region)
              .object(fo.s3ref)
              .build());
   }
