@@ -30,4 +30,6 @@ abstract class FileObject implements MultiTenant<FileObject> {
     id column: 'fo_id', generator: 'uuid2', length: 36
   }
   
+  public abstract FileObject clone();
+
 }
