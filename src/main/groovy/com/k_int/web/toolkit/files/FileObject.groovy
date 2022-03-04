@@ -30,6 +30,7 @@ abstract class FileObject implements MultiTenant<FileObject> {
     id column: 'fo_id', generator: 'uuid2', length: 36
   }
   
+  // See if this resolves the clone issue
   public abstract FileObject clone();
 
 }
