@@ -196,26 +196,47 @@ class ToolkitLifecycleSpec extends HttpSpec {
 
   void "test clone S3 File Object"() {
     when:"We try to clone an S3 file"
-        FileUpload fu = null;
-        FileUpload fu2 = null;
+
+        String created_fu_id = null;
+        String cloned_fu_id = null;
+
         Tenants.withId('test') {
           FileUpload.withTransaction { status ->
+
+            FileUpload fu = null;
+
             String initial_upload = "Hello World"
             MultipartFile mf = new MockMultipartFile("foo86", "foo86.txt", "text/plain", initial_upload.getBytes())
             fu = fileUploadService.save(mf, FileUploadService.S3_STORAGE_ENGINE);
-
             String retrieved_file_contents = fileUploadService.getInputStreamFor(fu.fileObject).getText("UTF-8")
             log.debug("Saved file upload with name ${fu.fileName} - Retrieved file content: ${retrieved_file_contents}");
             assert retrieved_file_contents.equals(initial_upload)
+            created_fu_id = fu.id;
+            // fu2 = fu.clone();
+            // fu2.save(flush:true, failOnError:true)
 
+            FileUpload.withSession { session ->
+              session.flush()
+              session.clear()
+            }
+          }
 
-            fu2 = fu.clone();
-            fu2.save(flush:true, failOnError:true)
+          FileUpload.withTransaction { status ->
+            FileUpload fu_loaded = FileUpload.executeQuery('select fu from FileUpload as fu').find { it.id == created_fu_id }
+            if ( fu_loaded != null ) {
+              log.debug("Got instance of ${fu_loaded?.class?.name}");
+              FileUpload fu2 = fu_loaded.clone();
+              cloned_fu_id = fu2.id;
+              log.debug("File upload cloned -- ${cloned_fu_id}");
+            }
+            else {
+              log.warn("Unable to find file upload");
+            }
           }
         }
 
     then:"The FileUpload is properly returned"
-      fu != null
+      cloned_fu_id != null
 
   }
 

@@ -142,7 +142,8 @@ trait Clonable<D> {
       if (val != null) {
         if (deepClone) {
         
-          getLog()?.debug "Copying property ${propertyName} by cloned value"
+          getLog()?.debug "deepClone Copying property ${propertyName}. It is an instance of ${val?.class?.name}"
+
           if (val instanceof Collection) {
             getLog()?.debug "${propertyName} is a collection"
             def values = val.collect({ it.clone() })
