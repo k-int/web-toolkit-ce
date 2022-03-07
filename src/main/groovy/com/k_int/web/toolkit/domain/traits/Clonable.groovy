@@ -9,12 +9,12 @@ import org.grails.datastore.mapping.model.types.OneToMany
 import org.grails.datastore.mapping.model.types.OneToOne
 import org.grails.datastore.mapping.model.types.ToMany
 import org.slf4j.Logger
-
 import com.k_int.web.toolkit.utils.GormUtils
-
 import grails.util.GrailsClassUtils
 import groovy.transform.CompileStatic
 import groovy.transform.SelfType
+import org.hibernate.Hibernate;
+
 
 /**
  * A trait for a domain class to implement to add the ability to create a clone of itself.
@@ -156,7 +156,7 @@ trait Clonable<D> {
               to[propertyName] = values
             }
           } else {
-            to[propertyName] = val.invokeMethod('clone', [])
+            to[propertyName] = (Hibernate.unproxy(val)).invokeMethod('clone', [])
           }
         } else {
         

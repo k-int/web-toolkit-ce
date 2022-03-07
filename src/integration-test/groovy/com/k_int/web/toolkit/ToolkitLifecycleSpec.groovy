@@ -226,6 +226,7 @@ class ToolkitLifecycleSpec extends HttpSpec {
             if ( fu_loaded != null ) {
               log.debug("Got instance of ${fu_loaded?.class?.name}");
               FileUpload fu2 = fu_loaded.clone();
+              fu2.save(flush:true, failOnError:true);
               cloned_fu_id = fu2.id;
               log.debug("File upload cloned -- ${cloned_fu_id}");
             }
