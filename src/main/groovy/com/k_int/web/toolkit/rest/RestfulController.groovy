@@ -55,6 +55,7 @@ public class RestfulController<T> extends grails.rest.RestfulController<T> {
     simpleLookupService.lookupAsBatchedStream(res, params.term, maxChunkSize, filters, match_in, sorts, baseQuery)
   }
   
+  @Transactional
   def index(Integer max) {
     respond doTheLookup()
   }

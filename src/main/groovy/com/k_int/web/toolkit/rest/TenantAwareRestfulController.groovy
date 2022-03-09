@@ -5,6 +5,7 @@ import grails.gorm.multitenancy.CurrentTenant
 import grails.gorm.transactions.Transactional
 
 
+@Transactional
 @CurrentTenant
 @Artefact('Controller')
 class TenantAwareRestfulController<T> extends RestfulController<T> {
@@ -17,6 +18,7 @@ class TenantAwareRestfulController<T> extends RestfulController<T> {
     super(resource, readOnly)
   }
 
+  @Transactional
   def index(Integer max) {
     super.index(max)
   }
@@ -25,10 +27,12 @@ class TenantAwareRestfulController<T> extends RestfulController<T> {
     super.getObjectToBind()
   }
 
+  @Transactional
   def show() {
     super.show()
   }
 
+  @Transactional
   def create() {
     super.create()
   }
