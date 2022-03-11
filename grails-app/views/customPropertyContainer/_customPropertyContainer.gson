@@ -5,6 +5,8 @@ import com.k_int.web.toolkit.custprops.CustomProperty
 import com.k_int.web.toolkit.custprops.types.CustomPropertyContainer
 import groovy.transform.*
 
+import java.time.temporal.Temporal
+
 @Field CustomPropertyContainer customPropertyContainer
 
 // Build up a map for easy sorting.
@@ -22,7 +24,14 @@ json {
   propMap.each { final String propName, Set<CustomProperty> props ->
     call propName, props, { CustomProperty p ->
       g.inline( p , [excludes: ['definition', 'parent', 'value'] ]) {
-        if (DomainClassArtefactHandler.isDomainClass(Hibernate.getClass(p.value))) {
+
+        Class<?> valueClass = Hibernate.getClass(p.value)
+
+        // Temporal is the base interface for many Date/Time types
+        if ( Temporal.isAssignableFrom(valueClass) ){
+          value "${p.value}" // ToString()
+
+        } else if (DomainClassArtefactHandler.isDomainClass(Hibernate.getClass(p.value))) {
           value g.render (p.value, [excludes: ['owner'] ])
         } else {
           value p.value
