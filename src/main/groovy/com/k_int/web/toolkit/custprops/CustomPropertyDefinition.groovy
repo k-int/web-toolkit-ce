@@ -29,6 +29,9 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
   
   // Denotes primary. This is the primary sort, then weight, then id.
   boolean primary = false
+
+  // Denotes whether a Custom property is settable or not. Retired custprops cannot be primary
+  boolean retired = false
   
   // Used for ordering. Larger weight values sink.
   int weight = 0
@@ -60,7 +63,12 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
     type            (bindable: false, nullable: false)
     label           (nullable: false, blank: false)
     ctx             (nullable: true)
-    primary         (nullable: false)
+    primary         (nullable: false, validator: { val, obj, errors ->
+      if (val && obj.retired) {
+        errors.rejectValue('primary', 'cannot.be.primary.and.retired')
+      }
+    })
+    retired         (nullable: false)
   }
 
   static mapping = {
@@ -72,6 +80,7 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
     label column: 'pd_label', index: 'td_label_idx'
     weight column: 'pd_weight', index: 'td_weight_idx'
     primary column: 'pd_primary', index: 'td_primary_idx'
+    retired column: 'pd_retired', index: 'td_retired_idx'
     ctx column: 'pd_ctx'
     sort 'primary': 'asc', 'weight':'asc', 'id':'asc'
   }
