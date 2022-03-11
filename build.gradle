@@ -9,7 +9,7 @@ buildscript {
     classpath "org.grails:grails-gradle-plugin:$grailsVersion"
     classpath "org.grails.plugins:hibernate5:7.0.4"
     classpath "org.grails.plugins:views-gradle:2.0.2"
-    classpath "com.k_int.gradle:kint-gradle-plugin:2.0.0"
+    classpath "com.k_int.gradle:kint-gradle-plugin:2.1.2"
   }
 }
 
@@ -142,12 +142,20 @@ withConfig(configuration) {
   }
 }
 
+import org.gradle.plugins.ide.eclipse.model.ClasspathEntry
+
 eclipse {
   classpath {
     defaultOutputDir = file('build/main')
     file {
       whenMerged {
-        entries.each {
+        entries = entries.findResults({ en -> 
+          if ("${en.getKind()}".toLowerCase() != 'src' || en.output.startsWith('bin/main') || en.path != 'grails-app/conf') {
+            return en
+          }
+          null
+        }).each {
+          
           if (it.hasProperty('output') && it.output.startsWith('bin/')) {
             it.output = 'build/' + it.output.substring(4)
           }
