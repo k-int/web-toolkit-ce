@@ -68,27 +68,48 @@ grails:
     converters:
         encoding: UTF-8
 ---
-environments:
-    test:
-        dataSource:
-            dbCreate: none
-            dialect: com.k_int.hibernate.dialects.postgres.KIPostgres94Dialect
-            username: "test"
-            password: "test"
-            driverClassName: org.postgresql.Driver
-            url: "jdbc:postgresql://localhost:5432/test1"
+grails:
+  gorm:
+    multiTenancy:
+      mode: DATABASE
+      tenantResolverClass: 'org.grails.datastore.mapping.multitenancy.resolvers.FixedTenantResolver'
 
-        dataSources:
-            test:
-                dbCreate: create
-                url: "jdbc:postgresql://localhost:5432/test2"
-                username: "test"
-                password: "test"
-                driverClassName: org.postgresql.Driver
-                dialect: com.k_int.hibernate.dialects.postgres.KIPostgres94Dialect
-        grails:
-            gorm:
-                multiTenancy:
-                    # For testing it's OK to use the DISCRIMINATOR mode
-                    mode: DATABASE
-                    tenantResolverClass: org.grails.datastore.mapping.multitenancy.web.SystemPropertyTenantResolver
+dataSource:
+  pooled: false
+  jmxExport: false
+  
+  dialect: com.k_int.hibernate.dialects.postgres.KIPostgres94Dialect
+  driverClassName: org.postgresql.Driver
+  dbCreate: create
+  url: "jdbc:postgresql://localhost:54321/test"
+  username: "test"
+  password: "test"
+  
+environments:
+    test-livedb:
+      dataSource:
+        pooled: false
+        jmxExport: false
+        
+        dialect: com.k_int.hibernate.dialects.postgres.KIPostgres94Dialect
+        driverClassName: org.postgresql.Driver
+        dbCreate: create
+        url: "jdbc:postgresql://localhost:54321/test"
+        username: "test"
+        password: "test"
+
+      dataSources:
+        test:
+          dbCreate: create
+          url: "jdbc:postgresql://localhost:54321/test2"
+          username: "test"
+          password: "test"
+          driverClassName: org.postgresql.Driver
+          dialect: com.k_int.hibernate.dialects.postgres.KIPostgres94Dialect
+          
+      grails:
+        gorm:
+          multiTenancy:
+            # For testing it's OK to use the DISCRIMINATOR mode
+            mode: DATABASE
+            tenantResolverClass: org.grails.datastore.mapping.multitenancy.web.SystemPropertyTenantResolver

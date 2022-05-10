@@ -19,7 +19,7 @@ services:
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - 5432:5432
+      # - 5432:5432
       - 54321:5432
 
   minio:
@@ -35,7 +35,7 @@ services:
       - wt_minio_data:/data
       - ./minio_config:/minio_config
     ports:
-      - 9000:9000
+      - 9009:9000
       - 9001:9001
 
   setup:

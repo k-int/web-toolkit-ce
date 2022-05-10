@@ -2,9 +2,11 @@ package com.k_int.web.toolkit.custprops
 
 import javax.persistence.Transient
 import javax.validation.UnexpectedTypeException
-
+import org.springframework.validation.Errors
 import com.k_int.web.toolkit.databinding.BindUsingWhenRef
 import com.k_int.web.toolkit.refdata.RefdataValue
+
+import grails.compiler.GrailsCompileStatic
 import grails.databinding.SimpleMapDataBindingSource
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
@@ -15,6 +17,7 @@ import groovy.util.logging.Slf4j
 
 @Slf4j
 @Entity
+@GrailsCompileStatic
 class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> {
   
   static transients = ['propertyInstance']
@@ -63,7 +66,7 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
     type            (bindable: false, nullable: false)
     label           (nullable: false, blank: false)
     ctx             (nullable: true)
-    primary         (nullable: false, validator: { val, obj, errors ->
+    primary         (nullable: false, validator: { val, CustomPropertyDefinition obj, Errors errors ->
       if (val && obj.retired) {
         errors.rejectValue('primary', 'cannot.be.primary.and.retired')
       }
@@ -89,7 +92,7 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
     CustomPropertyDefinition definition = null
     if (type) {
       // Grab the class or default to this one.
-      Class cpdc = GrailsClassUtils.getStaticFieldValue(type, DEFINITION_PROPERTY) ?: CustomPropertyDefinition
+      Class<? extends CustomPropertyDefinition> cpdc = GrailsClassUtils.getStaticFieldValue(type, DEFINITION_PROPERTY) ?: CustomPropertyDefinition
       definition = cpdc.newInstance()
       
       // Use the binder instead.
@@ -110,8 +113,8 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
     definition
   }
 
-  CustomProperty getPropertyInstance(Map extraProperties = [:]) {
-    type?.newInstance([internal: (this.defaultInternal)] + extraProperties + [definition: this])
+  CustomProperty getPropertyInstance(Map<String, ?> extraProperties = [:]) {
+    type?.newInstance(([internal: (this.defaultInternal)] as Map) + extraProperties + ([definition: this] as Map))
   }
 }
 

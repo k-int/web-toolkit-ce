@@ -114,6 +114,16 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
       }
     }
   }
+  
+  @Override
+  protected Collection initializeCollection(final obj, final String propertyName, final Class type, final boolean reuseExistingCollectionIfExists = true) {
+    Class<?> theType = type
+    if (type == null || type == Object) {
+      theType = getDeclaredFieldType(obj.class, propertyName) ?: Object
+    }
+    
+    super.initializeCollection(obj, propertyName, theType, reuseExistingCollectionIfExists) 
+  }
 
   protected processCollectionProperty(final obj, final MetaProperty metaProperty, final val, final DataBindingSource source, final DataBindingListener listener, final errors) {
     if (source.dataSourceAware) {
@@ -228,6 +238,10 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
       super.processProperty(obj, metaProperty, val, source, listener, errors)
     }
   }
+  
+  protected Class<?> getDeclaredFieldType(Class<?> declaringClass, final String fieldName) {
+    getField(declaringClass, fieldName)?.type
+  }
 
   /**
    * Extend this section to allow none collection, Class typed, properties to be be set to a brand new object value instead of attempting an update.
@@ -243,7 +257,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
     String propName = metaProperty.getName()
 
     if(propertyType == null || propertyType == Object) {
-      propertyType = getField(obj.getClass(), propName)?.type ?: Object
+      propertyType = getDeclaredFieldType(obj.getClass(), propName) ?: Object
     }
     if ( isDomainClass(propertyType) ) {
 
