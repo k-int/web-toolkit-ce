@@ -8,11 +8,13 @@ import com.k_int.web.toolkit.SimpleLookupService
 
 import grails.gorm.transactions.Transactional
 import grails.web.http.HttpHeaders
+import grails.core.GrailsApplication
 
 public class RestfulController<T> extends grails.rest.RestfulController<T> {
 
   static responseFormats = ['json', 'xml']
   SimpleLookupService simpleLookupService
+  GrailsApplication grailsApplication
 
   public RestfulController (Class<T> resource) {
     super(resource)
@@ -74,12 +76,19 @@ public class RestfulController<T> extends grails.rest.RestfulController<T> {
         return
     }
 
-    // log.debug("RestfulController.update() :: DB Version: ${instance?.version} request version: ${getObjectToBind()?.version}");
+    Object object_to_bind = getObjectToBind();
 
-    // This is the properties assigning that does not work for entities not in the
-    // domain folder. Replace it with a bindData instead.
-//    instance.properties = getObjectToBind()
-    bindData(instance, getObjectToBind())
+    if ( grailsApplication.config.getProperty('enforceVersionCheck',Boolean.class,false) == true ) {
+      if (object_to_bind.version != null) {
+        if (instance.version > object_to_bind.version) {
+          log.debug("RestfulController.update() :: DB Version: ${instance?.version} request version: ${getObjectToBind()?.version} - Reject");
+          instance.errors.rejectValue("version", "default.optimistic.locking.failure", "Another user has updated this record while you were editing")
+          return
+        }
+      }
+    }
+
+    bindData(instance, object_to_bind);
 
     instance.validate()
     if (instance.hasErrors()) {
