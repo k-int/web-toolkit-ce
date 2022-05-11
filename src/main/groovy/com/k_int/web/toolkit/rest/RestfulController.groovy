@@ -79,7 +79,7 @@ public class RestfulController<T> extends grails.rest.RestfulController<T> {
     Object object_to_bind = getObjectToBind();
 
     if ( grailsApplication.config.getProperty('enforceVersionCheck',Boolean.class,false) == true ) {
-      if (object_to_bind.version != null) {
+      if (object_to_bind?.version != null) {
         if (instance.version > object_to_bind.version) {
           log.debug("RestfulController.update() :: DB Version: ${instance?.version} request version: ${getObjectToBind()?.version} - Reject");
           instance.errors.rejectValue("version", "default.optimistic.locking.failure", "Another user has updated this record while you were editing")
