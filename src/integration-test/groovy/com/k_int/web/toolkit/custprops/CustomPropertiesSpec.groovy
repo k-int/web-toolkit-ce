@@ -25,6 +25,8 @@ import com.k_int.web.toolkit.custprops.types.CustomPropertyMultiRefdata
 import com.k_int.web.toolkit.custprops.types.CustomPropertyText
 import com.k_int.web.toolkit.custprops.types.CustomPropertyMultiText
 
+import java.time.LocalDate
+
 import grails.databinding.SimpleMapDataBindingSource
 import grails.gorm.MultiTenant
 import grails.gorm.multitenancy.CurrentTenant
@@ -59,7 +61,6 @@ class CustomPropertiesSpec extends Specification {
     }
   }
 
-  /////////////////////////// Setup Refdata ///////////////////////////
   @Shared
   def refdataCategory = new RefdataCategory([
     desc: 'Test',
@@ -115,36 +116,19 @@ class CustomPropertiesSpec extends Specification {
       "Text"      | true
       "LocalDate" | true
       "Boolean"   | false
-  }
-
-  // Setup refdata
-  @Shared
-  def refdataOne
-  @Shared
-  def refdataTwo
-  @Shared
-  def refdataThree
-
-  @Transactional
-  def "Setup refdata" () {
-    when: "refdata set up"
-      refdataOne = RefdataValue.lookupOrCreate(refdataCategory, 'one')
-      refdataTwo = RefdataValue.lookupOrCreate(refdataCategory, 'two')
-      refdataThree = RefdataValue.lookupOrCreate(refdataCategory, 'three')
-    then:
-      1==1 // Just want to set up the refdata, don't really care to test this here
+      "Container" | false
   }
 
   @Transactional(readOnly=true)
   def 'Bind custom property data' (String type, boolean hasMulti, def singleBind, def singleTest, def multiBind, def multiTest) {
     when: 'Binder called with data'
       final TestEntity te = new TestEntity()
-      def custpropMap = [
-        ("test${type}".toString()): [value: singleBind]
-      ];
 
+      def custpropMap = [:]
+      custpropMap["test${type}"] = [value: singleBind]
+      
       if (hasMulti) {
-        custpropMap["testMulti${type}".toString()] = [value: multiBind]
+        custpropMap["testMulti${type}"] = [value: multiBind]
       }
 
       grailsWebDataBinder.bind te, new SimpleMapDataBindingSource ([
@@ -154,7 +138,7 @@ class CustomPropertiesSpec extends Specification {
     then: 'Property bound'
       (
         (hasMulti == true && (te.custProps.value?.size() ?: 0) == 2) ||
-        (hasMulti == false && te.custProps.value?.size() ?: 0) == 1
+        (hasMulti == false && (te.custProps.value?.size() ?: 0) == 1)
       )
       
     and: 'Values as expected'
@@ -181,13 +165,51 @@ class CustomPropertiesSpec extends Specification {
       )
   
     where:
-      type        | hasMulti | singleBind           | singleTest | multiBind                            | multiTest
-      "Integer"   | true     | 10                   | null       | [20, 30]                             | null
-      "Blob"      | true     | [0, 0] as byte[]     | null       | [[0, 1] as byte[], [0, 2] as byte[]] | null
-      "Decimal"   | true     | 0.1                  | null       | [0.2, 0.3]                           | null
-      // TODO can't seem to bind refdata
-      "Refdata"   | false    | refdataOne?.id       | refdataOne | null                                 | null
+      type        | hasMulti | singleBind                     | singleTest | multiBind                                                      | multiTest
+      "Integer"   | true     | 10                             | null       | [20, 30]                                                       | null
+      "Blob"      | true     | [0, 0] as byte[]               | null       | [[0, 1] as byte[], [0, 2] as byte[]]                           | null
+      "Decimal"   | true     | 0.1                            | null       | [0.2, 0.3]                                                     | null
+      "LocalDate" | true     | LocalDate.parse("1996-10-10")  | null       | [LocalDate.parse("2001-12-06"), LocalDate.parse("2007-10-05")] | null
+      "Text"      | true     | "wibble"                       | null       | ["wobble", "wubble"]                                           | null
+      "Boolean"   | false    | true                           | null       | null                                                           | null
   }
+
+  // Keeping Refdata separate to avoid passing objects around test.
+  @Transactional
+  def 'Bind refdata custom property data' () {
+    def refdataOne = RefdataValue.lookupOrCreate(refdataCategory, 'one')
+    def refdataTwo = RefdataValue.lookupOrCreate(refdataCategory, 'two')
+    def refdataThree = RefdataValue.lookupOrCreate(refdataCategory, 'three')
+
+    def multiBind = [refdataTwo, refdataThree];
+
+    when: 'Binder called with data'
+      final TestEntity te = new TestEntity()
+      def custpropMap = [
+        "testRefdata" : [value: refdataOne],
+        "testMultiRefdata": [value: multiBind]
+      ];
+
+      grailsWebDataBinder.bind te, new SimpleMapDataBindingSource ([
+        custProps: custpropMap
+      ])
+      
+    then:
+      te.custProps.value?.size() ?: 0 == 2
+      
+    and: 'Values as expected'
+      final CustomProperty single = te.custProps?.value?.find { it.definition.name == "testRefdata"}
+      final CustomProperty multi = te.custProps?.value?.find { it.definition.name == "testMultiRefdata"}
+      final Collection multiVals = multi?.value
+
+      single?.value == refdataOne
+
+      multiBind?.every {mt ->
+        multiVals.any {mv -> mv == mt}
+      }
+  }
+
+  // CustomPropertyContainer is already tested via the above, nesting is _not_ tested currently
 }
 
 @Entity
