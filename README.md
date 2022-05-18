@@ -21,6 +21,8 @@ _NOTE:_ You may need to substitute the version number with the latest release.
 
 # Other Notes
 
+See: https://knowledge-integration.gitlab.io/dev-ops/kint-gradle-plugin/
+
 ## Releasing
 ```
 ./gradlew cgTagFinal to tag a final "release"
