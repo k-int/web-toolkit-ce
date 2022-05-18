@@ -1,44 +1,29 @@
 package com.k_int.web.toolkit
 
 
-import grails.testing.mixin.integration.Integration
-import grails.gorm.transactions.Rollback
-import spock.lang.Specification
-
-import com.k_int.web.toolkit.files.FileUploadService
-import com.k_int.web.toolkit.files.FileUpload;
-import com.k_int.web.toolkit.files.LOBFileObject;
-import com.k_int.web.toolkit.files.S3FileObject;
-
-import org.springframework.beans.factory.annotation.Autowired
+import org.grails.datastore.mapping.multitenancy.resolvers.SystemPropertyTenantResolver
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile
 
-import org.grails.datastore.mapping.multitenancy.resolvers.SystemPropertyTenantResolver
-
-
-import grails.gorm.multitenancy.Tenants
+import com.k_int.web.toolkit.files.FileUpload;
+import com.k_int.web.toolkit.files.FileUploadService
+import com.k_int.web.toolkit.files.LOBFileObject;
+import com.k_int.web.toolkit.files.S3FileObject;
 import com.k_int.web.toolkit.settings.AppSetting
 import com.k_int.web.toolkit.testing.HttpSpec
 
-
-
-/**
- * inspiration: https://github.com/craighewetson/grails_testcontainers_postgres
- *              https://www.infoq.com/presentations/grails-plugin-testing/
- */
-
+import grails.gorm.multitenancy.Tenants
+import grails.testing.mixin.integration.Integration
+import grails.util.Environment
 import groovy.util.logging.Slf4j
-
+import spock.lang.Requires
 import spock.lang.Stepwise
-
-
 
 @Slf4j
 @Stepwise
 @Integration
+@Requires({Environment.currentEnvironment.name == 'test-livedb'})
 class ToolkitLifecycleSpec extends HttpSpec {
-
   @Autowired
   FileUploadService fileUploadService
 
@@ -53,7 +38,7 @@ class ToolkitLifecycleSpec extends HttpSpec {
   def setupData() {
     [
       [ 'fileStorage', 'storageEngine', 'String', 'FileStorageEngines', 'LOB' ],
-      [ 'fileStorage', 'S3Endpoint',    'String', null,                 'http://localhost:9000' ],
+      [ 'fileStorage', 'S3Endpoint',    'String', null,                 'http://localhost:9009' ],
       [ 'fileStorage', 'S3AccessKey',   'String', null,                 'DIKU_AGG_ACCESS_KEY' ],
       [ 'fileStorage', 'S3SecretKey',   'String', null,                 'DIKU_AGG_SECRET_KEY' ],
       [ 'fileStorage', 'S3BucketName',  'String', null,                 'diku-shared' ],

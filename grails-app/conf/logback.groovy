@@ -45,6 +45,7 @@ if (devEnv || Environment.currentEnvironment == Environment.TEST) {
 
   if (Environment.currentEnvironment == Environment.TEST) {
     // Test only.
+    root(DEBUG, ['STDOUT'])
   }
 }
 

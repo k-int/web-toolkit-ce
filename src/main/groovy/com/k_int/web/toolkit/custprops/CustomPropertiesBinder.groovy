@@ -5,7 +5,10 @@ import grails.databinding.SimpleMapDataBindingSource
 import grails.util.Holders
 import grails.web.databinding.DataBindingUtils
 import grails.web.databinding.GrailsWebDataBinder
+import groovy.util.logging.Log
+import groovy.util.logging.Slf4j
 
+@Slf4j
 class CustomPropertiesBinder {
   
   private static GrailsWebDataBinder getDataBinder() {
@@ -14,18 +17,22 @@ class CustomPropertiesBinder {
   
   
   private static CustomPropertyContainer doBind (Map propSource, CustomPropertyContainer cpc) {
-    
+    log.debug ('Using custom binder')
     if (propSource && propSource.size() > 0) {
       // Each supplied property. We only allow predefined types.
       final Set<String> propertyNames = propSource.keySet()
+      log.debug ("Looking for properties ${propertyNames}")
   
       // Grab the defs present for all properties supplied.
       final Set<CustomPropertyDefinition> propDefs = CustomPropertyDefinition.createCriteria().list {
         'in' "name", propertyNames
       } as Set<CustomPropertyDefinition>
-  
+      
+      log.debug ("... found ${propDefs.size()}")
       // Go through every property...
       for (CustomPropertyDefinition propDef: propDefs) {
+        
+        log.debug ("Checking property ${propDef.name}")
         
         // Grab the values sent in for this property.
         // Either {id: 'someId', value: someValue, [_delete: true]} for update
@@ -46,6 +53,7 @@ class CustomPropertiesBinder {
         
         if (vals instanceof Collection) {
           for (final def valObj : vals) {
+            log.debug ("Attempting to bind ${valObj}")
             
             // Single values are presumed to be the 'value' key
             Map<String, ?> val
@@ -54,6 +62,7 @@ class CustomPropertiesBinder {
             } else {
               val = valObj
             }
+            log.debug ("Using shape ${val}")
             
             // If we have an ID. Select it by id and has to also be of this type.
             CustomProperty theProp
@@ -72,8 +81,11 @@ class CustomPropertiesBinder {
             if (!deleteFlag) {
               // Create a new property if we need one.
               theProp = theProp ?: propDef.getPropertyInstance()
+              log.debug ("Property instance to use as the target ${theProp}")
+              
               dataBinder.bind(theProp, new SimpleMapDataBindingSource(val) )
-                            
+              log.debug ("Property instance after binding ${theProp}")
+              
               // Add the property to the container
               cpc.addToValue ( theProp )
             }
