@@ -149,20 +149,17 @@ class CustomPropertiesSpec extends Specification {
       (singleTest != null && single?.value == singleTest) ||
       (singleTest == null && single?.value == singleBind)
 
-      hasMulti == false || (
-        (
-          multiTest != null &&
-          multiTest?.every {mt ->
+      if (hasMulti) {
+        if (multiTest) {
+          assert multiTest.every {mt ->
             multiVals.any {mv -> mv == mt} // This in place of "contains" for byteArray comparison
           }
-        ) ||
-        (
-          multiTest == null &&
-          multiBind?.every {mb ->
+        } else {
+          assert multiBind?.every {mb ->
             multiVals.any {mv -> mv == mb} // This in place of "contains" for byteArray comparison
           }
-        )
-      )
+        }
+      }
   
     where:
       type        | hasMulti | singleBind                     | singleTest | multiBind                                                      | multiTest
@@ -177,17 +174,21 @@ class CustomPropertiesSpec extends Specification {
   // Keeping Refdata separate to avoid passing objects around test.
   @Transactional
   def 'Bind refdata custom property data' () {
-    def refdataOne = RefdataValue.lookupOrCreate(refdataCategory, 'one')
-    def refdataTwo = RefdataValue.lookupOrCreate(refdataCategory, 'two')
-    def refdataThree = RefdataValue.lookupOrCreate(refdataCategory, 'three')
+    
+    when: "Refdata looked-up or created"
+      String refdataOne = RefdataValue.lookupOrCreate(refdataCategory, 'one')?.id
+      String refdataTwo = RefdataValue.lookupOrCreate(refdataCategory, 'two')?.id
+      String refdataThree = RefdataValue.lookupOrCreate(refdataCategory, 'three')?.id
 
-    def multiBind = [refdataTwo, refdataThree];
-
-    when: 'Binder called with data'
+    and: 'Binder called with data'
       final TestEntity te = new TestEntity()
       def custpropMap = [
-        "testRefdata" : [value: refdataOne],
-        "testMultiRefdata": [value: multiBind]
+        "testRefdata" : [
+          value: refdataOne
+        ],
+        "testMultiRefdata": [
+          value: [refdataTwo, refdataThree]
+        ]
       ];
 
       grailsWebDataBinder.bind te, new SimpleMapDataBindingSource ([
@@ -196,17 +197,23 @@ class CustomPropertiesSpec extends Specification {
       
     then:
       te.custProps.value?.size() ?: 0 == 2
+    
+    and: 'No errors'
+      !te.hasErrors()
       
     and: 'Values as expected'
       final CustomProperty single = te.custProps?.value?.find { it.definition.name == "testRefdata"}
       final CustomProperty multi = te.custProps?.value?.find { it.definition.name == "testMultiRefdata"}
       final Collection multiVals = multi?.value
 
-      single?.value == refdataOne
+      single?.value?.id == refdataOne
 
-      multiBind?.every {mt ->
-        multiVals.any {mv -> mv == mt}
-      }
+      multi.value?.size() == 2
+      
+      def ids = multi.value.collect { it.id }
+      
+      ids.contains(refdataTwo)
+      ids.contains(refdataThree)
   }
 
   // CustomPropertyContainer is already tested via the above, nesting is _not_ tested currently
