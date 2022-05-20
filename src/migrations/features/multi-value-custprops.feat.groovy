@@ -151,7 +151,7 @@ databaseChangeLog = {
     addForeignKeyConstraint(baseColumnNames: "custom_property_multi_local_date_id", baseTableName: "custom_property_multi_local_date_value", constraintName: "FKlq0njvkrtu3kr3beevehf03j7", deferrable: "false", initiallyDeferred: "false", referencedColumnNames: "id", referencedTableName: "custom_property_multi_local_date", validate: "true")
 
 
-    addForeignKeyConstraint(baseColumnNames: "definition_id", baseTableName: "custom_property_local_date", constraintName: "FK7897vj3shs837v623bh235ys6", deferrable: "false", initiallyDeferred: "false", referencedColumnNames: "pd_id", referencedTableName: "custom_property_definition", validate: "true")
+    addForeignKeyConstraint(baseColumnNames: "definition_id", baseTableName: "custom_property_multi_local_date", constraintName: "FK7897vj3shs837v623bh235ys6", deferrable: "false", initiallyDeferred: "false", referencedColumnNames: "pd_id", referencedTableName: "custom_property_definition", validate: "true")
   }
 
   changeSet(author: "sosguthorpe", id: "1652870877903-5") {

@@ -38,7 +38,13 @@ configurations {
   }
 }
 
-
+sourceSets {
+  main {
+    resources {
+      srcDir 'src/migrations'
+    }
+  }
+}
 
 // AST Sources.
 //sourceSets {
