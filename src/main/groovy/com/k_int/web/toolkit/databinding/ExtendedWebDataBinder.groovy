@@ -94,7 +94,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
         if (property != null && property instanceof Association) {
           Association association = ((Association)property)
           if (association.bidirectional) {
-            def otherSide = association.inverseSide
+            Association otherSide = association.inverseSide
             if (otherSide instanceof ManyToOne) {
               // Null it out.
               elementToRemove[((Association)otherSide).name] = null
