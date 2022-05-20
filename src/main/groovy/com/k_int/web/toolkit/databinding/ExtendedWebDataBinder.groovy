@@ -3,7 +3,7 @@ package com.k_int.web.toolkit.databinding
 import java.lang.reflect.Field
 
 import javax.persistence.ManyToOne
-
+import org.codehaus.groovy.runtime.metaclass.MultipleSetterProperty
 import org.grails.databinding.ClosureValueConverter
 import org.grails.databinding.xml.GPathResultMap
 import org.grails.datastore.gorm.GormEnhancer
@@ -226,7 +226,10 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
    */
   @Override
   protected processProperty(obj, MetaProperty metaProperty, val, DataBindingSource source, DataBindingListener listener, errors) {
-    if(Collection.isAssignableFrom(metaProperty.type)) {
+    
+    final Class<?> type = getMetapropertyType(metaProperty);
+    
+    if(Collection.isAssignableFrom(type)) {
       if (listener == null || listener.beforeBinding(obj, metaProperty.name, val, errors) != false) {
         // Process the property here. If we couldn't then we should
         processCollectionProperty(obj, metaProperty, val, source, listener, errors)
@@ -242,6 +245,19 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
   protected Class<?> getDeclaredFieldType(Class<?> declaringClass, final String fieldName) {
     getField(declaringClass, fieldName)?.type
   }
+  
+  protected Class<?> getMetapropertyType(MetaProperty mp) {
+    
+    if (mp instanceof MetaBeanProperty) {
+      return mp.field?.type ?: mp.type ?: Object
+    }
+    
+    if (mp instanceof MultipleSetterProperty) {
+      return mp.field?.type ?: mp.type ?: Object
+    }
+    
+    mp.type ?: Object
+  }
 
   /**
    * Extend this section to allow none collection, Class typed, properties to be be set to a brand new object value instead of attempting an update.
@@ -251,7 +267,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
   protected setPropertyValue(obj, DataBindingSource source, MetaProperty metaProperty, propertyValue, DataBindingListener listener, boolean convertCollectionElements) {
 
     // Grab the type that the property value is declared as.
-    Class propertyType = metaProperty.getType()
+    Class propertyType = getMetapropertyType(metaProperty);
 
     // Now grab the name.
     String propName = metaProperty.getName()
