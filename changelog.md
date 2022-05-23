@@ -1,10 +1,31 @@
 # Changelog
 
+## Version 6.3.0-rc.1
+
+### Additions
+* [Custom Properties]
+	* Multi valued custom properties
+* [General]
+	* Add multivalue property migrations as opt in feature
+
+### Changes
+* [Chore]
+	* Change folder for migrations to namespace as wtk
+
+### Fixes
+* [General]
+	* Fix binding for Generic Collections.
+	* Cast to prevent groovy compiler not seeing name property
+
 ## Version 6.2.0
 
 ### Additions
 * [Custom   Properties]
 	* LocalDate type and Retired flag
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
 
 ## Version 6.2.0-rc.4
 
