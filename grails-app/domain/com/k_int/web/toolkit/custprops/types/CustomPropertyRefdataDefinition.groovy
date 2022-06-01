@@ -9,7 +9,6 @@ import grails.gorm.annotation.Entity
 /**
  * Expands the definition class with a RefdataCategory to drive selection only
  */
-@Entity
 class CustomPropertyRefdataDefinition extends CustomPropertyDefinition implements MultiTenant<CustomPropertyRefdataDefinition> {
   RefdataCategory category
 }

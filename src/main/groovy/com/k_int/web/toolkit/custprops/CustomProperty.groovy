@@ -2,11 +2,13 @@ package com.k_int.web.toolkit.custprops
 
 import com.k_int.web.toolkit.custprops.types.*
 
+import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 import grails.gorm.transactions.Rollback
 
 @Entity
+@GrailsCompileStatic
 class CustomProperty<T> implements MultiTenant<CustomProperty> {
   CustomPropertyDefinition definition
   T value
