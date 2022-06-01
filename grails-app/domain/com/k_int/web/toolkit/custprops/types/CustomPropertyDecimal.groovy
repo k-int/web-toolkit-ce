@@ -3,10 +3,10 @@ package com.k_int.web.toolkit.custprops.types
 import com.k_int.web.toolkit.custprops.CustomProperty
 import com.k_int.web.toolkit.domain.traits.Clonable
 
+import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
-import grails.gorm.annotation.Entity
 
-@Entity
+@GrailsCompileStatic
 class CustomPropertyDecimal extends CustomProperty<BigDecimal> implements MultiTenant<CustomPropertyDecimal>, Clonable<CustomPropertyDecimal> { 
   
   BigDecimal value

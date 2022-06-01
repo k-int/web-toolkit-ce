@@ -11,10 +11,10 @@ import com.k_int.web.toolkit.databinding.BindUsingWhenRef
 import com.k_int.web.toolkit.domain.traits.Clonable
 import com.k_int.web.toolkit.utils.DomainUtils.InternalPropertyDefinition
 
+import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
-import grails.gorm.annotation.Entity
 
-@Entity
+//@Entity
 @BindUsingWhenRef({ obj, String propName, source -> CustomPropertiesBinder.bind (obj, propName, source) })
 class CustomPropertyContainer extends CustomProperty<Set<CustomProperty>> implements MultiTenant<CustomPropertyContainer>, Clonable<CustomPropertyContainer> {
   

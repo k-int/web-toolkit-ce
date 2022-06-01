@@ -6,7 +6,6 @@ import com.k_int.web.toolkit.domain.traits.Clonable
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
 
-@Entity
 class CustomPropertyText extends CustomProperty<String> implements MultiTenant<CustomPropertyText>, Clonable<CustomPropertyText> { 
   
   String value

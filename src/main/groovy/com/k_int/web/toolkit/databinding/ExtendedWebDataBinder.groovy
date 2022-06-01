@@ -128,7 +128,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
   protected processCollectionProperty(final obj, final MetaProperty metaProperty, final val, final DataBindingSource source, final DataBindingListener listener, final errors) {
     if (source.dataSourceAware) {
       
-      def propertyType = metaProperty.type
+      def propertyType = getMetapropertyType(metaProperty)
       if(Collection.isAssignableFrom(propertyType)) {
         
         def propertyName = metaProperty.name
@@ -210,7 +210,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
               
                 // Skip anything else and just attempt to add the objects here.
                 for(item in itemsWhichNeedBinding) {
-                  addElementToCollection obj, metaProperty.name, metaProperty.type, item, false
+                  addElementToCollection obj, propertyName, propertyType, item, false
                 }
               }
             }
@@ -433,6 +433,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
 
     // Allow the normal per property annotation to take precedence
     ValueConverter converter = super.getValueConverterForField(obj, propName)
+    
     if (!converter) {
       try {
         def field = getField(obj.getClass(), propName)

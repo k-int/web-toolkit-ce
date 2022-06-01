@@ -2,12 +2,11 @@ package com.k_int.web.toolkit.custprops.types
 
 import com.k_int.web.toolkit.custprops.CustomProperty
 import com.k_int.web.toolkit.domain.traits.Clonable
-import com.k_int.web.toolkit.refdata.RefdataCategory
 import com.k_int.web.toolkit.refdata.RefdataValue
-import grails.gorm.MultiTenant
-import grails.gorm.annotation.Entity
 
-@Entity
+import grails.gorm.MultiTenant
+
+
 class CustomPropertyRefdata extends CustomProperty<RefdataValue> implements MultiTenant<CustomPropertyRefdata>,Clonable<CustomPropertyRefdata> {
   RefdataValue value
   RefdataValue lookupValue ( final String refDataValueString ) {

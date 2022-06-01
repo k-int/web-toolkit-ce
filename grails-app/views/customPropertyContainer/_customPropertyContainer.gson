@@ -34,7 +34,7 @@ json {
         } else if (DomainClassArtefactHandler.isDomainClass(Hibernate.getClass(p.value))) {
           value g.render (p.value, [excludes: ['owner'] ])
         } else {
-          value p.value
+          value g.render( p.value)
         }
         type g.render (p.definition)
       }
