@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 6.3.0-rc.2
+
+### Fixes
+* [Multi   Custprops]
+	* Mappings and bindings were incorrect
+
 ## Version 6.3.0-rc.1
 
 ### Additions
@@ -10,6 +16,7 @@
 
 ### Changes
 * [Chore]
+	* Changelog - Generate the changelog
 	* Change folder for migrations to namespace as wtk
 
 ### Fixes
