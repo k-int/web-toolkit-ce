@@ -1,6 +1,8 @@
 import org.grails.core.artefact.DomainClassArtefactHandler
 import org.hibernate.Hibernate
 
+import org.springframework.beans.BeanUtils
+
 import com.k_int.web.toolkit.custprops.CustomProperty
 import com.k_int.web.toolkit.custprops.types.CustomPropertyContainer
 import groovy.transform.*
@@ -31,10 +33,17 @@ json {
         if ( Temporal.isAssignableFrom(valueClass) ){
           value "${p.value}" // ToString()
 
+          // If we have any domain class values, render them without owner so we dont get a loop
         } else if (DomainClassArtefactHandler.isDomainClass(Hibernate.getClass(p.value))) {
           value g.render (p.value, [excludes: ['owner'] ])
+
+          // Any non-scalar objects, such as Maps or Collections we render out
+        } else if (valueClass && !BeanUtils.isSimpleValueType(valueClass)) {
+          value g.render(p.value)
+
+          // Render any scalar values directly
         } else {
-          value g.render( p.value)
+          value p.value
         }
         type g.render (p.definition)
       }
