@@ -1,6 +1,20 @@
 # Changelog
 
+## Version 6.3.0-rc.3
+
+### Fixes
+* [General]
+	* SingleValueCustprop rendering (#8)
+
+### References
+* [Fixes]
+	* Issue #ERM-2201
+
 ## Version 6.3.0-rc.2
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
 
 ### Fixes
 * [Multi   Custprops]
