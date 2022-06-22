@@ -1,5 +1,7 @@
 package com.k_int.web.toolkit.custprops.types
 
+import com.k_int.web.toolkit.databinding.BindImmutably
+
 import com.k_int.web.toolkit.custprops.CustomProperty
 import com.k_int.web.toolkit.domain.traits.Clonable
 import com.k_int.web.toolkit.refdata.RefdataValue
@@ -8,6 +10,7 @@ import grails.gorm.MultiTenant
 
 class CustomPropertyMultiRefdata extends CustomProperty<Set<RefdataValue>> implements MultiTenant<CustomPropertyMultiRefdata>, Clonable<CustomPropertyMultiRefdata> { 
   
+  @BindImmutably
   Set<RefdataValue> value = []
   
   static hasMany = [value: RefdataValue]

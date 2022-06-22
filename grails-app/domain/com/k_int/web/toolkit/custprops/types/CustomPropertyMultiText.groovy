@@ -1,5 +1,7 @@
 package com.k_int.web.toolkit.custprops.types
 
+import com.k_int.web.toolkit.databinding.BindImmutably
+
 import com.k_int.web.toolkit.custprops.CustomProperty
 import com.k_int.web.toolkit.domain.traits.Clonable
 
@@ -9,6 +11,7 @@ import grails.gorm.MultiTenant
 @GrailsCompileStatic
 class CustomPropertyMultiText extends CustomProperty<Set<String>> implements MultiTenant<CustomPropertyMultiText>, Clonable<CustomPropertyMultiText> { 
   
+  @BindImmutably
   Set<String> value = []
   
   static hasMany = [value: String]
