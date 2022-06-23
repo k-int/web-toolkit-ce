@@ -1,6 +1,20 @@
 # Changelog
 
+## Version 6.3.0-rc.4
+
+### Additions
+* [General]
+	* BindImmutably (#10)
+
+### References
+* [  Provides]
+	* Issue #ERM-2218
+
 ## Version 6.3.0-rc.3
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
 
 ### Fixes
 * [General]
