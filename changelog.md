@@ -1,5 +1,39 @@
 # Changelog
 
+## Version 6.3.0-rc.4
+
+### Additions
+* [General]
+	* BindImmutably (#10)
+
+### References
+* [  Provides]
+	* Issue #ERM-2218
+
+## Version 6.3.0-rc.3
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
+
+### Fixes
+* [General]
+	* SingleValueCustprop rendering (#8)
+
+### References
+* [Fixes]
+	* Issue #ERM-2201
+
+## Version 6.3.0-rc.2
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
+
+### Fixes
+* [Multi   Custprops]
+	* Mappings and bindings were incorrect
+
 ## Version 6.3.0-rc.1
 
 ### Additions
@@ -10,6 +44,7 @@
 
 ### Changes
 * [Chore]
+	* Changelog - Generate the changelog
 	* Change folder for migrations to namespace as wtk
 
 ### Fixes

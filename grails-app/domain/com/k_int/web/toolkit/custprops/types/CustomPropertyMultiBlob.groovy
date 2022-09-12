@@ -1,5 +1,7 @@
 package com.k_int.web.toolkit.custprops.types
 
+import com.k_int.web.toolkit.databinding.BindImmutably
+
 import com.k_int.web.toolkit.custprops.CustomProperty
 import com.k_int.web.toolkit.domain.traits.Clonable
 
@@ -9,6 +11,7 @@ import grails.gorm.MultiTenant
 @GrailsCompileStatic
 class CustomPropertyMultiBlob extends CustomProperty<Set<Byte[]>> implements MultiTenant<CustomPropertyMultiBlob>, Clonable<CustomPropertyMultiBlob> { 
   
+  @BindImmutably
   Set<Byte[]> value = []
   
   static hasMany = [value: Byte[]]
