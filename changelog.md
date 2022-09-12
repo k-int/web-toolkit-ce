@@ -1,10 +1,32 @@
 # Changelog
 
+## Version 6.3.0
+
+### Changes
+* [Chore]
+	* Add license and update readme (ERM-2115) (#9)
+
+### Fixes
+* [Multi   Custprops]
+	* Mappings were very wrong
+* [General]
+	* Type resolving in generic set.
+	* Render out the value
+	* Inheritance breaks SQL
+
+### References
+* [Fixes]
+	* Issue #ERM-2115
+
 ## Version 6.3.0-rc.4
 
 ### Additions
 * [General]
 	* BindImmutably (#10)
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
 
 ### References
 * [  Provides]
