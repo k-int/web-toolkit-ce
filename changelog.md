@@ -1,9 +1,17 @@
 # Changelog
 
+## Version 6.4.0
+
+### Additions
+* [General]
+	* Added missing migrationd for custom_property
+	* PR-1340 Added hidden to AppSetting
+
 ## Version 6.3.0
 
 ### Changes
 * [Chore]
+	* Changelog - Generate the changelog
 	* Add license and update readme (ERM-2115) (#9)
 
 ### Fixes
