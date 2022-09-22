@@ -1,11 +1,26 @@
 # Changelog
 
+## Version 6.4.1
+
+### Changes
+* [Chore]
+	* Bump the grails libs ot the correct values.
+
+### Fixes
+* [General]
+	* Ensure the RELEASE text iis removed.
+	* Ensure we render any native values directly
+
 ## Version 6.4.0
 
 ### Additions
 * [General]
 	* Added missing migrationd for custom_property
 	* PR-1340 Added hidden to AppSetting
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
 
 ## Version 6.3.0
 
