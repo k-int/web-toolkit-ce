@@ -43,7 +43,7 @@ json {
 
           // Render any scalar values directly
         } else {
-          value g.render( p.value)
+          value p.value
         }
         type g.render (p.definition)
       }
