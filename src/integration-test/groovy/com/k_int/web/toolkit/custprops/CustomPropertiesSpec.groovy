@@ -1,49 +1,30 @@
 package com.k_int.web.toolkit.custprops
 
+import java.time.LocalDate
+
 import javax.persistence.Entity
 
-import org.grails.orm.hibernate.cfg.Settings
-
+import com.k_int.web.toolkit.custprops.types.CustomPropertyContainer
 import com.k_int.web.toolkit.refdata.RefdataCategory
 import com.k_int.web.toolkit.refdata.RefdataValue
-
-import com.k_int.web.toolkit.custprops.types.CustomPropertyContainer
-
-import com.k_int.web.toolkit.custprops.types.CustomPropertyInteger
-import com.k_int.web.toolkit.custprops.types.CustomPropertyMultiInteger
-import com.k_int.web.toolkit.custprops.types.CustomPropertyBlob
-import com.k_int.web.toolkit.custprops.types.CustomPropertyMultiBlob
-import com.k_int.web.toolkit.custprops.types.CustomPropertyBoolean
-import com.k_int.web.toolkit.custprops.types.CustomPropertyDecimal
-import com.k_int.web.toolkit.custprops.types.CustomPropertyMultiDecimal
-import com.k_int.web.toolkit.custprops.types.CustomPropertyLocalDate
-import com.k_int.web.toolkit.custprops.types.CustomPropertyMultiLocalDate
-
-import com.k_int.web.toolkit.custprops.types.CustomPropertyRefdataDefinition
-import com.k_int.web.toolkit.custprops.types.CustomPropertyRefdata
-import com.k_int.web.toolkit.custprops.types.CustomPropertyMultiRefdata
-import com.k_int.web.toolkit.custprops.types.CustomPropertyText
-import com.k_int.web.toolkit.custprops.types.CustomPropertyMultiText
-
-import java.time.LocalDate
 
 import grails.databinding.SimpleMapDataBindingSource
 import grails.gorm.MultiTenant
 import grails.gorm.multitenancy.CurrentTenant
 import grails.gorm.transactions.Transactional
-import grails.test.hibernate.HibernateSpec
 import grails.testing.mixin.integration.Integration
+import grails.util.Environment
 import grails.web.databinding.GrailsWebDataBinder
-import groovy.util.logging.Slf4j
+import spock.lang.Requires
+import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Stepwise
-import spock.lang.Shared
 
 
-@Slf4j
 @Integration
 @Stepwise
 @CurrentTenant
+@Requires({Environment.currentEnvironment.name == 'test-livedb'})
 class CustomPropertiesSpec extends Specification {
 
   @Shared
@@ -54,8 +35,8 @@ class CustomPropertiesSpec extends Specification {
 
   private void addDefinitions(final List<Map<String,?>> propertyDefinitions) {
     for (Map definition : propertyDefinitions) {
-      final String type = definition.remove('type')
-      final boolean multi = definition.remove('multi')
+      String type = definition.remove('type')
+      boolean multi = definition.remove('multi')
       CustomPropertyDefinition cpd = CustomPropertyDefinition.forType(type, definition)
       cpd.save(flush: true, failOnError:true)
     }

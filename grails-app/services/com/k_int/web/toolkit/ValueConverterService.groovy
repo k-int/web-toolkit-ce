@@ -3,10 +3,11 @@ package com.k_int.web.toolkit
 import com.k_int.web.toolkit.databinding.ExtendedWebDataBinder
 
 import grails.util.Holders
+import grails.web.databinding.DataBindingUtils
 
 class ValueConverterService {
   public static <T> T convert ( Class<T> targetType, value ) {
-    ExtendedWebDataBinder grailsWebDataBinder = Holders.getApplicationContext().getBean('grailsWebDataBinder')
+    ExtendedWebDataBinder grailsWebDataBinder = Holders.getApplicationContext().getBean(DataBindingUtils.DATA_BINDER_BEAN_NAME)
     grailsWebDataBinder.attemptConversion (targetType, value)
   }
   

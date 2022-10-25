@@ -18,6 +18,8 @@ import groovy.util.logging.Slf4j
 @Slf4j
 public class DomainUtils {
   
+  public static final String BEAN_MAPPING_CONTEXT = 'grailsDomainClassMappingContext'
+  
   public static class InternalPropertyDefinition extends Serializable {
     boolean cacheable = false
     boolean searchable = true
@@ -35,7 +37,7 @@ public class DomainUtils {
   }
   
   private static MappingContext getMappingContext() {
-    def mc = grailsApplication.mainContext.getBean('grailsDomainClassMappingContext')
+    def mc = grailsApplication.mainContext.getBean(BEAN_MAPPING_CONTEXT)
     mc
   }
   

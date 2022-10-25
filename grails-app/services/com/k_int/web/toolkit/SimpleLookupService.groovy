@@ -1,11 +1,41 @@
 package com.k_int.web.toolkit
 
+import org.antlr.v4.runtime.ParserRuleContext
+import org.antlr.v4.runtime.tree.ErrorNode
+import org.antlr.v4.runtime.tree.TerminalNode
 
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkListener
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.AmbiguousFilterContext
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.ConjunctiveFilterContext
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.DisjunctiveFilterContext
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.FilterGroupContext
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.NegatedExpressionContext
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.OperatorContext
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.RangeFilterContext
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.Range_exprContext
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.SpecialFilterContext
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.Special_op_exprContext
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.StandardFilterContext
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.SubjectFirstFilterContext
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.ValueFirstFilterContext
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.Value_expContext
+
+import java.util.regex.Matcher
+
+import org.antlr.v4.runtime.CharStream
+import org.antlr.v4.runtime.CharStreams
+import org.antlr.v4.runtime.CommonTokenStream
+import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.hibernate.criterion.*
 import org.hibernate.sql.JoinType
 
+import com.k_int.web.toolkit.grammar.SimpleLookupServiceListenerWtk
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkLexer
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser
+import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.FiltersContext
 import com.k_int.web.toolkit.utils.DomainUtils
 import com.k_int.web.toolkit.utils.DomainUtils.InternalPropertyDefinition
+
 import grails.util.GrailsClassUtils
 import groovy.util.logging.Slf4j
 
@@ -14,7 +44,7 @@ class SimpleLookupService {
   
   ValueConverterService valueConverterService
 
-  private static class PropertyDef extends HashMap<String, String> {
+  public static class PropertyDef extends HashMap<String, String> {
     PropertyDef () {
       super()
     }
@@ -113,138 +143,138 @@ class SimpleLookupService {
   private static final String REGEX_BETWEEN = "^(.*?)([<>]=?)(.*?)([<>]=?)(.*?)\$"
   private static final String REGEX_NONE_ESCAPED_PERCENTAGE = "([^\\\\])(%)"
   
-  private List getComparisonParts (final DetachedCriteria criteria, final Map<String, String> aliasStack, final String filterString, final String indentation = null ) {
-    // Between first.
-    final def results = []
-    def matches = filterString =~ REGEX_BETWEEN
-    if (matches.size() == 1) {
-      
-      log.debug('Special between style syntax. Splitting into 2 filters instead.')
-      
-      // Grab the match.
-      def match = matches[0]
-      
-      // Build up 2 more filter strings instead of directly returning the parts here.
-      // Match 3 is the center part and is the common part of the expression.
-      results << parseFilterString(criteria, aliasStack, "${match[1]}${match[2]}${match[3]}", indentation)
-      results << parseFilterString(criteria, aliasStack, "${match[3]}${match[4]}${match[5]}", indentation)
-      
-    } else {
-      matches = filterString =~ REGEX_SPECIAL_OP
-      if (matches.size() == 1) {
-        log.debug('Single op like isEmpty or isNotNull.')
-        
-        def match = matches[0]
-        final String rootOp = match[4]?.trim()?.toLowerCase()?.capitalize()
-        final String negated = match[3]?.trim()?.toLowerCase()?.capitalize() ?: ''
-        
-        String op = "${match[2]?.trim()?.toLowerCase()}${negated}${rootOp}"
-        
-        if (rootOp == 'Set') {
-          log.debug "Special 2 part operation ${op}"
-          
-          // Add the criterion directly.
-          if (negated) {
-            // Actually specially maps to NOT ( isNotNull ), which is not the same as isNull
-            // and hence this special case. Let's use our string parsing to build up the query so as to
-            // take care of joins.
-            
-            final String critString = "!${match[1]} isNotNull"
-            log.debug "Alias of ${critString}"
-            
-            Criterion c = parseFilterString(criteria, aliasStack, "!${match[1]} isNotNull", indentation)
-            if (c) {
-              results << c
-            }
-          } else {
-            log.debug "Alias of ${match[1]} isNotNull"
-            
-            // Just return the strings in the normal manner.
-            results << 'isNotNull'
-            results << match[1]
-          }
-          
-        } else {
-          log.debug "Normal 2 part operation ${op}"
-          results << op
-          results << match[1]
-        }
-        
-      } else {
-        
-        boolean negate = false
-      
-        matches = filterString =~ REGEX_OP
-        if (matches.size() == 1) {
-          def match = matches[0]
-          
-          switch (match[2]) {
-            case '=' :
-            case '==' :
-              results << 'eqOrIsNull'
-              break
-            case '!=' :
-            case '<>' :
-              results << 'neOrIsNotNull'
-              break
-            case '>' :
-              results << 'gt'
-              break
-            case '>=' :
-              results << 'ge'
-              break
-            case '<' :
-              results << 'lt'
-              break
-            case '<=' :
-              results << 'le'
-              break
-            case '!~' :
-              negate = true
-            case '=~' :
-              // Contains and not contains should use ilike with wilds.
-               
-            case '=i=' :
-              // Special case insensitive equal. We need to use ilike under the hood and remove
-              // and we also need to remeber to escape % signs as they should be matched explicitly 
-              results << 'ilike'
-              break
-              
-            default : 
-              log.debug "Unknown comparator '${match[2]}' ignoring expression."
-          }
-          
-          if (results) {
-            
-            // Default to raw values.
-            def m1 = match[1]
-            def m2 = match[4]
-            
-            if (results[0] == 'ilike') {
-              m1 = "${m1}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2')
-              m2 = "${m2}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2')
-            
-              if (['!~','=~'].contains(match[2])) {
-                // Only the LHS can be the property name so the value must be the RHS (match 4).
-                m2 = "%${m2}%"
-              }
-            }
-            
-            results << (m1.trim() == 'NULL' ? null : m1)
-            results << (m2.trim() == 'NULL' ? null : m2)
-            
-            if (negate == true) {
-              results << true
-            }
-          }
-        }
-      }
-    }
-    
-    if (!results) log.debug "Unknown expression ${filterString}"
-    
-    results
-  }
+//  private List getComparisonParts (final DetachedCriteria criteria, final Map<String, String> aliasStack, final String filterString, final String indentation = null ) {
+//    // Between first.
+//    final def results = []
+//    def matches = filterString =~ REGEX_BETWEEN
+//    if (matches.size() == 1) {
+//      
+//      log.debug('Special between style syntax. Splitting into 2 filters instead.')
+//      
+//      // Grab the match.
+//      def match = matches[0]
+//      
+//      // Build up 2 more filter strings instead of directly returning the parts here.
+//      // Match 3 is the center part and is the common part of the expression.
+//      results << parseFilterString(criteria, aliasStack, "${match[1]}${match[2]}${match[3]}", indentation)
+//      results << parseFilterString(criteria, aliasStack, "${match[3]}${match[4]}${match[5]}", indentation)
+//      
+//    } else {
+//      matches = filterString =~ REGEX_SPECIAL_OP
+//      if (matches.size() == 1) {
+//        log.debug('Single op like isEmpty or isNotNull.')
+//        
+//        Matcher match = matches[0]
+//        final String rootOp = match[4]?.trim()?.toLowerCase()?.capitalize()
+//        final String negated = match[3]?.trim()?.toLowerCase()?.capitalize() ?: ''
+//        
+//        String op = "${match[2]?.trim()?.toLowerCase()}${negated}${rootOp}"
+//        
+//        if (rootOp == 'Set') {
+//          log.debug "Special 2 part operation ${op}"
+//          
+//          // Add the criterion directly.
+//          if (negated) {
+//            // Actually specially maps to NOT ( isNotNull ), which is not the same as isNull
+//            // and hence this special case. Let's use our string parsing to build up the query so as to
+//            // take care of joins.
+//            
+//            final String critString = "!${match[1]} isNotNull"
+//            log.debug "Alias of ${critString}"
+//            
+//            Criterion c = parseFilterString(criteria, aliasStack, "!${match[1]} isNotNull", indentation)
+//            if (c) {
+//              results << c
+//            }
+//          } else {
+//            log.debug "Alias of ${match[1]} isNotNull"
+//            
+//            // Just return the strings in the normal manner.
+//            results << 'isNotNull'
+//            results << match[1]
+//          }
+//          
+//        } else {
+//          log.debug "Normal 2 part operation ${op}"
+//          results << op
+//          results << match[1]
+//        }
+//        
+//      } else {
+//        
+//        boolean negate = false
+//      
+//        matches = filterString =~ REGEX_OP
+//        if (matches.size() == 1) {
+//          def match = matches[0]
+//          
+//          switch (match[2]) {
+//            case '=' :
+//            case '==' :
+//              results << 'eqOrIsNull'
+//              break
+//            case '!=' :
+//            case '<>' :
+//              results << 'neOrIsNotNull'
+//              break
+//            case '>' :
+//              results << 'gt'
+//              break
+//            case '>=' :
+//              results << 'ge'
+//              break
+//            case '<' :
+//              results << 'lt'
+//              break
+//            case '<=' :
+//              results << 'le'
+//              break
+//            case '!~' :
+//              negate = true
+//            case '=~' :
+//              // Contains and not contains should use ilike with wilds.
+//               
+//            case '=i=' :
+//              // Special case insensitive equal. We need to use ilike under the hood and remove
+//              // and we also need to remeber to escape % signs as they should be matched explicitly 
+//              results << 'ilike'
+//              break
+//              
+//            default : 
+//              log.debug "Unknown comparator '${match[2]}' ignoring expression."
+//          }
+//          
+//          if (results) {
+//            
+//            // Default to raw values.
+//            def m1 = match[1]
+//            def m2 = match[4]
+//            
+//            if (results[0] == 'ilike') {
+//              m1 = "${m1}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2')
+//              m2 = "${m2}".replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2')
+//            
+//              if (['!~','=~'].contains(match[2])) {
+//                // Only the LHS can be the property name so the value must be the RHS (match 4).
+//                m2 = "%${m2}%"
+//              }
+//            }
+//            
+//            results << (m1.trim() == 'NULL' ? null : m1)
+//            results << (m2.trim() == 'NULL' ? null : m2)
+//            
+//            if (negate == true) {
+//              results << true
+//            }
+//          }
+//        }
+//      }
+//    }
+//    
+//    if (!results) log.debug "Unknown expression ${filterString}"
+//    
+//    results
+//  }
   
   private String invertOp(final String op) {
     String newOp = op
@@ -298,177 +328,197 @@ class SimpleLookupService {
   }
   
   private Criterion parseFilterString ( final DetachedCriteria criteria, final Map<String, String> aliasStack, String filterString, String indentation = null ) {
+    CharStream input = CharStreams.fromString(filterString)
+    SimpleLookupWtkLexer lexer = new SimpleLookupWtkLexer(input);
+    CommonTokenStream tokens = new CommonTokenStream(lexer);
+    SimpleLookupWtkParser parser = new SimpleLookupWtkParser(tokens);
+    FiltersContext filters = parser.filters();
     
-    Criterion crit = null
+    log.info "Parse tree: ${filters.toStringTree(parser)}"
     
-    if (indentation == null) {
-      indentation = ''
-    } else {
-      indentation += '  '
-    }
+    // We have parsed the whole string and now we have the final context.
     
-    // First check for logical operators like AND / OR
-    String[] entries = filterString.split (/\&\&/)
-    if (entries.length > 1) {
-      // Start an and.
-      log.trace ("${indentation}and {")
-      
-      List<Criterion> criterionList = []
-      
-      // Now call out to this method again with each entry.
-      entries.each { 
-        criterionList << parseFilterString (criteria, aliasStack, it, indentation)
-      }
-      
-      if (criterionList) {
-        crit = Restrictions.and( criterionList as Criterion[] )
-        
-      } else {
-        log.trace ("${indentation}  // Failed to evaluate criteria. Ignore this AND")
-      }
-      log.trace ("${indentation}}")
-    } else {
-      entries = filterString.split (/\|\|/)
-      if (entries.length > 1) {
-        
-        // Start an OR.
-        log.trace ("${indentation}or {")
-        List<Criterion> criterionList = []
-        
-        // Now call out to this method again with each entry.
-        entries.each {
-          
-          // If the value is blank we should not add to thee list.
-          Criterion c = parseFilterString (criteria, aliasStack, it, indentation)
-          if (c) {
-            criterionList << c
-          }
-        }
-        
-        if (criterionList) {
-          crit = Restrictions.or( criterionList as Criterion[] )
-        } else {
-          log.trace ("${indentation}  // Failed to evaluate criteria. Ignore this OR")
-        }
-        log.trace ("${indentation}}")
-      } else {
-        // Check for negation.
-        if (filterString.startsWith("!")) {
-          
-          log.trace ("${indentation}not {")
-          crit = Restrictions.not( parseFilterString (criteria, aliasStack, filterString.substring(1), indentation) )
-          Criterion c = parseFilterString (criteria, aliasStack, filterString.substring(1), indentation)
-          
-          if (c) {
-            crit = Restrictions.not( c )
-          } else {
-            log.trace ("${indentation}  // Failed to evaluate criteria. Ignore this NOT")
-          }
-          log.trace ("${indentation}}")
-          
-          if (c) log.debug "Negated whole filter entry"
-        } else {
-          // Then check for comparator type i.e. gt, eq, lt etc..
-          List parts = getComparisonParts (criteria, aliasStack, filterString, indentation)
-          log.debug "Got comparision parts ${parts}"
-          if (parts) {
-            
-            def op = parts[0]
-            if (Criterion.class.isAssignableFrom(op.class)){
-              // Assume all parts are Criterion.
-              // And them.              
-              crit = Restrictions.and( parts as Criterion[] )
-            } else if (parts.size() > 1) {
-            
-              // Assume normal op.
-              // part 1 or 2 could be the property name and, the other is the value.
-              def prop = parts[1] ? "${parts[1]}".trim() : null
-              def propDef = prop ? DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true) : null
-              def value = null
-              if (parts.size() > 2 && parts.size() <= 4) {
-              
-                value = parts[2]
-                if (!propDef) {
-                  // Swap the values and retry.
-                  prop = parts[2] ? "${parts[2]}".trim() : null
-                  propDef = prop ? DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true) : null
-                  if (propDef) {
-                    value = parts[1]
-                    op = invertOp(op)
-                  }
-                }
-              }
-              
-              if (propDef) {
-                if (propDef.filterable) {
-                  // If subquery we should call out now.
-                  if (propDef.subQuery) {
-                    
-                    // Call the subquery method on the target.
-                    String propName = getAliasedProperty(criteria, aliasStack, propDef.subQuery) as String
-                    DetachedCriteria dc = handleSubquery (propDef, filterString, indentation)
-                    if (dc) {
-                      crit = Subqueries.propertyIn(
-                        propName + '.id',
-                        handleSubquery (propDef, filterString, indentation)
-                      )
-                    }
-                  } else {
-                  
-                    def propertyType = propDef.type
-                    def propName = getAliasedProperty(criteria, aliasStack, prop) as String
-                    
-                    if (parts.size() == 2) {
-                      
-                      log.trace ("${indentation}${op} ${prop}")
-                      crit = Restrictions."${op}" (propName)
-                      
-                    } else {
-                    
-                      // Can't ilike on none-strings. So we should change back to eq.
-                      if (op == 'ilike' && !String.class.isAssignableFrom(propertyType)) {
-                        op = 'eqOrIsNull'
-                      }
-                      
-                      log.trace ("${indentation}${op} ${prop}, ${value}")
-                      def val = value ? valueConverterService.attemptConversion(propertyType, value) : null
-                      
-                      log.debug ("Converted ${value} into ${val}")
-                      crit = Restrictions."${op}" (propName, val)
-                      
-                      // The 4th part would be negation for the comparitor. Wrap in a not.
-                      if (parts.size() == 4 && parts[3] == true) {
-                        log.debug ("Negating the filter")
-                        crit = Restrictions.not(crit)
-                      }
-                    }
-                  }
-                } else {
-                  log.debug "Filter on ${parts} has been disallowed."
-                }
-              } else {
-                log.debug "Could not process op def ${parts}"
-              }
-            } else {
-              log.debug "Could not process op def ${parts}"
-            }
-          }
-        }
-      }
-    }
+    // Create a listener to act on the tree.
+    SimpleLookupServiceListenerWtk listener = new SimpleLookupServiceListenerWtk(log, valueConverterService, criteria, criteria.getCriteriaImpl().getEntityOrClassName())
+    ParseTreeWalker.DEFAULT.walk(listener, filters);
     
-    crit
+    Criterion result = listener.result
+    
+    return result
   }
+    
+//    Criterion crit = null
+//    
+//    if (indentation == null) {
+//      indentation = ''
+//    } else {
+//      indentation += '  '
+//    }
+//    
+//    // First check for logical operators like AND / OR
+//    String[] entries = filterString.split (/\&\&/)
+//    if (entries.length > 1) {
+//      // Start an and.
+//      log.trace ("${indentation}and {")
+//      
+//      List<Criterion> criterionList = []
+//      
+//      // Now call out to this method again with each entry.
+//      entries.each { 
+//        criterionList << parseFilterString (criteria, aliasStack, it, indentation)
+//      }
+//      
+//      if (criterionList) {
+//        crit = Restrictions.and( criterionList as Criterion[] )
+//        
+//      } else {
+//        log.trace ("${indentation}  // Failed to evaluate criteria. Ignore this AND")
+//      }
+//      log.trace ("${indentation}}")
+//    } else {
+//      entries = filterString.split (/\|\|/)
+//      if (entries.length > 1) {
+//        
+//        // Start an OR.
+//        log.trace ("${indentation}or {")
+//        List<Criterion> criterionList = []
+//        
+//        // Now call out to this method again with each entry.
+//        entries.each {
+//          
+//          // If the value is blank we should not add to thee list.
+//          Criterion c = parseFilterString (criteria, aliasStack, it, indentation)
+//          if (c) {
+//            criterionList << c
+//          }
+//        }
+//        
+//        if (criterionList) {
+//          crit = Restrictions.or( criterionList as Criterion[] )
+//        } else {
+//          log.trace ("${indentation}  // Failed to evaluate criteria. Ignore this OR")
+//        }
+//        log.trace ("${indentation}}")
+//      } else {
+//        // Check for negation.
+//        if (filterString.startsWith("!")) {
+//          
+//          log.trace ("${indentation}not {")
+//          crit = Restrictions.not( parseFilterString (criteria, aliasStack, filterString.substring(1), indentation) )
+//          Criterion c = parseFilterString (criteria, aliasStack, filterString.substring(1), indentation)
+//          
+//          if (c) {
+//            crit = Restrictions.not( c )
+//          } else {
+//            log.trace ("${indentation}  // Failed to evaluate criteria. Ignore this NOT")
+//          }
+//          log.trace ("${indentation}}")
+//          
+//          if (c) log.debug "Negated whole filter entry"
+//        } else {
+//          // Then check for comparator type i.e. gt, eq, lt etc..
+//          List parts = getComparisonParts (criteria, aliasStack, filterString, indentation)
+//          log.debug "Got comparision parts ${parts}"
+//          if (parts) {
+//            
+//            def op = parts[0]
+//            if (Criterion.class.isAssignableFrom(op.class)){
+//              // Assume all parts are Criterion.
+//              // And them.              
+//              crit = Restrictions.and( parts as Criterion[] )
+//            } else if (parts.size() > 1) {
+//            
+//              // Assume normal op.
+//              // part 1 or 2 could be the property name and, the other is the value.
+//              def prop = parts[1] ? "${parts[1]}".trim() : null
+//              def propDef = prop ? DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true) : null
+//              def value = null
+//              if (parts.size() > 2 && parts.size() <= 4) {
+//              
+//                value = parts[2]
+//                if (!propDef) {
+//                  // Swap the values and retry.
+//                  prop = parts[2] ? "${parts[2]}".trim() : null
+//                  propDef = prop ? DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true) : null
+//                  if (propDef) {
+//                    value = parts[1]
+//                    op = invertOp(op)
+//                  }
+//                }
+//              }
+//              
+//              if (propDef) {
+//                if (propDef.filterable) {
+//                  // If subquery we should call out now.
+//                  if (propDef.subQuery) {
+//                    
+//                    // Call the subquery method on the target.
+//                    String propName = getAliasedProperty(criteria, aliasStack, propDef.subQuery) as String
+//                    DetachedCriteria dc = handleSubquery (propDef, filterString, indentation)
+//                    if (dc) {
+//                      crit = Subqueries.propertyIn(
+//                        propName + '.id',
+//                        handleSubquery (propDef, filterString, indentation)
+//                      )
+//                    }
+//                  } else {
+//                  
+//                    def propertyType = propDef.type
+//                    def propName = getAliasedProperty(criteria, aliasStack, prop) as String
+//                    
+//                    if (parts.size() == 2) {
+//                      
+//                      log.trace ("${indentation}${op} ${prop}")
+//                      crit = Restrictions."${op}" (propName)
+//                      
+//                    } else {
+//                    
+//                      // Can't ilike on none-strings. So we should change back to eq.
+//                      if (op == 'ilike' && !String.class.isAssignableFrom(propertyType)) {
+//                        op = 'eqOrIsNull'
+//                      }
+//                      
+//                      log.trace ("${indentation}${op} ${prop}, ${value}")
+//                      def val = value ? valueConverterService.attemptConversion(propertyType, value) : null
+//                      
+//                      log.debug ("Converted ${value} into ${val}")
+//                      crit = Restrictions."${op}" (propName, val)
+//                      
+//                      // The 4th part would be negation for the comparitor. Wrap in a not.
+//                      if (parts.size() == 4 && parts[3] == true) {
+//                        log.debug ("Negating the filter")
+//                        crit = Restrictions.not(crit)
+//                      }
+//                    }
+//                  }
+//                } else {
+//                  log.debug "Filter on ${parts} has been disallowed."
+//                }
+//              } else {
+//                log.debug "Could not process op def ${parts}"
+//              }
+//            } else {
+//              log.debug "Could not process op def ${parts}"
+//            }
+//          }
+//        }
+//      }
+//    }
+//    
+//    crit
+//  }
   
   private void parseFilters ( final DetachedCriteria criteria, final Map<String, String> aliasStack, final Collection<String> filters ) {
+    // Jump out of the routine immediately if no filters or empty list
+    if (!filters) return
     
     // We parse the filters and build up the criteria.
-    filters?.each {
-      def filterGroup = parseFilterString (criteria, aliasStack, it)
+//    filters?.each {
+      final Criterion filterGroup = parseFilterString (criteria, aliasStack, filters.join('\n'))
       if (filterGroup) {
         criteria.add( filterGroup )
       }
-    }
+//    }
   }
   
   private List<Criterion> getTextMatches (final DetachedCriteria criteria, final Map<String, String> aliasStack, final String term, final match_in, MatchMode textMatching = MatchMode.ANYWHERE) {
