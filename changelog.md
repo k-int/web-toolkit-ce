@@ -1,9 +1,16 @@
 # Changelog
 
+## Version 7.0.0-rc.1
+
+### Additions
+* [Lookup]
+	* **BREAKING** -  Filtering improvements
+
 ## Version 6.4.1
 
 ### Changes
 * [Chore]
+	* Changelog - Generate the changelog
 	* Bump the grails libs ot the correct values.
 
 ### Fixes
