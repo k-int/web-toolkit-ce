@@ -1,0 +1,183 @@
+buildscript {
+	repositories {
+		mavenCentral()
+		maven { url "https://plugins.gradle.org/m2/" }
+		maven { url "https://repo.grails.org/grails/core" }
+		maven { url "https://maven.k-int.com/content/repositories/releases" }
+	}
+	dependencies {
+		classpath "org.grails:grails-gradle-plugin:$grailsGradlePluginVersion"
+		classpath "org.grails.plugins:views-gradle:2.3.2"
+		classpath "com.k_int.gradle:kint-gradle-plugin:2.1.3"
+    classpath "org.grails.plugins:hibernate5:7.3.1"
+	}
+}
+
+plugins {
+	id 'antlr'
+}
+
+//version "0.1"
+group 'com.k_int.grails'
+
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'maven-publish'
+apply plugin: 'org.grails.grails-plugin'
+
+apply plugin: 'org.grails.plugins.views-json'
+apply plugin: 'com.k_int.gradle.plugin'
+apply plugin: 'com.k_int.gradle.conventional-git'
+
+repositories {
+	mavenCentral()
+	maven { url "https://repo.grails.org/grails/core" }
+}
+
+configurations {
+	developmentOnly
+	runtimeClasspath {
+		extendsFrom developmentOnly
+	}
+	
+	compileOnly {
+		extendsFrom developmentOnly
+	}
+	
+	testImplementation {
+		extendsFrom developmentOnly
+		extendsFrom implementation
+	}
+}
+
+dependencies {
+//	developmentOnly("org.springframework.boot:spring-boot-devtools")
+	developmentOnly "io.micronaut:micronaut-inject-groovy"
+	console "org.grails:grails-console"
+	developmentOnly "org.springframework.boot:spring-boot-starter-logging"
+	developmentOnly "org.springframework.boot:spring-boot-starter-validation"
+	developmentOnly "org.springframework.boot:spring-boot-autoconfigure"
+	
+	developmentOnly "org.grails:grails-core"
+//	implementation "org.springframework.boot:spring-boot-starter-actuator"
+//	implementation "org.springframework.boot:spring-boot-starter-tomcat"
+	developmentOnly "org.springframework.boot:spring-boot-starter-undertow"
+	
+	developmentOnly "org.grails:grails-web-boot"
+	developmentOnly "org.grails:grails-logging"
+	developmentOnly "org.grails:grails-plugin-rest"
+	developmentOnly "org.grails:grails-plugin-databinding"
+	developmentOnly "org.grails:grails-plugin-i18n"
+	developmentOnly "org.grails:grails-plugin-services"
+	developmentOnly "org.grails:grails-plugin-url-mappings"
+	developmentOnly "org.grails:grails-plugin-interceptors"
+//	implementation "org.grails.plugins:cache"
+	developmentOnly "org.grails.plugins:async"
+//	implementation "org.grails.plugins:scaffolding"
+//	implementation "org.grails.plugins:gsp"
+	// profile "org.grails.profiles:web-plugin"
+	profile "org.grails.profiles:rest-api-plugin"
+	testImplementation "io.micronaut:micronaut-inject-groovy"
+	developmentOnly "org.grails:grails-gorm-testing-support"
+//	testImplementation "org.mockito:mockito-core"
+	developmentOnly "org.grails:grails-web-testing-support"
+	
+	
+	// --------------------------------- Custom Deps Below -----------------------------------//
+	
+	developmentOnly "org.grails.plugins:hibernate5"
+	developmentOnly "org.postgresql:postgresql:42.2.14"
+	
+	developmentOnly "org.springframework.security:spring-security-core:5.8.1", {
+		['spring-aop', 'spring-beans', 'spring-context', 'spring-core', 'spring-expression'].each {
+			exclude module: it
+		}
+	}
+	developmentOnly "org.springframework.security:spring-security-web:5.8.1", {
+		exclude module: 'spring-web'
+	}
+	
+	implementation 'com.ibm.icu:icu4j:62.1'
+	
+	// Minio for file storage to S3
+	implementation "io.minio:minio:8.3.3"
+	implementation 'com.squareup.okhttp3:okhttp:4.8.1'
+	implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.3.70'
+	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.68'
+	
+	// SHould be replaced and rewritten out of this module.
+	implementation 'io.github.http-builder-ng:http-builder-ng-core:1.0.4'
+
+	antlr "org.antlr:antlr4:4.7" // use ANTLR version 4
+	
+  testImplementation 'com.h2database:h2:2.1.212'
+}
+
+bootRun {
+	ignoreExitValue true
+	jvmArgs(
+			'-Dspring.output.ansi.enabled=always',
+			'-noverify',
+			'-XX:TieredStopAtLevel=1',
+			'-Xmx1024m')
+	sourceResources sourceSets.main
+	String springProfilesActive = 'spring.profiles.active'
+	systemProperty springProfilesActive, System.getProperty(springProfilesActive)
+}
+
+tasks.withType(GroovyCompile) {
+	configure(groovyOptions) {
+		forkOptions.jvmArgs = ['-Xmx1024m']
+	}
+}
+
+java {
+	sourceCompatibility = JavaVersion.toVersion("11")
+	targetCompatibility = JavaVersion.toVersion("11")
+}
+
+
+tasks.withType(Test) {
+	useJUnitPlatform()
+}
+// enable if you wish to package this plugin as a standalone application
+bootJar.enabled = false
+
+eclipse {
+	autoBuildTasks ([':processResources', ':generateGrammarSource'])
+	synchronizationTasks ([':processResources', ':generateGrammarSource'])
+
+	classpath {
+		defaultOutputDir = new File(project.buildDir.canonicalPath, 'main')
+		file {
+
+			whenMerged { classpath ->
+
+				Set<String> resources = sourceSets.main?.resources?.srcDirs?.collect { it.canonicalPath }
+
+				entries.collect().each {
+
+					if (it.path =='grails-app/conf' && it.output?.toLowerCase().endsWith('test')) {
+						classpath.entries.remove( it )
+						println "Removed ${it}"
+						return
+					}
+
+					if (it.hasProperty('output') && it.output.startsWith('bin/')) {
+						it.output = 'build/' + it.output.substring(4)
+					}
+
+					// Eclude the output of the resources added to the source sets for grails.
+					// Instead we add the results of the 'processResources' tasks to the classpath later.
+					if (it.hasProperty('dir') && resources.find { res -> it.dir?.canonicalPath?.startsWith(res) } ) {
+						it.exported = false
+						it.excludes << '**/*'
+					}
+				}
+				def lib = new org.gradle.plugins.ide.eclipse.model.Library(fileReference(file("${tasks.processResources.destinationDir}")))
+				println "Adding: ${lib}"
+				entries << lib
+			}
+		}
+	}
+}

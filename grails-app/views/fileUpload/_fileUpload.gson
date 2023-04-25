@@ -1,0 +1,12 @@
+import com.k_int.web.toolkit.files.FileUpload
+import groovy.transform.*
+
+@Field FileUpload fileUpload
+
+json {
+  id fileUpload.id
+  contentType fileUpload.fileContentType
+  size fileUpload.fileSize
+  modified fileUpload.lastUpdated
+  name fileUpload.fileName
+}

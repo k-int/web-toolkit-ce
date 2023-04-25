@@ -1,0 +1,132 @@
+---
+grails:
+    profile: rest-api-plugin
+    codegen:
+        defaultPackage: com.k_int.web.toolkit
+    gorm:
+        reactor:
+            # Whether to translate GORM events into Reactor events
+            # Disabled by default for performance reasons
+            events: false
+info:
+    app:
+        name: '@info.app.name@'
+        version: '@info.app.version@'
+        grailsVersion: '@info.app.grailsVersion@'
+spring:
+    jmx:
+        unique-names: true
+    main:
+        banner-mode: "off"
+    groovy:
+        template:
+            check-template-location: false
+    devtools:
+        restart:
+            additional-exclude:
+                - '*.gsp'
+                - '**/*.gsp'
+                - '*.gson'
+                - '**/*.gson'
+                - 'logback.groovy'
+                - '*.properties'
+environments:
+    development:
+        management:
+            endpoints:
+                enabled-by-default: true
+                web:
+                    base-path: '/actuator'
+                    exposure:
+                        include: '*'
+    production:
+        management:
+            endpoints:
+                enabled-by-default: false
+                
+# Spring Actuator Endpoints are Disabled by Default
+endpoints:
+    enabled: false
+    jmx:
+        enabled: false
+---
+grails:
+    mime:
+        disable:
+            accept:
+                header:
+                    userAgents:
+                        - Gecko
+                        - WebKit
+                        - Presto
+                        - Trident
+        types:
+            json:
+              - application/json
+              - text/json   
+            hal:
+              - application/hal+json
+              - application/hal+xml  
+            xml:
+              - text/xml
+              - application/xml                                 
+            atom: application/atom+xml
+            css: text/css
+            csv: text/csv
+            js: text/javascript
+            rss: application/rss+xml
+            text: text/plain
+            all: '*/*'
+    urlmapping:
+        cache:
+            maxsize: 1000
+    controllers:
+        defaultScope: singleton
+    converters:
+        encoding: UTF-8
+---
+grails:
+  gorm:
+    multiTenancy:
+      mode: DATABASE
+      tenantResolverClass: org.grails.datastore.mapping.multitenancy.web.SystemPropertyTenantResolver
+
+dataSource:
+  pooled: false
+  jmxExport: false
+  
+  dialect: com.k_int.hibernate.dialects.postgres.KIPostgres94Dialect
+  driverClassName: org.postgresql.Driver
+  dbCreate: none
+  url: "jdbc:postgresql://localhost:54321/test"
+  username: "test"
+  password: "test"
+  
+environments:
+  test-livedb:
+    dataSource:
+      pooled: false
+      jmxExport: false
+
+      dialect: com.k_int.hibernate.dialects.postgres.KIPostgres94Dialect
+      driverClassName: org.postgresql.Driver
+      dbCreate: none
+      url: "jdbc:postgresql://localhost:54321/test"
+      username: "test"
+      password: "test"
+
+    dataSources:
+      test:
+        dbCreate: none
+        url: "jdbc:postgresql://localhost:54321/test2"
+        username: "test"
+        password: "test"
+        driverClassName: org.postgresql.Driver
+        dialect: com.k_int.hibernate.dialects.postgres.KIPostgres94Dialect
+          
+    grails:
+      gorm:
+        multiTenancy:
+          # For testing it's OK to use the DISCRIMINATOR mode
+          mode: DATABASE
+          tenantResolverClass: org.grails.datastore.mapping.multitenancy.web.SystemPropertyTenantResolver

@@ -1,0 +1,9 @@
+/build
+.*
+!.gitignore
+/bin
+/docs
+/web-toolkit-*
+/web-toolkit
+/bin-default
+/*.db
