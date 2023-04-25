@@ -9,7 +9,7 @@ buildscript {
 		classpath "org.grails:grails-gradle-plugin:$grailsGradlePluginVersion"
 		classpath "org.grails.plugins:views-gradle:2.3.2"
 		classpath "com.k_int.gradle:kint-gradle-plugin:2.1.3"
-    classpath "org.grails.plugins:hibernate5:7.3.1"
+		classpath "org.grails.plugins:hibernate5:7.3.1"
 	}
 }
 
@@ -39,11 +39,11 @@ configurations {
 	runtimeClasspath {
 		extendsFrom developmentOnly
 	}
-	
+
 	compileOnly {
 		extendsFrom developmentOnly
 	}
-	
+
 	testImplementation {
 		extendsFrom developmentOnly
 		extendsFrom implementation
@@ -51,18 +51,18 @@ configurations {
 }
 
 dependencies {
-//	developmentOnly("org.springframework.boot:spring-boot-devtools")
+	//	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	developmentOnly "io.micronaut:micronaut-inject-groovy"
 	console "org.grails:grails-console"
 	developmentOnly "org.springframework.boot:spring-boot-starter-logging"
 	developmentOnly "org.springframework.boot:spring-boot-starter-validation"
 	developmentOnly "org.springframework.boot:spring-boot-autoconfigure"
-	
+
 	developmentOnly "org.grails:grails-core"
-//	implementation "org.springframework.boot:spring-boot-starter-actuator"
-//	implementation "org.springframework.boot:spring-boot-starter-tomcat"
+	//	implementation "org.springframework.boot:spring-boot-starter-actuator"
+	//	implementation "org.springframework.boot:spring-boot-starter-tomcat"
 	developmentOnly "org.springframework.boot:spring-boot-starter-undertow"
-	
+
 	developmentOnly "org.grails:grails-web-boot"
 	developmentOnly "org.grails:grails-logging"
 	developmentOnly "org.grails:grails-plugin-rest"
@@ -71,46 +71,52 @@ dependencies {
 	developmentOnly "org.grails:grails-plugin-services"
 	developmentOnly "org.grails:grails-plugin-url-mappings"
 	developmentOnly "org.grails:grails-plugin-interceptors"
-//	implementation "org.grails.plugins:cache"
+	//	implementation "org.grails.plugins:cache"
 	developmentOnly "org.grails.plugins:async"
-//	implementation "org.grails.plugins:scaffolding"
-//	implementation "org.grails.plugins:gsp"
+	//	implementation "org.grails.plugins:scaffolding"
+	//	implementation "org.grails.plugins:gsp"
 	// profile "org.grails.profiles:web-plugin"
 	profile "org.grails.profiles:rest-api-plugin"
 	testImplementation "io.micronaut:micronaut-inject-groovy"
 	developmentOnly "org.grails:grails-gorm-testing-support"
-//	testImplementation "org.mockito:mockito-core"
+	//	testImplementation "org.mockito:mockito-core"
 	developmentOnly "org.grails:grails-web-testing-support"
-	
-	
+
+
 	// --------------------------------- Custom Deps Below -----------------------------------//
-	
+	developmentOnly "org.grails.plugins:views-json"
 	developmentOnly "org.grails.plugins:hibernate5"
 	developmentOnly "org.postgresql:postgresql:42.2.14"
-	
+
 	developmentOnly "org.springframework.security:spring-security-core:5.8.1", {
-		['spring-aop', 'spring-beans', 'spring-context', 'spring-core', 'spring-expression'].each {
+		[
+			'spring-aop',
+			'spring-beans',
+			'spring-context',
+			'spring-core',
+			'spring-expression'
+		].each {
 			exclude module: it
 		}
 	}
 	developmentOnly "org.springframework.security:spring-security-web:5.8.1", {
 		exclude module: 'spring-web'
 	}
-	
+
 	implementation 'com.ibm.icu:icu4j:62.1'
-	
+
 	// Minio for file storage to S3
 	implementation "io.minio:minio:8.3.3"
 	implementation 'com.squareup.okhttp3:okhttp:4.8.1'
 	implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.3.70'
 	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.68'
-	
+
 	// SHould be replaced and rewritten out of this module.
 	implementation 'io.github.http-builder-ng:http-builder-ng-core:1.0.4'
 
 	antlr "org.antlr:antlr4:4.7" // use ANTLR version 4
-	
-  testImplementation 'com.h2database:h2:2.1.212'
+
+	testImplementation 'com.h2database:h2:2.1.212'
 }
 
 bootRun {
@@ -144,8 +150,14 @@ tasks.withType(Test) {
 bootJar.enabled = false
 
 eclipse {
-	autoBuildTasks ([':processResources', ':generateGrammarSource'])
-	synchronizationTasks ([':processResources', ':generateGrammarSource'])
+	autoBuildTasks ([
+		':processResources',
+		':generateGrammarSource'
+	])
+	synchronizationTasks ([
+		':processResources',
+		':generateGrammarSource'
+	])
 
 	classpath {
 		defaultOutputDir = new File(project.buildDir.canonicalPath, 'main')
@@ -180,4 +192,59 @@ eclipse {
 			}
 		}
 	}
+}
+
+// Writes plugin data
+tasks.register("extendedConfigScript") { Task me ->
+
+	// Find the correct file.
+	Task configTask = project.tasks.getByName('configScript')
+	File configFile = configTask.outputs.files.files.find { it.name == 'config.groovy' }
+	if(!configFile) {
+		return  // No need to continue if the file is not there
+	}
+
+	me.inputs.property('version', project.version)
+	me.outputs.file(configFile)
+	project.tasks.getByName('compileGroovy').dependsOn( me )
+	me.dependsOn( configTask )
+
+	doLast {
+		configFile.append("""
+/***** Extention *****/
+withConfig(configuration) {
+  inline(phase: 'CONVERSION') { source, context, classNode ->
+    classNode.putNodeMetaData('projectVersion', '$project.version')
+  }
+}""")
+	}
+}
+
+publishing {
+	publications {
+		maven(MavenPublication) {
+			groupId = project.group
+			artifactId = 'web-toolkit'
+			version = project.version
+
+			from components.java
+			artifact sourcesJar
+			artifact javadocJar
+
+			pom {
+				name = 'Web Toolkit'
+				description = 'Provides general tooling for web application frontend development'
+				developers {
+					developer {
+						name = 'Steve Osguthorpe'
+						email = 'steve.osguthorpe@k-int.com'
+					}
+				}
+			}
+		}
+	}
+}
+
+compileGsonViews {
+	packageName = "web-toolkit"
 }
