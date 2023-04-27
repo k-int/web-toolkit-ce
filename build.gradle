@@ -145,10 +145,10 @@ tasks.withType(GroovyCompile) {
 	}
 }
 
-java {
-	sourceCompatibility = JavaVersion.toVersion("11")
-	targetCompatibility = JavaVersion.toVersion("11")
-}
+//java {
+//	sourceCompatibility = JavaVersion.toVersion("11")
+//	targetCompatibility = JavaVersion.toVersion("11")
+//}
 
 
 tasks.withType(Test) {
@@ -232,7 +232,7 @@ publishing {
 	publications {
 		maven(MavenPublication) {
 			groupId = project.group
-			artifactId = 'web-toolkit'
+			artifactId = project.name
 			version = project.version
 
 			from components.java
