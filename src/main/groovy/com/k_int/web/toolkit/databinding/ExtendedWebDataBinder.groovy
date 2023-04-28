@@ -62,8 +62,6 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
 		final DataBindingConfigurationProperties configurationProperties = mainContext
 				.getBean(DataBindingConfigurationProperties)
 
-		println "BINDER!!!!!!!!!!"
-
 		log.debug "Create our new databinder"
 		
 		this.setConvertEmptyStringsToNull(configurationProperties.isConvertEmptyStringsToNull());
@@ -72,7 +70,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
 		
 		final ValueConverter[] valueConverters = getAllBeansByTypeFromContext(ValueConverter.class, mainContext)
 
-		println "valueConverters: ${valueConverters}"
+		//println "valueConverters: ${valueConverters}"
 
 		AnnotationAwareOrderComparator.sort(valueConverters);
 		this.setValueConverters(valueConverters);

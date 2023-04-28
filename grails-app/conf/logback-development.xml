@@ -13,6 +13,23 @@
 
   <logger name="com.k_int.web.toolkit" level="DEBUG"/>
 
+  <if condition='isDefined("grails.util.BuildSettings.TARGET_DIR")'>
+    <then>
+      <appender name="FULL_STACKTRACE" class="ch.qos.logback.core.FileAppender" append="true">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+          <file>${grails.util.BuildSettings.TARGET_DIR}/stacktrace.log</file> 
+          <pattern>
+            %level %logger - %msg%n
+          </pattern>
+        </encoder>
+      </appender>
+      <logger name="StackTrace" additivity="false">
+        <level value="ERROR" />
+        <appender-ref ref="FULL_STACKTRACE" />
+      </logger>
+    </then>
+  </if>
+
   <root level="warn">
     <appender-ref ref="STDOUT" />
   </root>

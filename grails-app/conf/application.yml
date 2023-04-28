@@ -39,6 +39,9 @@ environments:
                     base-path: '/actuator'
                     exposure:
                         include: '*'
+        logging:
+            config: classpath:logback-development.xml
+
     production:
         management:
             endpoints:
