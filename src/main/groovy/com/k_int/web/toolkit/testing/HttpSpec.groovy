@@ -30,24 +30,33 @@ abstract class HttpSpec extends Specification {
     'application/vnd.api+json'
   ]
   
-  @Shared
-  private Map<String, String> specDefaultHeaders = [
-    (HttpHeaders.CONTENT_TYPE): 'application/json',
-    (HttpHeaders.ACCEPT):       'application/json'
-  ]
-  
-  @Shared Closure httpClientConfig = null
+	private static class SpecState {
+		Map<String, String> specDefaultHeaders = [
+	    (HttpHeaders.CONTENT_TYPE): 'application/json',
+	    (HttpHeaders.ACCEPT):       'application/json'
+	  ]
+		Closure httpClientConfig
+		HttpBuilder httpClient
+		
+		boolean setupSpecDone = false
+		Closure cleanupClosure = null
+	}
+	
+	@Shared
+	private SpecState state = new SpecState()
+	
+	protected void setHttpClientConfig( Closure c ) {
+		if (state.httpClient != null) throw new IllegalStateException("Cannot set client config after spec setup")
+		state.httpClientConfig = c
+	}
   
   protected Map<String, String> setDefaultHeaders(Map<String, String> defaultHeaders) {
-    this.specDefaultHeaders = defaultHeaders
+    state.specDefaultHeaders = defaultHeaders
   }
   
   protected Map<String, String> addDefaultHeaders(Map<String, String> defaultHeaders) {
-    this.specDefaultHeaders += defaultHeaders
+    state.specDefaultHeaders += defaultHeaders
   }
-  
-  @Shared
-  private HttpBuilder httpClient
   
   Map<String, String> headersOverride = [:]
   protected Map<String, String> setHeaders (Map<String,String> vals) {
@@ -75,10 +84,10 @@ abstract class HttpSpec extends Specification {
   }
   
   protected def doGet (final String uri, final Map params = null, final Closure expand = null) {
-    httpClient.get({
+    state.httpClient.get({
       request.uri = cleanUri(uri)
       request.uri.query = params
-      request.headers = (specDefaultHeaders + headersOverride) as Map
+      request.headers = (state.specDefaultHeaders + headersOverride) as Map
       
       if (expand) {
         expand.rehydrate(delegate, expand.owner, thisObject)()
@@ -87,11 +96,11 @@ abstract class HttpSpec extends Specification {
   }
   
   protected def doPost (final String uri, final def jsonData, final Map params = null, final Closure expand = null) {
-    httpClient.post({
+    state.httpClient.post({
       request.uri = cleanUri(uri)
       request.uri.query = params
       request.body = buildJson(jsonData)
-      request.headers = (specDefaultHeaders + headersOverride) as Map
+      request.headers = (state.specDefaultHeaders + headersOverride) as Map
       
       if (expand) {
         expand.rehydrate(delegate, expand.owner, thisObject)()
@@ -100,11 +109,11 @@ abstract class HttpSpec extends Specification {
   }
   
   protected def doPut (final String uri, final def jsonData, final Map params = null, final Closure expand = null) {
-    httpClient.put({
+    state.httpClient.put({
       request.uri = cleanUri(uri)
       request.uri.query = params
       request.body = buildJson(jsonData)
-      request.headers = (specDefaultHeaders + headersOverride) as Map
+      request.headers = (state.specDefaultHeaders + headersOverride) as Map
       
       if (expand) {
         expand.rehydrate(delegate, expand.owner, thisObject)()
@@ -113,11 +122,11 @@ abstract class HttpSpec extends Specification {
   }
   
   protected def doPatch (final String uri, final def jsonData, final Map params = null, final Closure expand = null) {
-    httpClient.patch({
+    state.httpClient.patch({
       request.uri = cleanUri(uri)
       request.uri.query = params
       request.body = buildJson(jsonData)
-      request.headers = (specDefaultHeaders + headersOverride) as Map
+      request.headers = (state.specDefaultHeaders + headersOverride) as Map
       
       if (expand) {
         expand.rehydrate(delegate, expand.owner, thisObject)()
@@ -126,10 +135,10 @@ abstract class HttpSpec extends Specification {
   }
   
   protected def doDelete (final String uri, final Map params = null, final Closure expand = null) {
-    httpClient.delete({
+    state.httpClient.delete({
       request.uri = cleanUri(uri)
       request.uri.query = params
-      request.headers = (specDefaultHeaders + headersOverride) as Map
+      request.headers = (state.specDefaultHeaders + headersOverride) as Map
       
       if (expand) {
         expand.rehydrate(delegate, expand.owner, thisObject)()
@@ -138,22 +147,19 @@ abstract class HttpSpec extends Specification {
   }
   
   // Below is a workaround to be able to access spring beans in setupSpec-type methods.
-  @Shared private boolean setupSpecDone = false
-  @Shared private Closure cleanupClosure = null
   
-  @Before
   @CompileStatic(SKIP)
-  def setupSpecWithSpringWorkaround() {
-    if (!setupSpecDone) {
+  def setup() {
+    if (!state.setupSpecDone) {
       setupSpecWithSpring()
-      setupSpecDone = true
+      state.setupSpecDone = true
     }
     
-    cleanupClosure = this.metaClass.respondsTo('cleanupSpecWithSpring') ? this.&cleanupSpecWithSpring : null
+    state.cleanupClosure = this.metaClass.respondsTo('cleanupSpecWithSpring') ? this.&cleanupSpecWithSpring : null
   }
 
   def cleanupSpec() {
-    cleanupClosure?.run()
+    state.cleanupClosure?.run()
   }
   
   @Value('${server.servlet.context-path:/}')
@@ -171,9 +177,9 @@ abstract class HttpSpec extends Specification {
   
   
   def setupSpecWithSpring() {
-    
+    println "Running setup of doc"
     final String root = "$baseUrl"
-    httpClient = configure {
+    state.httpClient = configure {
       
       // Default root as specified in config.
       if (root) {
@@ -194,13 +200,14 @@ abstract class HttpSpec extends Specification {
       }
       
       // Add timeouts.
-      client.clientCustomizer { HttpURLConnection conn ->
+      client.clientCustomizer {
+				HttpURLConnection conn = it as HttpURLConnection
         conn.connectTimeout = 2000
         conn.readTimeout = 3000
       }
       
       // Execute extras and overrides here.
-      httpClientConfig?.rehydrate(delegate, owner, thisObject)?.call()
+      state.httpClientConfig?.rehydrate(delegate, owner, thisObject)?.call()
     }
   }
   
