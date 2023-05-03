@@ -87,6 +87,8 @@ dependencies {
 	developmentOnly "org.grails.plugins:views-json"
 	developmentOnly "org.grails.plugins:hibernate5"
 	developmentOnly "org.postgresql:postgresql:42.2.14"
+	implementation 'org.codehaus.janino:janino:3.1.9' // Needed for conditional logging
+
 
 	developmentOnly "org.springframework.security:spring-security-core:5.8.1", {
 		[
