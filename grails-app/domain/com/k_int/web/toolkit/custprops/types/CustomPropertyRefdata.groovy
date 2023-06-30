@@ -8,16 +8,10 @@ import grails.gorm.MultiTenant
 
 
 class CustomPropertyRefdata extends CustomProperty<RefdataValue> implements MultiTenant<CustomPropertyRefdata>,Clonable<CustomPropertyRefdata> {
-
   RefdataValue value
-
   RefdataValue lookupValue ( final String refDataValueString ) {
     def catId = definition.refresh().category
     RefdataValue.findByValueAndOwner( RefdataValue.normValue(refDataValueString), catId )
-  }
-
-  public CustomPropertyRefdata(String refDataValueString) {
-    this.value = this.lookupValue(refDataValueString);
   }
   
   // Customise the definition class.
