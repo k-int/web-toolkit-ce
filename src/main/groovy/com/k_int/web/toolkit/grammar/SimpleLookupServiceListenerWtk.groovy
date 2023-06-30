@@ -1,8 +1,14 @@
 package com.k_int.web.toolkit.grammar
 
+import static groovy.transform.TypeCheckingMode.SKIP
+
+import org.antlr.v4.runtime.CommonTokenStream
+import org.antlr.v4.runtime.CharStream
+import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.Token
 import org.antlr.v4.runtime.tree.ErrorNode
+import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.hibernate.criterion.Conjunction
 import org.hibernate.criterion.Criterion
@@ -35,6 +41,10 @@ import com.k_int.web.toolkit.utils.DomainUtils
 import com.k_int.web.toolkit.utils.DomainUtils.InternalPropertyDefinition
 
 import groovy.transform.CompileStatic
+
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+import java.util.stream.Stream
 
 @CompileStatic
 class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
@@ -195,26 +205,23 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 
   @Override
   public void enterValue_exp (Value_expContext ctx) {
-    // TODO Auto-generated method stub
-    
+    // NOOP
   }
 
   @Override
   public void exitValue_exp (Value_expContext ctx) {
-    // TODO Auto-generated method stub
-    
+    // NOOP
   }
 
   @Override
   public void enterOperator (OperatorContext ctx) {
-    // TODO Auto-generated method stub
+    // NOOP
     
   }
 
   @Override
   public void exitOperator (OperatorContext ctx) {
-    // TODO Auto-generated method stub
-    
+    // NOOP
   }
 
   @Override
@@ -225,14 +232,14 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
     final String subject = ctx.subject.text
     addCriterion(
       subject,
-      resolvePropertyType(subject).type,
+      resolvePropertyType(subject),
       ctx.special_operator().opToken)
     
   }
 
   @Override
   public void exitSpecial_op_expr (Special_op_exprContext ctx) {
-    // TODO Auto-generated method stub
+    // NOOP
   }
 
   @Override
@@ -242,19 +249,19 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
     // Special case that translates to 2 criterion in a conjunction
     // Subject is the same for both
     final String subject = ctx.subject.text
-    final Class<?> subjectType = resolvePropertyType(subject).type;
+    final InternalPropertyDefinition subjectTypeDef = resolvePropertyType(subject);
     
     // Add the right hand side as-is.
     addCriterion(
       subject,
-      subjectType,
+      subjectTypeDef,
       ctx.rhop,
       ctx.rhval.text)
     
     // Add the lh op as a reverse as the subject is in between the 2 conditions
     addCriterion(
       subject,
-      subjectType,
+      subjectTypeDef,
       ctx.lhop,
       ctx.lhval.text,
       true)
@@ -270,156 +277,15 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 
   @Override
   public void exitRange_expr (Range_exprContext ctx) {
-    // TODO Auto-generated method stub
+    // NOOP
     
   }
  
 
-  private Criterion pushCriterion( final Criterion crit ) {
-    
-//    if (Conjunction.class.isAssignableFrom(crit.class)) {
-//      if (contextStack.isEmpty()) throw new IllegalStateException('Cannot add junction when no criteria currently exists')
-//      
-//      ((Conjunction) crit).add(contextStack.poll())
-//        
-//      // Take the next item out of the stack and add to this conjunction
-//      contextStack.push( crit )
-//      return crit
-//    }
-    
+  private Criterion pushCriterion( final Criterion crit ) {    
     // add it
     contextStack.push(crit)
   }
-  
-  private void addCriterion ( final String subject, final Class<?> subjectType, final Token op, final String value = null, boolean invertOp = false ) {
-    
-    // Can't ilike on none-strings. So we should change back to eq.
-    final boolean requiresConversion = !String.class.isAssignableFrom(subjectType)
-    final String propertyName = getAliasedProperty(subject)
-    final def compValue = (value && requiresConversion) ? valueConverterService.attemptConversion(subjectType, value) : value
-    
-    switch (op.type) {
-      case SimpleLookupWtkParser.EQ :
-      case SimpleLookupWtkParser.EQEQ :
-        log.debug "equality filter"
-        pushCriterion(Restrictions.eqOrIsNull(propertyName, compValue))
-        break
-      case SimpleLookupWtkParser.NEQ :
-        log.debug "not equal filter"
-        pushCriterion(Restrictions.neOrIsNotNull(propertyName, compValue))
-        break
-      case SimpleLookupWtkParser.GT :
-        if (invertOp) {
-          pushCriterion(Restrictions.lt(propertyName, compValue))
-        } else {
-          pushCriterion(Restrictions.gt(propertyName, compValue))
-        }
-        break
-      case SimpleLookupWtkParser.GE :
-        if (invertOp) {
-          pushCriterion(Restrictions.le(propertyName, compValue))
-        } else {
-          pushCriterion(Restrictions.ge(propertyName, compValue))
-        }
-        break
-      case SimpleLookupWtkParser.LT :
-        if (invertOp) {
-          pushCriterion(Restrictions.gt(propertyName, compValue))
-        } else {
-          pushCriterion(Restrictions.lt(propertyName, compValue))
-        }
-        break
-      case SimpleLookupWtkParser.LE :
-        if (invertOp) {
-          pushCriterion(Restrictions.ge(propertyName, compValue))
-        } else {
-          pushCriterion(Restrictions.le(propertyName, compValue))
-        }
-        break
-      case SimpleLookupWtkParser.NCONT :
-        // does not contain
-        
-        if (!requiresConversion) {
-          final String strVal = compValue as String
-          pushCriterion(Restrictions.not(
-            Restrictions.ilike(propertyName, '%' + (strVal?.replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2')?:'') + '%')))
-        } else {
-          // Can't ilike against none strings
-          pushCriterion(Restrictions.not(Restrictions.eq(propertyName, compValue)));
-        }
-        break
-      case SimpleLookupWtkParser.CONT :
-        // Contains.
-        if (!requiresConversion) {
-          final String strVal = compValue as String
-          pushCriterion(Restrictions.ilike(propertyName, '%' + (strVal?.replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2')?:'') + '%'))
-        } else {
-          // Can't ilike against none strings
-          pushCriterion(Restrictions.eq(propertyName, compValue));
-        }
-        
-        break
-      case SimpleLookupWtkParser.CIEQ :
-      
-        if (!requiresConversion) {
-          final String strVal = compValue as String
-          pushCriterion(Restrictions.ilike(propertyName, (strVal?.replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2')?:'')))
-        } else {
-          // Can't ilike against none strings
-          pushCriterion(Restrictions.eq(propertyName, compValue));
-        }
-        
-        break
-        
-      // Special operations
-      case SimpleLookupWtkParser.ISNULL :
-        pushCriterion(Restrictions.isNull(propertyName))
-        break
-      case SimpleLookupWtkParser.ISNOTNULL :
-      case SimpleLookupWtkParser.ISSET:
-        pushCriterion(Restrictions.isNotNull(propertyName))
-        break
-      case SimpleLookupWtkParser.ISNOTSET :
-        // Actually specially maps to NOT ( isNotNull ), which is not the same as isNull
-        // and hence this special case
-        pushCriterion(Restrictions.not(Restrictions.isNotNull(propertyName)))
-        break
-      case SimpleLookupWtkParser.ISEMPTY :
-        pushCriterion(Restrictions.isEmpty(propertyName))
-        break
-      case SimpleLookupWtkParser.ISNOTEMPTY :
-        pushCriterion(Restrictions.isNotEmpty(propertyName))
-        break
-    }
-  }
-  
-  /*private String invertOp(final Token op) {
-     
-    Token newOp = op
-    
-    switch (op.type) {
-      case SimpleLookupWtk.EQ :
-        log.debug "Reverse of op ${op} is still ${op}"
-        break
-      case 'gt' :
-        newOp = 'lt'
-        break
-      case 'ge' :
-        newOp = 'le'
-        break
-      case 'lt' :
-        newOp = 'gt'
-        break
-      case 'le' :
-        newOp = 'ge'
-        break
-        
-      default :
-        log.debug "Unknown reverse op of ${op}. Retuning original."
-    }
-    
-    newOp
-  }*/
 
   @Override
   public void enterAmbiguousFilter (AmbiguousFilterContext ctx) {
@@ -454,7 +320,7 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
     // Add a criterion to the stack.
     addCriterion(
       inverted ? rhs : lhs,
-      typeDef.type,
+      typeDef,
       op,
       inverted ? lhs : rhs,
       inverted)
@@ -462,47 +328,55 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 
   @Override
   public void exitAmbiguousFilter (AmbiguousFilterContext ctx) {
-    // TODO Auto-generated method stub
+    // NOOP
     
   }
 
+	// Because the criteriaImpl visibility is package, we need groovy here.
+	// Skip the sattic compiler.
+	@CompileStatic(SKIP)
+	private String getEntityNameFromCriteria( DetachedCriteria dc ) {
+		dc?.criteriaImpl?.entityOrClassName
+	}
+	
   @Override
   public void enterSubjectFirstFilter (SubjectFirstFilterContext ctx) {
     traceQuery("// Subject first query")
+		
+		// Add a criterion to the stack.
+		final String subject = ctx.subject.text
+		InternalPropertyDefinition propDef = resolvePropertyType(subject);
 
-    // Add a criterion to the stack.
-    final String subject = ctx.subject.text
     addCriterion(
       subject,
-      resolvePropertyType(subject).type,
+      resolvePropertyType(subject),
       ctx.operator().opToken,
       ctx.value.text)
   }
 
   @Override
   public void exitSubjectFirstFilter (SubjectFirstFilterContext ctx) {
-    // TODO Auto-generated method stub
+    // NOOP
     
   }
 
   @Override
   public void enterValueFirstFilter (ValueFirstFilterContext ctx) {
     
-    traceQuery("// Subject first query")
+    traceQuery("// Value first query")
 
     // Add a criterion to the stack.
     final String subject = ctx.subject.text
     addCriterion(
       subject,
-      resolvePropertyType(subject).type,
+      resolvePropertyType(subject),
       ctx.operator().opToken,
       ctx.value.text)
   }
 
   @Override
   public void exitValueFirstFilter (ValueFirstFilterContext ctx) {
-    // TODO Auto-generated method stub
-    
+    // NOOP
   }
 
   @Override
@@ -512,20 +386,174 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 
   @Override
   public void exitStandardFilter (StandardFilterContext ctx) {
-    
+		// NOOP
   }
 
   @Override
   public void enterConjunctiveFilter (ConjunctiveFilterContext ctx) {
-    // TODO Auto-generated method stub
-    
+    // NOOP
   }
 
   @Override
   public void exitConjunctiveFilter (ConjunctiveFilterContext ctx) {
     // OR the top 2 criterion
     contextStack.push( Restrictions.conjunction(contextStack.poll(), contextStack.poll()) )
-  }
+  }	
+	
+	private void addCriterion ( final String subjectExpr, final InternalPropertyDefinition rootPropDef, final Token op, final String value = null, boolean invertOp = false ) {
+		
+		InternalPropertyDefinition propDef = rootPropDef
+		final String partialPathBySubQuery = propDef.subQuery
+		String subject = subjectExpr
+		if (partialPathBySubQuery) {
+			subject = subject.substring(partialPathBySubQuery.length() + 1)
+			
+			// Check if the class implements the method.
+			def methods = propDef.owner.metaClass.respondsTo(propDef.owner, 'handleLookupViaSubquery', [String.class] as Object[])
+			
+			// Did we get a sub criteria?
+			DetachedCriteria subRoot = methods?.get(0)?.invoke(propDef.owner, [subject] as Object[]) as DetachedCriteria
+			
+			// Bail early if no criteria
+			if (!subRoot) return
+			
+			contextStacks.push(new ArrayDeque<>())
+			
+			// Similar to a grouping we shift the target context
+			aliasesStack.push([:])
+			targetStack.push (subRoot)
+			newAliasPrefix()
+			
+			// Chop the first path.
+			subject = subject.substring(subject.indexOf('.') + 1)
+			
+			// Resolve sub path from the type to shift resolution
+			propDef = DomainUtils.resolveProperty(propDef.type, subject, true)
+		}
+		
+		final Class<?> subjectType = propDef.type
+		
+		// Can't ilike on none-strings. So we should change back to eq.
+		final boolean requiresConversion = !String.class.isAssignableFrom(subjectType)
+		final String propertyName = getAliasedProperty(subject)
+		final def compValue = (value && requiresConversion) ? valueConverterService.attemptConversion(subjectType, value) : value
+		
+		switch (op.type) {
+			case SimpleLookupWtkParser.EQ :
+			case SimpleLookupWtkParser.EQEQ :
+				log.debug "equality filter"
+				pushCriterion(Restrictions.eqOrIsNull(propertyName, compValue))
+				break
+			case SimpleLookupWtkParser.NEQ :
+				log.debug "not equal filter"
+				pushCriterion(Restrictions.neOrIsNotNull(propertyName, compValue))
+				break
+			case SimpleLookupWtkParser.GT :
+				if (invertOp) {
+					pushCriterion(Restrictions.lt(propertyName, compValue))
+				} else {
+					pushCriterion(Restrictions.gt(propertyName, compValue))
+				}
+				break
+			case SimpleLookupWtkParser.GE :
+				if (invertOp) {
+					pushCriterion(Restrictions.le(propertyName, compValue))
+				} else {
+					pushCriterion(Restrictions.ge(propertyName, compValue))
+				}
+				break
+			case SimpleLookupWtkParser.LT :
+				if (invertOp) {
+					pushCriterion(Restrictions.gt(propertyName, compValue))
+				} else {
+					pushCriterion(Restrictions.lt(propertyName, compValue))
+				}
+				break
+			case SimpleLookupWtkParser.LE :
+				if (invertOp) {
+					pushCriterion(Restrictions.ge(propertyName, compValue))
+				} else {
+					pushCriterion(Restrictions.le(propertyName, compValue))
+				}
+				break
+			case SimpleLookupWtkParser.NCONT :
+				// does not contain
+				
+				if (!requiresConversion) {
+					final String strVal = compValue as String
+					pushCriterion(Restrictions.not(
+						Restrictions.ilike(propertyName, '%' + (strVal?.replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2')?:'') + '%')))
+				} else {
+					// Can't ilike against none strings
+					pushCriterion(Restrictions.not(Restrictions.eq(propertyName, compValue)));
+				}
+				break
+			case SimpleLookupWtkParser.CONT :
+				// Contains.
+				if (!requiresConversion) {
+					final String strVal = compValue as String
+					pushCriterion(Restrictions.ilike(propertyName, '%' + (strVal?.replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2')?:'') + '%'))
+				} else {
+					// Can't ilike against none strings
+					pushCriterion(Restrictions.eq(propertyName, compValue));
+				}
+				
+				break
+			case SimpleLookupWtkParser.CIEQ :
+			
+				if (!requiresConversion) {
+					final String strVal = compValue as String
+					pushCriterion(Restrictions.ilike(propertyName, (strVal?.replaceAll(REGEX_NONE_ESCAPED_PERCENTAGE, '$1\\$2')?:'')))
+				} else {
+					// Can't ilike against none strings
+					pushCriterion(Restrictions.eq(propertyName, compValue));
+				}
+				
+				break
+				
+			// Special operations
+			case SimpleLookupWtkParser.ISNULL :
+				pushCriterion(Restrictions.isNull(propertyName))
+				break
+			case SimpleLookupWtkParser.ISNOTNULL :
+			case SimpleLookupWtkParser.ISSET:
+				pushCriterion(Restrictions.isNotNull(propertyName))
+				break
+			case SimpleLookupWtkParser.ISNOTSET :
+				// Actually specially maps to NOT ( isNotNull ), which is not the same as isNull
+				// and hence this special case
+				pushCriterion(Restrictions.not(Restrictions.isNotNull(propertyName)))
+				break
+			case SimpleLookupWtkParser.ISEMPTY :
+				pushCriterion(Restrictions.isEmpty(propertyName))
+				break
+			case SimpleLookupWtkParser.ISNOTEMPTY :
+				pushCriterion(Restrictions.isNotEmpty(propertyName))
+				break
+		}
+		
+		// Reinstate the previous stacks.
+		if (partialPathBySubQuery) {
+			// Add as a sub query...
+			// Should be exactly 1 criterion in the stack
+			Deque<Criterion> groupCriterionStack = contextStacks.poll()
+			if (groupCriterionStack.size() != 1) throw new IllegalStateException('More than 1 criterion resulted from subquery component')
+			
+			// Pop the criteria with the aliases defined.
+			final DetachedCriteria sq =
+				targetStack.poll()
+				.add(groupCriterionStack.poll())
+				
+			// Add as an in to the current stack. The implementation should
+			// add the appropriate projection
+			final String targetId = "${getAliasedProperty(partialPathBySubQuery)?.property}.id"
+			contextStack.push(Subqueries.propertyIn(targetId, sq))
+			
+			// Drop alias stacks for GCing
+			aliasesStack.poll() // No longer needed.
+			aliasPrefixStack.poll() // No longer needed.
+		}
+	}
 
   @Override
   public void enterFilterGroup (FilterGroupContext ctx) {
@@ -534,7 +562,7 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
     // New aliases for this group.
     aliasesStack.push([:])
     groupCounter ++;
-    targetStack.push ( 
+    targetStack.push (
       DetachedCriteria.forEntityName(rootEntityName, "__sub_query_${groupCounter}")) 
     newAliasPrefix()
   }
@@ -544,10 +572,6 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
     // Should be exactly 1 criterion in the stack
     Deque<Criterion> groupCriterionStack = contextStacks.poll()
     if (groupCriterionStack.size() != 1) throw new IllegalStateException('More than 1 criterion resulted from group')
-
-      
-    // ADd it to the subquery with an ID projection
-//    contextStack.push(groupCriterionStack.poll())
     
     // Pop the criteria with the aliases defined.
     final DetachedCriteria sq =
@@ -566,18 +590,17 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 
   @Override
   public void enterSpecialFilter (SpecialFilterContext ctx) {
-    
+    // NOOP
   }
 
   @Override
   public void exitSpecialFilter (SpecialFilterContext ctx) {
-    // TODO Auto-generated method stub
-    
+    // NOOP
   }
 
   @Override
   public void enterNegatedExpression (NegatedExpressionContext ctx) {
-    // TODO Auto-generated method stub
+    // NOOP
   }
 
   @Override
@@ -588,7 +611,7 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 
   @Override
   public void enterDisjunctiveFilter (DisjunctiveFilterContext ctx) {
-    // TODO Auto-generated method stub
+    // NOOP
     
   }
 
@@ -600,13 +623,12 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 
   @Override
   public void enterRangeFilter (RangeFilterContext ctx) {
-    // TODO Auto-generated method stub
-    
+    // NOOP
   }
 
   @Override
   public void exitRangeFilter (RangeFilterContext ctx) {
-    // TODO Auto-generated method stub
+    // NOOP
   }
 
   @Override
@@ -645,13 +667,11 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 
   @Override
   public void enterSpecial_operator (Special_operatorContext ctx) {
-    // TODO Auto-generated method stub
-    
+    // NOOP
   }
 
   @Override
   public void exitSpecial_operator (Special_operatorContext ctx) {
-    // TODO Auto-generated method stub
-    
+    // NOOP
   }
 }
