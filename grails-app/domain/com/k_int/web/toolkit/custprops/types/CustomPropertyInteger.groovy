@@ -10,10 +10,6 @@ import grails.gorm.MultiTenant
 class CustomPropertyInteger extends CustomProperty<BigInteger> implements MultiTenant<CustomPropertyInteger>, Clonable<CustomPropertyInteger> { 
   
   BigInteger value
-
-  public CustomPropertyInteger(String strValue) {
-    this.value = new BigInteger(strValue);
-  }
   
   static constraints = {
     value nullable: false, blank: false
