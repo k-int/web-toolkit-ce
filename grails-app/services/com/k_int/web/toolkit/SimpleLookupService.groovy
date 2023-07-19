@@ -132,7 +132,8 @@ class SimpleLookupService {
     // We have parsed the whole string and now we have the final context.
     
     // Create a listener to act on the tree.
-    SimpleLookupServiceListenerWtk listener = new SimpleLookupServiceListenerWtk(log, valueConverterService, criteria, criteria.getCriteriaImpl().getEntityOrClassName())
+    SimpleLookupServiceListenerWtk listener = new SimpleLookupServiceListenerWtk(
+			log, valueConverterService, criteria, criteria.getCriteriaImpl().getEntityOrClassName(), aliasStack)
     ParseTreeWalker.DEFAULT.walk(listener, filters);
     
     Criterion result = listener.result

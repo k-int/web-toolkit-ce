@@ -65,12 +65,12 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
   private final String rootEntityName
   private final ValueConverterService valueConverterService
   
-  public SimpleLookupServiceListenerWtk(final Logger log, ValueConverterService valueConverterService, final DetachedCriteria rootTarget, final String rootEntityName) {
+  public SimpleLookupServiceListenerWtk(final Logger log, final ValueConverterService valueConverterService, final DetachedCriteria rootTarget, final String rootEntityName, final Map<String, String> rootAliasNames) {
     this.log = log
     this.rootEntityName = rootEntityName
     this.targetStack.push(rootTarget)
     this.valueConverterService = valueConverterService
-    aliasesStack.push([:]) // Add an empty alias stack initially.
+    aliasesStack.push(rootAliasNames) // Add an empty alias stack initially.
     contextStacks.push(new ArrayDeque<Criterion>()); // empty stack on the queue
     newAliasPrefix()
   }
