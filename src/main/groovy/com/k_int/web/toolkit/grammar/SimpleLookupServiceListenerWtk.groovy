@@ -438,6 +438,8 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 		final String propertyName = getAliasedProperty(subject)
 		final def compValue = (value && requiresConversion) ? valueConverterService.attemptConversion(subjectType, value) : value
 		
+		boolean negateWholeSubq = false;
+		
 		switch (op.type) {
 			case SimpleLookupWtkParser.EQ :
 			case SimpleLookupWtkParser.EQEQ :
@@ -520,9 +522,11 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 				pushCriterion(Restrictions.isNotNull(propertyName))
 				break
 			case SimpleLookupWtkParser.ISNOTSET :
-				// Actually specially maps to NOT ( isNotNull ), which is not the same as isNull
-				// and hence this special case
-				pushCriterion(Restrictions.not(Restrictions.isNotNull(propertyName)))
+				// Because of the way sub queries are used in some cases we need to defer this
+				// negation to negate the whole subquery when special cases, like customProperties are used. 
+				negateWholeSubq = true
+				
+				pushCriterion(Restrictions.conjunction(Restrictions.isNotNull(propertyName)))
 				break
 			case SimpleLookupWtkParser.ISEMPTY :
 				pushCriterion(Restrictions.isEmpty(propertyName))
@@ -552,6 +556,12 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 			// Drop alias stacks for GCing
 			aliasesStack.poll() // No longer needed.
 			aliasPrefixStack.poll() // No longer needed.
+		}
+		
+		if (negateWholeSubq) {
+			// We should wrap the head of the context stack in a not.
+			Criterion head = contextStack.poll()
+			contextStack.push(Restrictions.not(head))
 		}
 	}
 
