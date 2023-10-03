@@ -4,6 +4,7 @@ import org.antlr.v4.runtime.CharStream
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
+import org.grails.datastore.gorm.GormStaticApi
 import org.hibernate.criterion.*
 import org.hibernate.sql.JoinType
 
@@ -12,9 +13,12 @@ import com.k_int.web.toolkit.grammar.SimpleLookupWtkLexer
 import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser
 import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.FiltersContext
 import com.k_int.web.toolkit.utils.DomainUtils
+import com.k_int.web.toolkit.utils.GormUtils
 
+import grails.gorm.multitenancy.Tenants
 import grails.util.GrailsClassUtils
 import groovy.util.logging.Slf4j
+import java.util.concurrent.Callable
 
 @Slf4j
 class SimpleLookupService {
@@ -261,6 +265,7 @@ class SimpleLookupService {
     private final Closure originalQuery
     private final int chunkMaxSize
     private final Class targetClass
+		private final Optional<Serializable> tenantId
     
     private long totalResults = 0
     
@@ -275,12 +280,24 @@ class SimpleLookupService {
     public BatchedStreamIterator (
         final Class targetClass,
         final int batchSizeSuggestion = 1000,
+				final Optional<Serializable> tenantId,
         final Closure lookupQuery) {
       
       this.targetClass = targetClass
       this.originalQuery = lookupQuery
       this.chunkMaxSize = batchSizeSuggestion
+			this.tenantId = tenantId
     }
+		
+		private <T> T doInSession( Closure<T> lookup ) {
+			GormStaticApi<?> api = GormUtils.gormStaticApi(targetClass)
+			
+			T val = tenantId
+				.map({ tenantId -> api.withTenant( tenantId, lookup ) })
+				.orElseGet({ api.withTransaction(lookup) })
+				
+			val
+		}
     
     private void fetch() {      
       if (position > -1) {
@@ -292,25 +309,29 @@ class SimpleLookupService {
       } else {
         offset = 0 // First page.
       }
+			
+			doInSession() {
+				def res = doList (targetClass, ['offset': offset, 'max': chunkMaxSize], {
+	        // Ensure the owner isn't changed. And run.
+	        originalQuery.rehydrate(delegate, owner.originalQuery, thisObject).call()
+	        
+	        // Cache to help speed up future calls.
+	        readOnly true
+	        cache true
+	      })
       
-      def res = doList (targetClass, ['offset': offset, 'max': chunkMaxSize], {
-        // Ensure the owner isn't changed. And run.
-        originalQuery.rehydrate(delegate, owner.originalQuery, thisObject).call()
-        
-        // Cache to help speed up future calls.
-        readOnly true
-        cache true
-      })
-      
-      // Every time we fetch results we should ensure the total is updated to
-      // the current understanding. It's possible for the results-size to change
-      // while we chunk things up but that is an acceptable caveat here.
-      totalResults = res?.totalCount ?: 0
-      
-      // Update the chunk vars.
-      currentChunk = res
-      currentChunkPosition = -1
-      currentChunkEnd = currentChunk.size() - 1
+	      // Every time we fetch results we should ensure the total is updated to
+	      // the current understanding. It's possible for the results-size to change
+	      // while we chunk things up but that is an acceptable caveat here.
+	      totalResults = res?.totalCount ?: 0
+	      
+	      // Update the chunk vars.
+	      currentChunk = res
+				
+				currentChunkPosition = -1
+				currentChunkEnd = currentChunk.size() - 1
+			
+			}
     }
     
     // Initialize the values.
@@ -370,10 +391,19 @@ class SimpleLookupService {
     
     // Results per page, cap at 1000 for safety here.
     final int chunkSizeSuggestion = Math.min(chunkSize, 1000)
+		
+		// Not Ideal to have to catch the exception but there isn't a better way ATM
+		
+		Serializable tid
+		try {
+			tid = Tenants.currentId()
+		} catch( Exception e ) {
+			tid = null;
+		}
 
     // Return our special wrapper class that should allow for forward iteration
     // through the results.
-    new BatchedStreamIterator (c, chunkSizeSuggestion, {
+    new BatchedStreamIterator (c, chunkSizeSuggestion, Optional.ofNullable(tid), {
       // Change the delegate and execute.
       if (base) {
         base.setDelegate(delegate)
