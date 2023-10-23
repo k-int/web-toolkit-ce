@@ -42,8 +42,8 @@ fragment DIGIT      : [0-9];
 ESCAPED_SPECIAL      : '\\' ~[\r\n\t];
 
 NEGATED              : '!';
-GROUP_START          : '(';
-GROUP_END            : ')';
+GROUP_START          : WHITESPACE* '(';
+GROUP_END            : ')' WHITESPACE*;
 
 AND                  : '&&';
 OR                   : '||';
@@ -75,7 +75,7 @@ ISNOTEMPTY           : IS NOT EMPTY;
 
 WHITESPACE           : (' ' | '\t') ;
 NEWLINE              : ('\r'? '\n' | '\r')+;
-SUBJECT              : (LOWERCASE | UPPERCASE) ((LOWERCASE | UPPERCASE | DIGIT | '_' | '.')* (LOWERCASE | UPPERCASE | DIGIT))? ;
+SUBJECT              : (LOWERCASE | UPPERCASE) ((LOWERCASE | UPPERCASE | DIGIT | '_' | '.')* (LOWERCASE | UPPERCASE | DIGIT))?;
 
 // Capture any that haven't explicitly matched above
 ANY                  :  .;
@@ -100,9 +100,9 @@ range_expr
   : lhval=value_exp lhop=(GT | GE | LT | LE) subject=SUBJECT rhop=(GT | GE | LT | LE) rhval=value_exp;
 
 standard_expr
-  : lhs=SUBJECT operator rhs=SUBJECT                    #ambiguousFilter
-  | subject=SUBJECT operator value=value_exp            #subjectFirstFilter
+  : subject=SUBJECT operator value=value_exp            #subjectFirstFilter
   | value=value_exp operator subject=SUBJECT            #valueFirstFilter
+  | lhs=value_exp operator rhs=value_exp                #ambiguousFilter
 ;
 
 filter_expr
