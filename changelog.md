@@ -1,6 +1,16 @@
 # Changelog
 
+## Version 8.1.2
+
+### Fixes
+* [General]
+	* Allow whitespace around subjects/values
+
 ## Version 8.1.1
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
 
 ### Fixes
 * [General]
