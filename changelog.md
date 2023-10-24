@@ -1,6 +1,16 @@
 # Changelog
 
+## Version 8.1.3
+
+### Fixes
+* [General]
+	* Trim determined subject in ambiguous filter
+
 ## Version 8.1.2
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
 
 ### Fixes
 * [General]
