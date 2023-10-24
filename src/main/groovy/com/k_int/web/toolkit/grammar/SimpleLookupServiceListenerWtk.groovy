@@ -298,20 +298,23 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
     final String lhs = ctx.lhs.text
     final Token op = ctx.operator().opToken
     final String rhs = ctx.rhs.text
+		
+		final String trimmedLhs = lhs?.trim()
+		final String trimmedRhs = rhs?.trim()
     
     // Resolve the type of the property should the lhs be the subject
-    def typeDef = resolvePropertyType(lhs)
+    def typeDef = resolvePropertyType(trimmedLhs)
     if (typeDef == null) {
       
-      log.debug "${lhs} is not a valid property path trying RHS"
+      log.debug "${trimmedLhs} is not a valid property path trying RHS"
       // assume rhs is the subject
-      typeDef = resolvePropertyType(ctx.rhs.text)
+      typeDef = resolvePropertyType(trimmedRhs)
       inverted = true
     }
     
     if (typeDef == null) {
-      log.error "${rhs} is not a valid property path. Invalid filter"
-      return
+      // log.error "Neither ${lhs} or ${rhs} are valid property paths."
+      throw new IllegalStateException("Neither ${trimmedLhs} or ${trimmedRhs} are valid property paths.")
     }
     
     // Valid
@@ -319,7 +322,7 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 
     // Add a criterion to the stack.
     addCriterion(
-      inverted ? rhs : lhs,
+      inverted ? trimmedRhs : trimmedLhs,
       typeDef,
       op,
       inverted ? lhs : rhs,
