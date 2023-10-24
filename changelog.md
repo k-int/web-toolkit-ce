@@ -1,6 +1,16 @@
 # Changelog
 
+## Version 8.1.4
+
+### Fixes
+* [General]
+	* Move none greedy whitespace captures to parser from lexer
+
 ## Version 8.1.3
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
 
 ### Fixes
 * [General]
