@@ -117,6 +117,7 @@ environments:
       url: "jdbc:postgresql://localhost:54321/test"
       username: "test"
       password: "test"
+      tenant: "testTenant"
 
     dataSources:
       test:
@@ -132,4 +133,6 @@ environments:
         multiTenancy:
           # For testing it's OK to use the DISCRIMINATOR mode
           mode: DATABASE
-          tenantResolverClass: org.grails.datastore.mapping.multitenancy.web.SystemPropertyTenantResolver
+          tenantResolverClass: org.grails.datastore.mapping.multitenancy.resolvers.FixedTenantResolver
+
+

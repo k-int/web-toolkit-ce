@@ -9,14 +9,18 @@ buildscript {
 		classpath "org.grails:grails-gradle-plugin:$grailsGradlePluginVersion"
 		classpath "org.grails.plugins:views-gradle:2.3.2"
 		
-		
 		classpath 'com.k_int.gradle:kint-gradle-plugin:2.2.0'
-		classpath "org.grails.plugins:hibernate5:7.3.1"
+		classpath "org.grails.plugins:hibernate5:$gormVersion" // Prev 7.3.1
 	}
 }
 
 plugins {
 	id 'antlr'
+}
+
+repositories {
+  mavenCentral()
+  maven { url "https://repo.grails.org/grails/core/" }
 }
 
 //version "0.1"
@@ -30,11 +34,6 @@ apply plugin: 'org.grails.grails-plugin'
 apply plugin: 'org.grails.plugins.views-json'
 apply plugin: 'com.k_int.gradle.plugin'
 apply plugin: 'com.k_int.gradle.conventional-git'
-
-repositories {
-	mavenCentral()
-	maven { url "https://repo.grails.org/grails/core" }
-}
 
 configurations {
 	developmentOnly
@@ -50,77 +49,6 @@ configurations {
 		extendsFrom developmentOnly
 		extendsFrom implementation
 	}
-}
-
-dependencies {
-	//	developmentOnly("org.springframework.boot:spring-boot-devtools")
-	developmentOnly "io.micronaut:micronaut-inject-groovy"
-	console "org.grails:grails-console"
-	developmentOnly "org.springframework.boot:spring-boot-starter-logging"
-	developmentOnly "org.springframework.boot:spring-boot-starter-validation"
-	developmentOnly "org.springframework.boot:spring-boot-autoconfigure"
-
-	developmentOnly "org.grails:grails-core"
-	//	implementation "org.springframework.boot:spring-boot-starter-actuator"
-	//	implementation "org.springframework.boot:spring-boot-starter-tomcat"
-	developmentOnly "org.springframework.boot:spring-boot-starter-undertow"
-
-	developmentOnly "org.grails:grails-web-boot"
-	developmentOnly "org.grails:grails-logging"
-	developmentOnly "org.grails:grails-plugin-rest"
-	developmentOnly "org.grails:grails-plugin-databinding"
-	developmentOnly "org.grails:grails-plugin-i18n"
-	developmentOnly "org.grails:grails-plugin-services"
-	developmentOnly "org.grails:grails-plugin-url-mappings"
-	developmentOnly "org.grails:grails-plugin-interceptors"
-	//	implementation "org.grails.plugins:cache"
-	developmentOnly "org.grails.plugins:async"
-	//	implementation "org.grails.plugins:scaffolding"
-	//	implementation "org.grails.plugins:gsp"
-	// profile "org.grails.profiles:web-plugin"
-	profile "org.grails.profiles:rest-api-plugin"
-	testImplementation "io.micronaut:micronaut-inject-groovy"
-	developmentOnly "org.grails:grails-gorm-testing-support"
-	//	testImplementation "org.mockito:mockito-core"
-	developmentOnly "org.grails:grails-web-testing-support"
-
-
-	// --------------------------------- Custom Deps Below -----------------------------------//
-	developmentOnly "org.grails.plugins:views-json"
-	developmentOnly "org.grails.plugins:hibernate5"
-	developmentOnly "org.postgresql:postgresql:42.2.14"
-	implementation 'org.codehaus.janino:janino:3.1.9' // Needed for conditional logging
-
-
-	developmentOnly "org.springframework.security:spring-security-core:5.8.1", {
-		[
-			'spring-aop',
-			'spring-beans',
-			'spring-context',
-			'spring-core',
-			'spring-expression'
-		].each {
-			exclude module: it
-		}
-	}
-	developmentOnly "org.springframework.security:spring-security-web:5.8.1", {
-		exclude module: 'spring-web'
-	}
-
-	implementation 'com.ibm.icu:icu4j:62.1'
-
-	// Minio for file storage to S3
-	implementation "io.minio:minio:8.3.3"
-	implementation 'com.squareup.okhttp3:okhttp:4.8.1'
-	implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.3.70'
-	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.68'
-
-	// SHould be replaced and rewritten out of this module.
-	implementation 'io.github.http-builder-ng:http-builder-ng-core:1.0.4'
-
-	antlr "org.antlr:antlr4:4.7" // use ANTLR version 4
-
-	testImplementation 'com.h2database:h2:2.1.212'
 }
 
 bootRun {
@@ -143,23 +71,104 @@ sourceSets {
   }
 }
 
+dependencies {
+  developmentOnly "org.grails:grails-core"
+  developmentOnly "org.grails:grails-logging"
+  developmentOnly "org.grails:grails-plugin-databinding"
+  developmentOnly "org.grails:grails-plugin-i18n"
+  developmentOnly "org.grails:grails-plugin-interceptors"
+  developmentOnly "org.grails:grails-plugin-rest"
+  developmentOnly "org.grails:grails-plugin-services"
+  developmentOnly "org.grails:grails-plugin-url-mappings"
+  developmentOnly "org.grails:grails-web-boot"
+  developmentOnly "org.grails.plugins:async"
+  developmentOnly "org.grails.plugins:hibernate5"
+  // Do we need this?
+  //implementation("org.hibernate:hibernate-core:5.6.15.Final")
+
+  developmentOnly "org.springframework.boot:spring-boot-starter-undertow"
+
+  developmentOnly "org.springframework.boot:spring-boot-autoconfigure"
+  developmentOnly "org.springframework.boot:spring-boot-starter-logging"
+  developmentOnly "org.springframework.boot:spring-boot-starter-validation"
+
+  developmentOnly "io.micronaut:micronaut-inject-groovy"
+
+  console("org.grails:grails-console")
+  runtimeOnly("com.h2database:h2")
+  
+  testImplementation("io.micronaut:micronaut-inject-groovy")
+
+  // For some reason testImplementation for these two fails on gradlew check
+	compileOnly("org.grails:grails-gorm-testing-support")
+  compileOnly("org.spockframework:spock-core")
+
+  testImplementation("org.grails:grails-gorm-testing-support")
+  testImplementation("org.spockframework:spock-core")
+
+  testImplementation("io.micronaut:micronaut-http-client")
+
+  profile "org.grails.profiles:rest-api-plugin"
+
+  // --------------------------------- Custom Deps Below -----------------------------------//
+	developmentOnly "org.grails.plugins:views-json"
+	developmentOnly "org.postgresql:postgresql:42.2.14"
+	developmentOnly 'org.codehaus.janino:janino:3.1.9' // Needed for conditional logging
+
+
+	developmentOnly "org.springframework.security:spring-security-core:6.1.1", { // Prev 5.8.1
+		[
+			'spring-aop',
+			'spring-beans',
+			'spring-context',
+			'spring-core',
+			'spring-expression'
+		].each {
+			exclude module: it
+		}
+	}
+	developmentOnly "org.springframework.security:spring-security-web:5.8.1", {
+		exclude module: 'spring-web'
+	}
+
+	developmentOnly 'com.ibm.icu:icu4j:62.1'
+
+	// Minio for file storage to S3
+	developmentOnly "io.minio:minio:8.3.3"
+	developmentOnly 'com.squareup.okhttp3:okhttp:4.8.1'
+	developmentOnly 'org.jetbrains.kotlin:kotlin-stdlib:1.3.70'
+	developmentOnly 'com.amazonaws:aws-java-sdk-s3:1.12.68'
+
+	// SHould be replaced and rewritten out of this module.
+	developmentOnly 'io.github.http-builder-ng:http-builder-ng-core:1.0.4'
+
+	antlr "org.antlr:antlr4:4.7" // use ANTLR version 4
+
+	testImplementation 'com.h2database:h2:2.1.212'
+}
+
+/* application {
+  mainClass.set("web.toolkit.ce.Application")
+} */
+
+/* 
+java {
+  sourceCompatibility = JavaVersion.toVersion("11")
+} */
+
 tasks.withType(GroovyCompile) {
 	configure(groovyOptions) {
 		forkOptions.jvmArgs = ['-Xmx1024m']
 	}
 }
 
-//java {
-//	sourceCompatibility = JavaVersion.toVersion("11")
-//	targetCompatibility = JavaVersion.toVersion("11")
-//}
-
-
 tasks.withType(Test) {
-	useJUnitPlatform()
+  useJUnitPlatform()
 }
+
 // enable if you wish to package this plugin as a standalone application
 bootJar.enabled = false
+
 
 eclipse {
 	autoBuildTasks ([
@@ -206,32 +215,6 @@ eclipse {
 	}
 }
 
-// Writes plugin data
-tasks.register("extendedConfigScript") { Task me ->
-
-	// Find the correct file.
-	Task configTask = project.tasks.getByName('configScript')
-	File configFile = configTask.outputs.files.files.find { it.name == 'config.groovy' }
-	if(!configFile) {
-		return  // No need to continue if the file is not there
-	}
-
-	me.inputs.property('version', project.version)
-	me.outputs.file(configFile)
-	project.tasks.getByName('compileGroovy').dependsOn( me )
-	me.dependsOn( configTask )
-
-	doLast {
-		configFile.append("""
-/***** Extention *****/
-withConfig(configuration) {
-  inline(phase: 'CONVERSION') { source, context, classNode ->
-    classNode.putNodeMetaData('projectVersion', '$project.version')
-  }
-}""")
-	}
-}
-
 publishing {
 	publications {
 		maven(MavenPublication) {
@@ -260,3 +243,31 @@ publishing {
 compileGsonViews {
 	packageName = "web-toolkit"
 }
+
+// Writes plugin data
+/*
+tasks.register("extendedConfigScript") { Task me ->
+
+	// Find the correct file.
+	Task configTask = project.tasks.getByName('configScript')
+	File configFile = configTask.outputs.files.files.find { it.name == 'config.groovy' }
+	if(!configFile) {
+		return  // No need to continue if the file is not there
+	}
+
+	me.inputs.property('version', project.version)
+	me.outputs.file(configFile)
+	project.tasks.getByName('compileGroovy').dependsOn( me )
+	me.dependsOn( configTask )
+
+	doLast {
+		configFile.append("""
+    /***** Extention ***** /
+withConfig(configuration) {
+  inline(phase: 'CONVERSION') { source, context, classNode ->
+    classNode.putNodeMetaData('projectVersion', '$project.version')
+  }
+}""")
+	}
+}
+*/

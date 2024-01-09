@@ -1,5 +1,5 @@
 # Web Toolkit Community Edition
-Toolkit and value-add module for grails 4.x.x
+Toolkit and value-add module for grails 6.x.x
 
 Copyright (C) 2015-2020 Knowledge Integration
 
