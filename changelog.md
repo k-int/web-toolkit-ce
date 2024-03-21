@@ -1,6 +1,16 @@
 # Changelog
 
+## Version 9.0.0
+
+### Additions
+* [General]
+	* **BREAKING** -  Grails 6
+
 ## Version 8.1.4
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
 
 ### Fixes
 * [General]
