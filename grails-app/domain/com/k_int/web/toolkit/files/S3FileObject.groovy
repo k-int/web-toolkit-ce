@@ -1,29 +1,28 @@
 package com.k_int.web.toolkit.files
 
+import org.grails.datastore.gorm.GormEntity
+
 import com.k_int.web.toolkit.domain.traits.Clonable
+
 import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
-import grails.gorm.annotation.Entity
-import groovy.util.logging.Slf4j
 
 @GrailsCompileStatic
-@Entity
-class S3FileObject extends FileObject implements MultiTenant<S3FileObject>, Clonable<S3FileObject> {
+class S3FileObject extends FileObject implements GormEntity<FileObject>, MultiTenant<FileObject>, Clonable<S3FileObject> {
 
-  String s3ref
-    
-  static constraints = {
-    s3ref nullable: false
-  }
+	String s3ref
 
-  static mapping = {
-    discriminator "S3"
-         s3ref column: 'fo_s3ref'
+	static constraints = {
+		s3ref nullable: false
+	}
 
-  }
-  
-  @Override
-  public S3FileObject clone () {
-    Clonable.super.clone()
-  }
+	static mapping = {
+		discriminator "S3"
+		s3ref column: 'fo_s3ref'
+	}
+
+	@Override
+	public S3FileObject clone () {
+		Clonable.super.clone()
+	}
 }

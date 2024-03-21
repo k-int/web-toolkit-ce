@@ -1,5 +1,7 @@
 package com.k_int.web.toolkit.custprops.types
 
+import org.grails.datastore.gorm.GormEntity
+
 import com.k_int.web.toolkit.custprops.CustomProperty
 import com.k_int.web.toolkit.domain.traits.Clonable
 
@@ -7,7 +9,7 @@ import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
 
 @GrailsCompileStatic
-class CustomPropertyInteger extends CustomProperty<BigInteger> implements MultiTenant<CustomPropertyInteger>, Clonable<CustomPropertyInteger> { 
+class CustomPropertyInteger extends CustomProperty<BigInteger> implements GormEntity<CustomProperty<BigInteger>>, MultiTenant<CustomProperty<BigInteger>>, Clonable<CustomPropertyInteger> { 
   
   BigInteger value
   

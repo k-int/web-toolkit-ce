@@ -2,6 +2,8 @@ package com.k_int.web.toolkit.custprops.types
 
 import java.time.LocalDate
 
+import org.grails.datastore.gorm.GormEntity
+
 import com.k_int.web.toolkit.custprops.CustomProperty
 import com.k_int.web.toolkit.domain.traits.Clonable
 
@@ -9,7 +11,7 @@ import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
 
 @GrailsCompileStatic
-class CustomPropertyLocalDate extends CustomProperty<LocalDate> implements MultiTenant<CustomPropertyLocalDate>, Clonable<CustomPropertyLocalDate> { 
+class CustomPropertyLocalDate extends CustomProperty<LocalDate> implements GormEntity<CustomProperty<LocalDate>>, MultiTenant<CustomProperty<LocalDate>>, Clonable<CustomPropertyLocalDate> { 
   
   LocalDate value
   

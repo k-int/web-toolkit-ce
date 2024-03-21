@@ -1,16 +1,17 @@
 package com.k_int.web.toolkit.custprops.types
 
-import com.k_int.web.toolkit.databinding.BindImmutably
+import org.grails.datastore.gorm.GormEntity
 
 import com.k_int.web.toolkit.custprops.CustomProperty
+import com.k_int.web.toolkit.databinding.BindImmutably
 import com.k_int.web.toolkit.domain.traits.Clonable
 import com.k_int.web.toolkit.refdata.RefdataValue
 
 import grails.gorm.MultiTenant
 
-class CustomPropertyMultiRefdata extends CustomProperty<Set<RefdataValue>> implements MultiTenant<CustomPropertyMultiRefdata>, Clonable<CustomPropertyMultiRefdata> { 
+class CustomPropertyMultiRefdata extends CustomProperty<Set<RefdataValue>> implements GormEntity<CustomProperty<Set<RefdataValue>>>, MultiTenant<CustomProperty<Set<RefdataValue>>>, Clonable<CustomPropertyMultiRefdata> { 
   
-  @BindImmutably
+  @BindImmutably(true)
   Set<RefdataValue> value = []
   
   static hasMany = [value: RefdataValue]

@@ -1,15 +1,16 @@
 package com.k_int.web.toolkit.custprops.types
 
-import com.k_int.web.toolkit.databinding.BindImmutably
+import org.grails.datastore.gorm.GormEntity
 
 import com.k_int.web.toolkit.custprops.CustomProperty
+import com.k_int.web.toolkit.databinding.BindImmutably
 import com.k_int.web.toolkit.domain.traits.Clonable
 
 import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
 
 @GrailsCompileStatic
-class CustomPropertyMultiBlob extends CustomProperty<Set<Byte[]>> implements MultiTenant<CustomPropertyMultiBlob>, Clonable<CustomPropertyMultiBlob> { 
+class CustomPropertyMultiBlob extends CustomProperty<Set<Byte[]>> implements GormEntity<CustomProperty<Set<Byte[]>>>, MultiTenant<CustomProperty<Set<Byte[]>>>, Clonable<CustomPropertyMultiBlob> { 
   
   @BindImmutably
   Set<Byte[]> value = []

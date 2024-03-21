@@ -1,5 +1,7 @@
 package com.k_int.web.toolkit.custprops
 
+import org.grails.datastore.gorm.GormEntity
+
 import com.k_int.web.toolkit.custprops.types.*
 
 import grails.compiler.GrailsCompileStatic
@@ -9,7 +11,7 @@ import grails.gorm.transactions.Rollback
 
 @Entity
 @GrailsCompileStatic
-class CustomProperty<T> implements MultiTenant<CustomProperty> {
+class CustomProperty<T> implements GormEntity<CustomProperty<T>>, MultiTenant<CustomProperty<T>> {
   CustomPropertyDefinition definition
   T value
   

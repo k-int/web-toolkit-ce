@@ -5,9 +5,10 @@ import com.k_int.web.toolkit.domain.traits.Clonable
 
 import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
+import org.grails.datastore.gorm.GormEntity
 
-//@GrailsCompileStatic
-class CustomPropertyBlob extends CustomProperty<Byte[]> implements MultiTenant<CustomPropertyBlob>, Clonable<CustomPropertyBlob> { 
+@GrailsCompileStatic
+class CustomPropertyBlob extends CustomProperty<Byte[]> implements GormEntity<CustomProperty<Byte[]>>, MultiTenant<CustomProperty<Byte[]>>, Clonable<CustomPropertyBlob> { 
   
   Byte[] value
   

@@ -1,12 +1,13 @@
 package com.k_int.web.toolkit.custprops.types
 
+import org.grails.datastore.gorm.GormEntity
+
 import com.k_int.web.toolkit.custprops.CustomProperty
 import com.k_int.web.toolkit.domain.traits.Clonable
 
 import grails.gorm.MultiTenant
-import grails.gorm.annotation.Entity
 
-class CustomPropertyText extends CustomProperty<String> implements MultiTenant<CustomPropertyText>, Clonable<CustomPropertyText> { 
+class CustomPropertyText extends CustomProperty<String> implements GormEntity<CustomProperty<String>>, MultiTenant<CustomProperty<String>>, Clonable<CustomPropertyText> { 
   
   String value
   

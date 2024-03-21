@@ -1,5 +1,6 @@
 package com.k_int.web.toolkit.custprops.types
 
+import org.grails.datastore.gorm.GormEntity
 import org.hibernate.criterion.DetachedCriteria
 import org.hibernate.criterion.Projections
 import org.hibernate.criterion.Restrictions
@@ -15,7 +16,7 @@ import grails.gorm.MultiTenant
 
 //@Entity
 @BindUsingWhenRef({ obj, String propName, source -> CustomPropertiesBinder.bind (obj, propName, source) })
-class CustomPropertyContainer extends CustomProperty<Set<CustomProperty>> implements MultiTenant<CustomPropertyContainer>, Clonable<CustomPropertyContainer> {
+class CustomPropertyContainer extends CustomProperty<Set<CustomProperty>> implements GormEntity<CustomProperty<Set<CustomProperty>>>, MultiTenant<CustomProperty<Set<CustomProperty>>>, Clonable<CustomPropertyContainer> {
   
   static copyByCloning = ['value']
 
