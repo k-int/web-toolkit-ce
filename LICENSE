@@ -1,0 +1,59 @@
+# LICENSE
+
+This software library is dual licensed. The two licenses are listed below, subject to the following specific use clause
+
+Software: Web-Toolkit - a utility framework for building Grails RESTFUL applications
+License: Dual - Apache 2.0 with K-Int License
+
+## Specific use License under Apache License 2.0 (APL 2.0)
+
+For the purposes of ongoing maintenance and development and deployment
+of the FOLIO Agreements and Licenses modules, this library is licensed to the Open Library 
+Foundation under the terms of GPL2.0 as set out below.
+
+For the purpose of developing and testing new modules on local machines and CI/CD test servers, 
+developers are able to work under the APL2.0 PROVIDED the work does not conflict with the specific
+application areas set out under the K-Int license terms.
+we welcome partnerships and collaborations in this area from earnest and trustworthy partners.
+
+As of this release dated 17th July 2024 all other usage is subject to the K-int license also set out below
+
+For any questions or clarifications about this license, you may contact
+
+    Ian Ibbotson
+    Director, Knowledge Intergation Ltd via info@k-int.com
+
+
+## Apache License 2.0 (APL 2.0)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+
+## K-Int License Terms
+
+The Software is provided to you by the Licensor under the License, as defined below, subject to the following condition.
+
+- You may not use the library in components provided to others as a managed service
+- You may not circumvent the license key functionality or remove/obscure features protected by license keys 
+- You may not remove or obscure any licensing, copyright, or other notices
+
+The library MAY NOT be used under the terms of APL2.0 as a component in any module for the FOLIO ecosystem 
+(Including related systems based upon the OKAPI library) which directly compete with Knowledge Intergation 
+applications - specifically Development of modules dealing with any aspect of 
+  - Resource Sharing
+  - Electronic Resource Mangagement (Excepting the specific exemptions for Licenses and Agreements noted above)
+  - Open Access
+  - Serials Management
+  - Collections Management within "GLAM" sector applications.
+
+K-int will consider extending the APL2.0 exemptions to other FOLIO modules not within this list.
