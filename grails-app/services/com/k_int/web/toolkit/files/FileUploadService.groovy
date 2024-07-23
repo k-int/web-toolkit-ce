@@ -72,7 +72,7 @@ class FileUploadService {
 
     String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
     String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
-    String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
+    String s3_secret_key = getS3SecretKey();
     String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
     String s3_region = AppSetting.getSettingValue('fileStorage', 'S3BucketRegion') ?: 'us-east-1';
 
@@ -193,11 +193,25 @@ class FileUploadService {
         break;
     }
   }
+
+  private String getS3SecretKey() {
+    // Secret key can come from env var or direct appsetting (deprecated)
+    String s3_secret_key;
+    String s3_secret_var = AppSetting.getSettingValue('fileStorage', 'S3SecretVar')
+    if (s3_secret_var != null) {
+      s3_secret_key = System.getenv(s3_secret_var);
+    } else {
+      s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
+    }
+
+    return s3_secret_key;
+  }
   
   private boolean checkS3Configured() {
     String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
     String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
-    String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
+    String s3_secret_key = getS3SecretKey();
+
     String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
 
     return ( ( s3_endpoint != null ) &&
@@ -212,7 +226,7 @@ class FileUploadService {
   private InputStream getS3FileStream(S3FileObject fo) {
     String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
     String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
-    String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
+    String s3_secret_key = getS3SecretKey();
     String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
     String s3_region = AppSetting.getSettingValue('fileStorage', 'S3BucketRegion') ?: 'us-east-1';
 
