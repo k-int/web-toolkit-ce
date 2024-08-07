@@ -6,6 +6,8 @@ buildscript {
 		maven { url "https://maven.k-int.com/content/repositories/releases" }
 	}
 	dependencies {
+		classpath 'org.ysb33r.gradle:grolifant:0.17.0'
+
 		classpath "org.grails:grails-gradle-plugin:$grailsGradlePluginVersion"
 		classpath "org.grails.plugins:views-gradle:2.3.2"
 		

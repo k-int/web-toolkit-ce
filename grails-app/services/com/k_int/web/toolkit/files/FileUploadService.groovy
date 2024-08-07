@@ -3,6 +3,8 @@ package com.k_int.web.toolkit.files
 import org.springframework.web.multipart.MultipartFile
 import com.k_int.web.toolkit.settings.AppSetting
 
+import grails.gorm.multitenancy.Tenants
+
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
@@ -196,13 +198,21 @@ class FileUploadService {
 
   private String getS3SecretKey() {
     // Secret key can come from env var or direct appsetting (deprecated)
+    // If env variable is set, ignore the appsetting
+    String s3_secret_var = AppSetting.getSettingValue('fileStorage', 'S3SecretVar');
+    println("LOGDEBUG SECRET VAR: ${s3_secret_var}")
+
     String s3_secret_key;
-    String s3_secret_var = AppSetting.getSettingValue('fileStorage', 'S3SecretVar')
     if (s3_secret_var != null) {
-      s3_secret_key = System.getenv(s3_secret_var);
-    } else {
+      s3_secret_key = System.getenv(s3_secret_var)
+    }    
+    println("LOGDEBUG SECRET KEY: ${s3_secret_key}")
+
+
+    if (s3_secret_key == null) {
       s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
     }
+    println("LOGDEBUG SECRET KEY: ${s3_secret_key}")
 
     return s3_secret_key;
   }
