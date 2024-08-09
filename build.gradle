@@ -1,5 +1,6 @@
 buildscript {
 	repositories {
+    maven { url "https://maven.k-int.com/content/repositories/public" }
 		mavenCentral()
 		maven { url "https://plugins.gradle.org/m2/" }
 		maven { url "https://repo.grails.org/grails/core" }
@@ -19,6 +20,7 @@ plugins {
 }
 
 repositories {
+  maven { url "https://maven.k-int.com/content/repositories/public" }
   mavenCentral()
   maven { url "https://repo.grails.org/grails/core/" }
 }
