@@ -1,9 +1,9 @@
 buildscript {
 	repositories {
+		maven { url "https://maven.k-int.com/content/repositories/public" }
 		mavenCentral()
 		maven { url "https://plugins.gradle.org/m2/" }
 		maven { url "https://repo.grails.org/grails/core" }
-		maven { url "https://maven.k-int.com/content/repositories/releases" }
 	}
 	dependencies {
 		classpath "org.grails:grails-gradle-plugin:$grailsGradlePluginVersion"
@@ -19,8 +19,11 @@ plugins {
 }
 
 repositories {
-  mavenCentral()
-  maven { url "https://repo.grails.org/grails/core/" }
+    maven { url "https://maven.k-int.com/content/repositories/public" }
+    mavenCentral()
+    maven { url "https://plugins.gradle.org/m2/" }
+    maven { url "https://repo.grails.org/grails/core" }
+    maven { url "https://repo.grails.org/grails/plugins" }
 }
 
 //version "0.1"
