@@ -14,6 +14,11 @@ import grails.util.Environment
 import grails.web.databinding.DataBindingUtils
 import groovy.util.logging.Slf4j
 
+import com.k_int.web.toolkit.usage.*;
+import grails.util.Holders;
+import java.security.MessageDigest;
+
+
 @Slf4j
 class WebToolkitGrailsPlugin extends Plugin {
 	
@@ -62,7 +67,10 @@ class WebToolkitGrailsPlugin extends Plugin {
     // Replace the default link generator.
     boolean isReloadEnabled = Environment.isDevelopmentMode() || Environment.current.isReloadEnabled()
     boolean cacheUrls = config.getProperty(Settings.WEB_LINK_GENERATOR_USE_CACHE, Boolean, !isReloadEnabled)
+
     grailsLinkGenerator(cacheUrls ? ProxyAwareCachingLinkGenerator : ProxyAwareLinkGenerator, config.getProperty(Settings.SERVER_URL) ?: null)
+
+    usageValidator(DefaultUsageValidator)
     
     final String langTag = grailsApplication.config.getProperty('webtoolkit.converters.numbers.fixedLocale', String, null)
     if (langTag?.toBoolean()) {
