@@ -37,7 +37,7 @@ Then to publish that:
 ```
     Add kintMavenUser and kintMavenPassword to ~/.gradle/gradle.properties
 
-    ./gradlew publish
+    ./gradlew publishAllPublicationsToKIntRepository
 ```
 
 ## Testing
