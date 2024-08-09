@@ -35,7 +35,9 @@ or
 
 Then to publish that:
 ```
-./gradlew publishMavenPublicationToKIntRepository
+    Add kintMavenUser and kintMavenPassword to ~/.gradle/gradle.properties
+
+    ./gradlew publish
 ```
 
 ## Testing
