@@ -8,7 +8,11 @@ public class DefaultUsageValidator implements UsageValidator {
 
   private static final String CONTEXT_REGISTRY = 'https://console-api.platform.k-int.com/toolkit/contextRegistry/validate';
   private static Set knownContexts = [
-    ''
+    'b2f3aac175664953c3bdbe1faa72de63',
+    '929370cd2d4d9148af162caaff742cb4',
+    '396323ac72add4e12b213b68f3e423c0',
+    'e53e03a84079fae26bb8fefcd294953d',
+    '12cfb950528672643af2882e4c147c1b'
   ];
 
   public boolean validateUsageContext(String contextHash, String contextName) {
