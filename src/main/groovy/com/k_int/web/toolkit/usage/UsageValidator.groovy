@@ -4,6 +4,6 @@ package com.k_int.web.toolkit.usage;
 public interface UsageValidator {
 
   public boolean validateUsageContext(String contextHash, String contextName);
-  public String getModuleSignature();
+  public String getModuleSignature(String key);
 
 }

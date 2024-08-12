@@ -3,6 +3,7 @@ package com.k_int.web.toolkit.usage;
 import groovy.json.JsonOutput
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.MessageDigest;
 
 public class DefaultUsageValidator implements UsageValidator {
 
@@ -23,10 +24,9 @@ public class DefaultUsageValidator implements UsageValidator {
       return fullCheck(contextHash,contextName);
   }
 
-  public String getModuleSignature() {
-    String appName = 'grails-okapi-' + Holders.grailsApplication.config.getProperty("okapi.schema.appName", Holders.grailsApplication.metadata.applicationName)
+  public String getModuleSignature(String key) {
     MessageDigest md = MessageDigest.getInstance("MD5")
-    byte[] digest = md.digest(appName.bytes)
+    byte[] digest = md.digest(key.bytes)
     String context = digest.collect { String.format("%02x", it) }.join()
     return signature;
   }
