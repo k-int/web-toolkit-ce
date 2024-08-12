@@ -3,6 +3,7 @@ package com.k_int.web.toolkit.testing
 import static groovy.transform.TypeCheckingMode.SKIP
 import static groovyx.net.http.ContentTypes.JSON
 import static groovyx.net.http.HttpBuilder.configure
+import groovy.json.JsonOutput
 
 import java.util.concurrent.Executors
 
@@ -75,12 +76,10 @@ abstract class HttpSpec extends Specification {
     if (!(jsonObj instanceof Closure)) {
       return jsonObj
     }
+
     log.debug "JsonObj is Closure"
-    StringWriter sw = new StringWriter()
-    def json = new StreamingJsonBuilder(sw)
-    json ( jsonObj )
-    
-    sw.toString()
+    // Convert the payload to JSON format
+    return JsonOutput.toJson(jsonObj)
   }
   
   protected def doGet (final String uri, final Map params = null, final Closure expand = null) {

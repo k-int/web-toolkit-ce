@@ -44,7 +44,7 @@ trait Clonable<D> {
    */
   @Override
   public D clone(final boolean ignoreRequired = false) {
-    clone(ignoreRequired, null)
+    clone(ignoreRequired, null as Iterable<String>)
   }
   
   /**
