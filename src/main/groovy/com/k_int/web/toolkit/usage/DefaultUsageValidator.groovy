@@ -9,10 +9,11 @@ public class DefaultUsageValidator implements UsageValidator {
   private static final String CONTEXT_REGISTRY = 'https://console-api.platform.k-int.com/toolkit/contextRegistry/validate';
   private static Set knownContexts = [
     'b2f3aac175664953c3bdbe1faa72de63',
-    '929370cd2d4d9148af162caaff742cb4',
-    '396323ac72add4e12b213b68f3e423c0',
-    'e53e03a84079fae26bb8fefcd294953d',
-    '12cfb950528672643af2882e4c147c1b'
+    '237b0da9d28c8ec0bc6f7fb85a6038e5',
+    '12cfb950528672643af2882e4c147c1b',
+    '118af403cfe3322815d7202530f87310',
+    'e435c3baa5f9b99ce2ec7175a95397e7',
+    '730553da76b0f85cb37f79bfa93b6e40'
   ];
 
   public boolean validateUsageContext(String contextHash, String contextName) {
@@ -21,6 +22,15 @@ public class DefaultUsageValidator implements UsageValidator {
     else
       return fullCheck(contextHash,contextName);
   }
+
+  public String getModuleSignature() {
+    String appName = 'grails-okapi-' + Holders.grailsApplication.config.getProperty("okapi.schema.appName", Holders.grailsApplication.metadata.applicationName)
+    MessageDigest md = MessageDigest.getInstance("MD5")
+    byte[] digest = md.digest(appName.bytes)
+    String context = digest.collect { String.format("%02x", it) }.join()
+    return signature;
+  }
+
 
   private boolean fullCheck(String contextHash, String contextName) {
     
