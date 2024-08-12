@@ -13,9 +13,10 @@ public class DefaultUsageValidator implements UsageValidator {
     '237b0da9d28c8ec0bc6f7fb85a6038e5',
     '12cfb950528672643af2882e4c147c1b',
     '118af403cfe3322815d7202530f87310',
-    'e435c3baa5f9b99ce2ec7175a95397e7',
-    '730553da76b0f85cb37f79bfa93b6e40'
+    '730553da76b0f85cb37f79bfa93b6e40',
+    'e53e03a84079fae26bb8fefcd294953d'
   ];
+
 
   public boolean validateUsageContext(String contextHash, String contextName) {
     if ( knownContexts.includes(contextHash) )
