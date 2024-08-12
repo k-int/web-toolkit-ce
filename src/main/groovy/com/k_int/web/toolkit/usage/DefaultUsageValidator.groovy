@@ -19,7 +19,7 @@ public class DefaultUsageValidator implements UsageValidator {
 
 
   public boolean validateUsageContext(String contextHash, String contextName) {
-    if ( knownContexts.includes(contextHash) )
+    if ( knownContexts.contains(contextHash) )
       return true;
     else
       return fullCheck(contextHash,contextName);
