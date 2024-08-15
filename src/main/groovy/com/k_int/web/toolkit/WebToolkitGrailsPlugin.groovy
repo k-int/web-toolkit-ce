@@ -15,6 +15,7 @@ import grails.web.databinding.DataBindingUtils
 import groovy.util.logging.Slf4j
 
 import com.k_int.web.toolkit.usage.*;
+import com.k_int.web.toolkit.telemetry.*;
 import grails.util.Holders;
 import java.security.MessageDigest;
 
@@ -71,6 +72,7 @@ class WebToolkitGrailsPlugin extends Plugin {
     grailsLinkGenerator(cacheUrls ? ProxyAwareCachingLinkGenerator : ProxyAwareLinkGenerator, config.getProperty(Settings.SERVER_URL) ?: null)
 
     usageValidator(DefaultUsageValidator)
+    telemetry(DefaultTelemetry)
     
     final String langTag = grailsApplication.config.getProperty('webtoolkit.converters.numbers.fixedLocale', String, null)
     if (langTag?.toBoolean()) {
