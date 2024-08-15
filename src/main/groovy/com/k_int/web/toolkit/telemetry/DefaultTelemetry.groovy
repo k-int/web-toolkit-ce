@@ -4,12 +4,12 @@ public class DefaultTelemetry implements Telemetry {
 
   public void telementryEvent(String event, String tenant, Map<String,Object> params) {
 
-		String TELEMETRY_TARGET = 'https://console-api.hosting.k-int.com';
 
     try {
 
-      String hosting_org = System.getEnv("HOSTING_ORG");
-      String hosting_env = System.getEnv("HOSTING_ENV");
+		  String TELEMETRY_TARGET = system.getEnv("TELEMETRY_TARGET") ?: 'https://console-api.hosting.k-int.com';
+      String hosting_org = System.getEnv("HOSTING_ORG") ?: 'UNKNOWN';
+      String hosting_env = System.getEnv("HOSTING_ENV") ?: 'UNKNOWN';
 
       def jsonPayload = [
         event: event,
