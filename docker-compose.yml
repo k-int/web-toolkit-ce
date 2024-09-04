@@ -1,5 +1,3 @@
-version: "2.1"
-
 volumes:
   wt_minio_data:
     driver: local

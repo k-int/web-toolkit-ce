@@ -136,7 +136,7 @@ dependencies {
 	developmentOnly 'com.ibm.icu:icu4j:62.1'
 
 	// Minio for file storage to S3
-	developmentOnly "io.minio:minio:8.3.3"
+	developmentOnly "io.minio:minio:8.5.12"
 	developmentOnly 'com.squareup.okhttp3:okhttp:4.8.1'
 	developmentOnly 'org.jetbrains.kotlin:kotlin-stdlib:1.3.70'
 	developmentOnly 'com.amazonaws:aws-java-sdk-s3:1.12.68'
