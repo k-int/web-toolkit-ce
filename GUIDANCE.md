@@ -5,7 +5,7 @@
 
 This document outlines the expectations we have for organizations, particularly hosting institutions and SaaS providers, who include this project in their offerings. While the software is released under an open-source license, maintaining and developing web-toolkit is both time-consuming and expensive. We are committed to open source and believe in its power to create collaborative and sustainable software ecosystems. However, we also need support to ensure the long-term viability of this project not just for ourselves, but for the full value chain of open source software that we in turn rely upon.
 
-## Our Expectations for Responsible Use
+## Our Expectations for Responsible Use and Ethical Monetisation
 
 ### 1. Acknowledgment of the Open Source Effort
 
