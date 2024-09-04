@@ -13,7 +13,7 @@ If you include ki-web-toolkit in a SaaS offering, we kindly ask that you provide
 
 - A visible mention of Knowledge Integration Web Toolkit in your product documentation, marketing materials, or website.
 - Acknowledgment of the contributors and community that supports KI Web Toolkit.
-- Do not silently include this module in a component you are selling without acknowledgement
+- Do not silently include this library in a component you are selling without acknowledgement
 
 ### 2. Support for Maintenance and Development
 
