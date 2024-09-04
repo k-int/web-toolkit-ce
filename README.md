@@ -109,9 +109,9 @@ A root level docker-compose file is provided that provisions the components need
 
 ```
 
-# [License](LICENSE)
+# [License](LICENSE.md)
 
-The license must be read in conjunction with GUIDANCE.md
+The license must be read in conjunction with [GUIDANCE.md](GUIDANCE.md)
 
 Copyright (C) 2015-2024 Knowledge Integration
 
