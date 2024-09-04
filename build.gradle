@@ -114,11 +114,11 @@ dependencies {
 
   // --------------------------------- Custom Deps Below -----------------------------------//
 	developmentOnly "org.grails.plugins:views-json"
-	developmentOnly "org.postgresql:postgresql:42.2.14"
+	developmentOnly "org.postgresql:postgresql:42.7.4"
 	developmentOnly 'org.codehaus.janino:janino:3.1.9' // Needed for conditional logging
 
 
-	developmentOnly "org.springframework.security:spring-security-core:6.1.1", { // Prev 5.8.1
+	developmentOnly "org.springframework.security:spring-security-core:6.1.9", { // Prev 5.8.1
 		[
 			'spring-aop',
 			'spring-beans',
@@ -129,7 +129,7 @@ dependencies {
 			exclude module: it
 		}
 	}
-	developmentOnly "org.springframework.security:spring-security-web:5.8.1", {
+	developmentOnly "org.springframework.security:spring-security-web:5.8.14", {
 		exclude module: 'spring-web'
 	}
 
@@ -139,7 +139,7 @@ dependencies {
 	developmentOnly "io.minio:minio:8.5.12"
 	developmentOnly 'com.squareup.okhttp3:okhttp:4.8.1'
 	developmentOnly 'org.jetbrains.kotlin:kotlin-stdlib:1.3.70'
-	developmentOnly 'com.amazonaws:aws-java-sdk-s3:1.12.68'
+	developmentOnly 'com.amazonaws:aws-java-sdk-s3:1.12.770'
 
 	// SHould be replaced and rewritten out of this module.
 	developmentOnly 'io.github.http-builder-ng:http-builder-ng-core:1.0.4'
