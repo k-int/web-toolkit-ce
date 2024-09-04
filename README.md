@@ -3,7 +3,8 @@ Toolkit and value-add module for grails 6.x.x
 
 Copyright (C) 2015-2024 Knowledge Integration
 
-This software is distributed under the terms of the Apache License, Version 2.0. See [License](#license) for more information.
+This software is distributed under the terms of the Apache License, Version 2.0. See [License](#license) for more information. The license must be read in conjunction with [GUIDANCE.md](GUIDANCE.md)
+
 
 # History
 
