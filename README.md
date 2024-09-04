@@ -9,7 +9,8 @@ This software is distributed under the terms of the Apache License, Version 2.0.
 
 This project is the community edition of our grails app web-toolkit, which was created
 to help support applications built on the grails platform. It is published here under an 
-APL license so it can be reused in other open source projects.
+APL license so it can be reused in other open source projects. Please observe the contents of 
+GUIDANCE.md however, particularly if you are building pay-for SAAS solutions on this code.
 
 # Installation
 
