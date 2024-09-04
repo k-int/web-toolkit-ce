@@ -26,7 +26,7 @@ Hosting and SaaS providers who derive value/revenue from KI Web Toolkit should r
 
 ## Why This Matters
 
-Open-source software thrives on community and collaboration. However, building and maintaining software requires resources, including time, money, and effort. We believe that everyone benefiting from KI Web Toolkit has a role to play in its sustainability. Your support, financial sponsorship, or active community engagement, ensures that KI Web Toolkit remains robust, secure, and available for all.
+Open-source software thrives on community and collaboration. However, building and maintaining software (Especially in a world of CVRs and demands for immediate patching) requires resources, including time, money, and effort. We believe that everyone benefiting from KI Web Toolkit has a role to play in its sustainability. Your support, financial sponsorship, or active community engagement, ensures that KI Web Toolkit remains robust, secure, and available for all.
 
 ## Conclusion
 
