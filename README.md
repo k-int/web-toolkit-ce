@@ -110,7 +110,9 @@ A root level docker-compose file is provided that provisions the components need
 
 # [License](LICENSE)
 
-Copyright (C) 2015-2020 Knowledge Integration
+The license must be read in conjunction with GUIDANCE.md
+
+Copyright (C) 2015-2024 Knowledge Integration
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
