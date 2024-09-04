@@ -15,7 +15,7 @@ GUIDANCE.md however, particularly if you are building pay-for SAAS solutions on 
 # Installation
 
 ```
-  compile "com.k_int.grails:web-toolkit-ce:5.0.0"
+  compile "com.k_int.grails:web-toolkit-ce:9.0.3"
 ```
 _NOTE:_ You may need to substitute the version number with the latest release.
 
