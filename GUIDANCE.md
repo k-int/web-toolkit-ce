@@ -17,10 +17,10 @@ If you include ki-web-toolkit in a SaaS offering, we kindly ask that you provide
 
 ### 2. Support for Maintenance and Development
 
-Hosting and SaaS providers who derive value/revenue from KI Web Toolkit should recognize the ongoing costs involved in maintaining and improving the software. We ask that:
+Self Hosting and SaaS providers who derive value/revenue from KI Web Toolkit in a production setting should recognize the ongoing costs involved in maintaining and improving the software. We ask that:
 
-- **Organizations Using KI Web Toolkit at Scale or in a production environment**: Consider formalizing support through a recurring sponsorship or maintenance agreement. This helps us allocate resources to ensure the stability, security, and growth of the project. If every institution that uses a module based on ki web toolkt contributed just GBP25/month we could afford to proactively patch and maintain this module. Modules which include this component, or hosting providers offering this as SAAS might bundle this cost into their offering transparently. Remember that we are trying to leverage scale here, so that the cost to each institution is trivial but the network effect is sustainable software... it helps nobody if hosting providers pay USD5 for a cluster of 300 institutions, please engage with this request in good faith and consider "What we owe to eachother"
-    - Monthy Supporter: https://buy.stripe.com/3cs7t50JfgZ64uccMM
+- **Organizations Using KI Web Toolkit at Scale or in a production environment**: Consider formalizing support through a recurring sponsorship or maintenance agreement. This helps us allocate resources to ensure the stability, security, and growth of the project. If every institution that uses a module based on ki web toolkt contributed just GBP25/month we could afford to proactively patch and maintain this module. Modules which include this component, or hosting providers offering this as SAAS might bundle this cost into their offering transparently. Remember that we are trying to leverage scale here, so that the cost to each institution is trivial but the network effect is sustainable software... it helps nobody if hosting providers pay USD5 for a cluster of 300 institutions, please engage with this request in good faith and consider "What we owe to eachother".
+    - Monthy Supporter: https://buy.stripe.com/3cs7t50JfgZ64uccMM 
     - Annual Supporter: https://buy.stripe.com/6oE4gT77D9wE7Go145
 - **Collaboration on Security**: Promptly report any security vulnerabilities you discover, and work with us to develop and distribute patches.
 
