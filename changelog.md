@@ -1,10 +1,60 @@
 # Changelog
 
+## Version 10.1.0
+
+### Additions
+* [General]
+	* S3 secret environment variable (#16)
+
+## Version 10.0.1
+
+### Changes
+* [Chore]
+	* readme updated
+	* update README
+	* Bump postgres, spring-security-core, spring-security-web and awk-java-sdk-s3
+
+## Version 10.0.0
+
+### Additions
+* [General]
+	* **BREAKING** -  Grails 6.2 upgrade - reposting using single quotes instead of escaping the bang
+
+### Changes
+* [General]
+	* **BREAKING** -  Grails 6.2 upgrade
+* [Chore]
+	* formatting
+
+## Version 9.0.3
+
+### Fixes
+* [General]
+	* contains for looking up contexts
+
+## Version 9.0.2
+
+### Changes
+* [Chore]
+	* update changelog, more updates to readme
+
+## Version 9.0.1
+
+### Changes
+* [Chore]
+	* update plugin class
+* [Feature]
+	* Add validation bean to default context, also reference k-int repo for missing jar dependencies
+
 ## Version 9.0.0
 
 ### Additions
 * [General]
 	* **BREAKING** -  Grails 6
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
 
 ## Version 8.1.4
 
