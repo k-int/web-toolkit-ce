@@ -64,15 +64,37 @@ class FileUploadService {
     fileUpload
   }
 
+  private String getS3Secret() {
+    // Strategy -- We wish to stop using the AppSettings which store/retrieve the S3 Secret in plain text
+    // First check for the pre-existing setting, use if exists & not null
+    String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
+
+    if (s3_secret_key == null) {
+      // Next check for tenant_specific environment variable from settings
+      String s3_key_variable = AppSetting.getSettingValue('fileStorage', 'S3SecretEnvironmentVariable');
+
+      if (s3_key_variable == null) {
+        s3_key_variable = "GLOBAL_S3_SECRET_KEY"
+      }
+      s3_secret_key = System.getenv(s3_key_variable);
+    }
+    return s3_secret_key;
+  }
+
   // Create a FileObject from the given stream details
   private FileObject s3FileObjectFromStream(String object_key,
                                             InputStream is,
                                             long stream_size,
                                             long offset) {
 
+    // Strategy -- We wish to stop using the AppSettings which store/retrieve the S3 Secret in plain text
+    // First check for the pre-existing setting, use if exists & not null
+    String s3_secret_key = getS3Secret();
+
     String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
     String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
-    String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
+    // Deprecated, using getS3Secret method now
+    //String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
     String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
     String s3_region = AppSetting.getSettingValue('fileStorage', 'S3BucketRegion') ?: 'us-east-1';
 
@@ -121,7 +143,7 @@ class FileUploadService {
       fileUpload.save(flush:true)
     }
     catch ( Exception e ) {
-      log.error("Problem with S3 updload",e);
+      log.error("Problem with S3 upload",e);
     }
 
     return fileUpload
@@ -197,7 +219,9 @@ class FileUploadService {
   private boolean checkS3Configured() {
     String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
     String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
-    String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
+
+    //String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
+    String s3_secret_key = getS3Secret();
     String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
 
     return ( ( s3_endpoint != null ) &&
@@ -212,7 +236,8 @@ class FileUploadService {
   private InputStream getS3FileStream(S3FileObject fo) {
     String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
     String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
-    String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
+    //String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
+    String s3_secret_key = getS3Secret();
     String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
     String s3_region = AppSetting.getSettingValue('fileStorage', 'S3BucketRegion') ?: 'us-east-1';
 
