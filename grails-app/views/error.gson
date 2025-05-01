@@ -1,0 +1,17 @@
+model {
+	String timestamp
+	Throwable exception
+	Boolean includeStack
+}
+
+json {
+  error 500
+  timestamp timestamp
+
+  if (includeStack && exception) {
+    message "${exception}"
+    stackTrace (exception.stackTrace.collect { "${it}" })
+  } else {
+    message "Uncaught Internal server error"
+  }
+}
