@@ -1,8 +1,10 @@
 package com.k_int.web.toolkit.grammar
 
-import com.k_int.web.toolkit.error.errorHandleable500
+import com.k_int.web.toolkit.error.handledException
+import com.k_int.web.toolkit.error.ErrorHandle
 
-class SimpleLookupServiceException extends Exception implements errorHandleable500 {
+
+class SimpleLookupServiceException extends Exception implements handledException {
   public static final Long GENERIC_ERROR = 0L
   public static final Long INVALID_PROPERTY = 1L
 
@@ -23,22 +25,22 @@ class SimpleLookupServiceException extends Exception implements errorHandleable5
     SimpleLookupServiceException(errorMessage, GENERIC_ERROR)
   }
 
-  public String handle500Message() {
-    String msg500
+  public ErrorHandle handleException() {
+    ErrorHandle handle;
     switch(code) {
       case INVALID_PROPERTY:
-        msg500 = "Failure in SimpleLookupService. Invalid property: ${contextString}"
+        handle = new ErrorHandle("Failure in SimpleLookupService. Invalid property: ${contextString}", 400)
         break
       case GENERIC_ERROR:
       default:
         if (contextString) {
-          msg500 = "Failure in SimpleLookupService. Context: ${contextString}"
+          handle = new ErrorHandle("Failure in SimpleLookupService. Context: ${contextString}")
         } else {
-          msg500 = "Failure in SimpleLookupService"
+          handle = new ErrorHandle("Failure in SimpleLookupService")
         }
         break
     }
 
-    return msg500
+    return handle
   }
 }

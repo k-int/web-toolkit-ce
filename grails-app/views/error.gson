@@ -3,12 +3,13 @@ model {
 	Throwable exception
 	Boolean includeStack
 	String message // Message can now be passed in
+	int code
 }
 
 // We handle individual exception handling above, in the controller
 
 json {
-  error 500
+  error code
   timestamp timestamp
 
   if (includeStack && exception) {

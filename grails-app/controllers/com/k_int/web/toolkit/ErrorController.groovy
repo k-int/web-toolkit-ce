@@ -1,6 +1,7 @@
 package com.k_int.web.toolkit
 
-import com.k_int.web.toolkit.error.errorHandleable500;
+import com.k_int.web.toolkit.error.handledException;
+import com.k_int.web.toolkit.error.ErrorHandle;
 
 import com.k_int.web.toolkit.grammar.SimpleLookupServiceException
 import grails.core.GrailsApplication
@@ -17,10 +18,13 @@ class ErrorController {
     }
 
     String message;
+    int code = 500;
 
     // Individual error handling. If exception implements errorHandleable500 then we can get a String message from it
-    if (ex instanceof errorHandleable500) {
-      message = ex.handle500Message()
+    if (ex instanceof handledException) {
+      ErrorHandle err = ex.handleException()
+      message = err.message;
+      code = err.code;
     }
 
 
@@ -31,10 +35,11 @@ class ErrorController {
       timestamp    : Instant.now().toString(),
       exception    : ex,
       includeStack : includeStack,
-      message      : message
+      message      : message,
+      code         : code
     ]
 
-    response.status = 500
+    response.status = code;
     // Explicitly render the standard '/error' view name.
     // Grails will look for /grails-app/views/error.gson first in the app,
     // then fall back to the one in the plugin.
