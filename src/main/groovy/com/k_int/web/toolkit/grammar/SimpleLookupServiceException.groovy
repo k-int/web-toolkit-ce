@@ -7,24 +7,23 @@ class SimpleLookupServiceException extends Exception implements errorHandleable5
   public static final Long INVALID_PROPERTY = 1L
 
   final Long code
-
   final String contextString
 
-  SimpleLookupServiceException(String errorMessage, Long code, String contextString) {
+  public SimpleLookupServiceException(String errorMessage, Long code, String contextString) {
     super(errorMessage)
     this.code = code
     this.contextString = contextString
   }
 
-  SimpleLookupServiceException(String errorMessage, Long code) {
+  public SimpleLookupServiceException(String errorMessage, Long code) {
     SimpleLookupServiceException(errorMessage, code, null)
   }
 
-  SimpleLookupServiceException(String errorMessage) {
+  public SimpleLookupServiceException(String errorMessage) {
     SimpleLookupServiceException(errorMessage, GENERIC_ERROR)
   }
 
-  String handle500Message() {
+  public String handle500Message() {
     String msg500
     switch(code) {
       case INVALID_PROPERTY:
