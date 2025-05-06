@@ -1,5 +1,8 @@
 package com.k_int.web.toolkit
 
+import com.k_int.web.toolkit.error.errorHandleable500;
+
+import com.k_int.web.toolkit.grammar.SimpleLookupServiceException
 import grails.core.GrailsApplication
 import java.time.Instant
 
@@ -13,13 +16,22 @@ class ErrorController {
       ex = ex.cause
     }
 
+    String message;
+
+    // Individual error handling. If exception implements errorHandleable500 then we can get a String message from it
+    if (ex instanceof errorHandleable500) {
+      message = ex.handle500Message()
+    }
+
+
     // Fetch config property from the application using the plugin
     Boolean includeStack = Boolean.valueOf(grailsApplication.config.getProperty('webtoolkit.endpoints.includeStackTraceFor500', String, 'false'))
 
     def model = [
-        timestamp: Instant.now().toString(),
-        exception         : ex,
-        includeStack : includeStack,
+      timestamp    : Instant.now().toString(),
+      exception    : ex,
+      includeStack : includeStack,
+      message      : message
     ]
 
     response.status = 500

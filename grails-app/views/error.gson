@@ -2,15 +2,26 @@ model {
 	String timestamp
 	Throwable exception
 	Boolean includeStack
+	String message // Message can now be passed in
 }
+
+// We handle individual exception handling above, in the controller
 
 json {
   error 500
   timestamp timestamp
 
   if (includeStack && exception) {
-    message "${exception}"
+    if (message) {
+      exception "${exception}"
+      message message
+    } else {
+      message "${exception}"
+    }
+
     stackTrace (exception.stackTrace.collect { "${it}" })
+  } else if (message) {
+    message message
   } else {
     message "Uncaught Internal server error"
   }
