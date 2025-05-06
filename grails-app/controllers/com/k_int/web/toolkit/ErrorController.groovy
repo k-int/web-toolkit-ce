@@ -29,7 +29,7 @@ class ErrorController {
 
 
     // Fetch config property from the application using the plugin
-    Boolean includeStack = Boolean.valueOf(grailsApplication.config.getProperty('webtoolkit.endpoints.includeStackTraceFor500', String, 'false'))
+    Boolean includeStack = Boolean.valueOf(grailsApplication.config.getProperty('webtoolkit.endpoints.includeStackTrace', String, 'false'))
 
     def model = [
       timestamp    : Instant.now().toString(),
