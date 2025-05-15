@@ -405,7 +405,11 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 	
 	private void addCriterion ( final String subjectExpr, final InternalPropertyDefinition rootPropDef, final Token op, final String value = null, boolean invertOp = false ) {
 		if (rootPropDef == null) {
-      throw new SimpleLookupServiceException("Cannot add criterion for subject: ${subjectExpr}", 1, subjectExpr);
+      throw new SimpleLookupServiceException(
+          "Cannot add criterion for subject: ${subjectExpr}",
+          SimpleLookupServiceException.INVALID_PROPERTY,
+          subjectExpr
+      );
     }
 		InternalPropertyDefinition propDef = rootPropDef
 		final String partialPathBySubQuery = propDef.subQuery
