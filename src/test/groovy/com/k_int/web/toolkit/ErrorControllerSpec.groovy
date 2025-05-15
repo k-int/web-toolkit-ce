@@ -25,39 +25,6 @@ class ErrorControllerSpec extends Specification implements ControllerUnitTest<Er
     }
   }
 
-  /*@Unroll
-  def 'handle500 should render expected /error view with handledException'(
-      Class<? extends Exception> exClass,
-      String errMessage,
-      boolean handledException
-  ) {
-    given: 'A handledException is present in request attributes'
-      def ex = new ErrorControllerSpecException("Something went wrong")
-      controller.request.setAttribute('javax.servlet.error.exception', ex)
-
-    and: 'grailsApplication config has include-stack-trace = true'
-      def mockGrailsApp = Mock(GrailsApplication)
-
-      mockGrailsApp.getConfig() >> Mock(Config) {
-        getProperty('endpoints.include-stack-trace', String, 'false') >> 'true'
-      }
-      controller.grailsApplication = mockGrailsApp
-
-    when: 'Calling handle500'
-      controller.handle500()
-
-    then: 'The /error view is rendered with correct model'
-      view == '/error'
-      model.message == 'ErrorControllerSpecException thrown'
-      model.code == 308
-      model.exception == ex
-      model.includeStack == true
-      response.status == 308
-    where:
-      exClass | errMessage | handledException | expectedMessage | expectedCode
-      ErrorControllerSpecException.class | "ErrorControllerSpecException thrown" | true | "ErrorControllerSpecException thrown" | 308
-
-  }*/
   @Unroll
   def "handle500 with #exceptionType.simpleName and config.includeStack=#includeStack should render expected values"() {
     given: 'An exception in request attributes'
