@@ -21,9 +21,7 @@ json {
     }
 
     stackTrace (exception.stackTrace.collect { "${it}" })
-  } else if (message) {
-    message message
   } else {
-    message "Uncaught Internal server error"
+    message message
   }
 }

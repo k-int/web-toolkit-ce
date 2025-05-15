@@ -17,7 +17,7 @@ class ErrorController {
       ex = ex.cause
     }
 
-    String message;
+    String message = "Uncaught Internal server error";
     int code = 500;
 
     // Individual error handling. If exception implements errorHandleable500 then we can get a String message from it

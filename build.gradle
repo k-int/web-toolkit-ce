@@ -103,7 +103,9 @@ dependencies {
 
   // For some reason testImplementation for these two fails on gradlew check
 	compileOnly("org.grails:grails-gorm-testing-support")
-  compileOnly("org.spockframework:spock-core")
+	testImplementation "org.grails:grails-web-testing-support"
+
+	compileOnly("org.spockframework:spock-core")
 
   testImplementation("org.grails:grails-gorm-testing-support")
   testImplementation("org.spockframework:spock-core")
