@@ -6,6 +6,10 @@
 * [General]
 	* S3 secret environment variable (#16)
 
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
+
 ## Version 10.0.1
 
 ### Changes
