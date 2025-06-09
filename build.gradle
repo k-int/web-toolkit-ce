@@ -161,10 +161,14 @@ java {
 } */
 
 tasks.withType(Javadoc) {
+	dependsOn 'compileGsonViews'
 	// Suppress "no comment" warnings on JAVA code (currently generated
 	options.addStringOption('Xdoclint:none', '-quiet')
 }
 
+tasks.withType(Groovydoc) {
+	dependsOn 'compileGsonViews'
+}
 
 tasks.withType(GroovyCompile) {
 	configure(groovyOptions) {
