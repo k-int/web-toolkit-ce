@@ -18,8 +18,11 @@ import grails.gorm.annotation.Entity
 class LOBFileObject extends FileObject implements MultiTenant<LOBFileObject>, Clonable<LOBFileObject> {
 
   static cloneStaticValues = [
-    fileContents: { 
-      BlobProxy.generateProxy(owner.fileContents.getBinaryStream(), owner.fileContents.length()) 
+      // owner is CURRENT object
+    fileContents: {
+      // Ensure we properly cast "owner" to rightful class
+      LOBFileObject cloneFile = (LOBFileObject) owner;
+      return BlobProxy.generateProxy(cloneFile.fileContents.getBinaryStream(), cloneFile.fileContents.length())
     }
   ]
   
