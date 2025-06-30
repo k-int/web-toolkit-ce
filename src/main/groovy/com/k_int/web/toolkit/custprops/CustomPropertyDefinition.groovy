@@ -104,13 +104,19 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
   
   static CustomPropertyDefinition forType (final String type, final Map otherProps = [:]) {
     CustomPropertyDefinition definition = null
-    final Class<? extends CustomProperty> typeClass = Class.forName(
-      "${CustomProperty.class.package.name}.types.${CustomProperty.class.simpleName}${GrailsNameUtils.getClassName(type)}"
-    )
-    if (typeClass) {
-      definition = forType(typeClass, otherProps)
+    try {
+      final Class<? extends CustomProperty> typeClass = Class.forName(
+        "${CustomProperty.class.package.name}.types.${CustomProperty.class.simpleName}${GrailsNameUtils.getClassName(type)}"
+      )
+
+      if (typeClass) {
+        definition = forType(typeClass, otherProps)
+      }
+
+      definition
+    } catch (ClassNotFoundException cnfe) {
+      throw new CustomPropertyException("No class found for type: ${type}", CustomPropertyException.INVALID_TYPE, type)
     }
-    definition
   }
 
   CustomProperty getPropertyInstance(Map<String, ?> extraProperties = [:]) {
