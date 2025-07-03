@@ -111,4 +111,47 @@ databaseChangeLog = {
       constraintName: "FKbklek969hy5ykdxsp2nf3t5fl", deferrable: "false", initiallyDeferred: "false", referencedColumnNames: "id",
       referencedTableName: "custom_property_multi_text", validate: "true")
   }
+
+  // Add primary keys (ERM-3759)
+  changeSet(author: "mchaib (manual)", id: "20250703-0953-001") {
+    preConditions(onFail: 'MARK_RAN') {
+      not { primaryKeyExists(tableName: 'custom_property_multi_blob_value') }
+    }
+    addPrimaryKey(tableName: "custom_property_multi_blob_value", columnNames: "custom_property_multi_blob_id", constraintName: "custom_property_multi_blob_valuePK")
+  }
+
+  changeSet(author: "mchaib (manual)", id: "20250703-0953-002") {
+    preConditions(onFail: 'MARK_RAN') {
+      not { primaryKeyExists(tableName: 'custom_property_multi_decimal_value') }
+    }
+    addPrimaryKey(tableName: "custom_property_multi_decimal_value", columnNames: "custom_property_multi_decimal_id", constraintName: "custom_property_multi_decimal_valuePK")
+  }
+
+  changeSet(author: "mchaib (manual)", id: "20250703-0953-003") {
+    preConditions(onFail: 'MARK_RAN') {
+      not { primaryKeyExists(tableName: 'custom_property_multi_integer_value') }
+    }
+    addPrimaryKey(tableName: "custom_property_multi_integer_value", columnNames: "custom_property_multi_integer_id", constraintName: "custom_property_multi_integer_valuePK")
+  }
+
+  changeSet(author: "mchaib (manual)", id: "20250703-0953-004") {
+    preConditions(onFail: 'MARK_RAN') {
+      not { primaryKeyExists(tableName: 'custom_property_multi_local_date_value') }
+    }
+    addPrimaryKey(tableName: "custom_property_multi_local_date_value", columnNames: "custom_property_multi_local_date_id", constraintName: "custom_property_multi_local_date_valuePK")
+  }
+
+  changeSet(author: "mchaib (manual)", id: "20250703-0953-005") {
+    preConditions(onFail: 'MARK_RAN') {
+      not { primaryKeyExists(tableName: 'custom_property_multi_refdata_refdata_value') }
+    }
+    addPrimaryKey(tableName: "custom_property_multi_refdata_refdata_value", columnNames: "custom_property_multi_refdata_value_id", constraintName: "custom_property_multi_refdata_refdata_valuePK")
+  }
+
+  changeSet(author: "mchaib (manual)", id: "20250703-0953-006") {
+    preConditions(onFail: 'MARK_RAN') {
+      not { primaryKeyExists(tableName: 'custom_property_multi_text_value') }
+    }
+    addPrimaryKey(tableName: "custom_property_multi_text_value", columnNames: "custom_property_multi_text_id", constraintName: "custom_property_multi_text_valuePK")
+  }
 }
