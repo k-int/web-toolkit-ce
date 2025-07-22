@@ -13,7 +13,6 @@ import java.time.Instant
 class ErrorController {
 
   GrailsApplication grailsApplication // Inject GrailsApplication
-//  Boolean includeStack = false;
 
   def handle500() {
     try {
