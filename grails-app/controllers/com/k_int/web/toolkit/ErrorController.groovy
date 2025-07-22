@@ -21,8 +21,6 @@ class ErrorController {
         ex = ex.cause
       }
 
-      throw new Exception("Oops")
-
       String message = "Uncaught Internal server error";
       int code = 500;
 
@@ -55,6 +53,7 @@ class ErrorController {
       Throwable originalException = request.getAttribute('javax.servlet.error.exception')
       log.error("Exception occurred within the WebToolkit ErrorController. The original exception being handled was [{}].", originalException?.message, t)
 
+      // Respond with minimal response
       response.status = 500
       response.setContentType('application/json')
       response.writer << """
