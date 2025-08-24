@@ -146,7 +146,7 @@ dependencies {
 	// SHould be replaced and rewritten out of this module.
 	developmentOnly 'io.github.http-builder-ng:http-builder-ng-core:1.0.4'
 
-	antlr "org.antlr:antlr4:4.7" // use ANTLR version 4
+	antlr "org.antlr:antlr4:4.10" // use ANTLR version 4
 
 	testImplementation 'com.h2database:h2:2.1.212'
 }
@@ -159,6 +159,16 @@ dependencies {
 java {
   sourceCompatibility = JavaVersion.toVersion("11")
 } */
+
+tasks.withType(Javadoc) {
+	dependsOn 'compileGsonViews'
+	// Suppress "no comment" warnings on JAVA code (currently generated
+	options.addStringOption('Xdoclint:none', '-quiet')
+}
+
+tasks.withType(Groovydoc) {
+	dependsOn 'compileGsonViews'
+}
 
 tasks.withType(GroovyCompile) {
 	configure(groovyOptions) {
