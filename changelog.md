@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 10.2.0
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
+
 ## Version 10.1.0
 
 ### Additions
