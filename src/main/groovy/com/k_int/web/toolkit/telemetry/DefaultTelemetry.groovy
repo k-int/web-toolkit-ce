@@ -5,6 +5,10 @@ import grails.util.Environment
 public class DefaultTelemetry implements Telemetry {
 
   public void telementryEvent(String event, String tenant, Map<String,Object> params) {
+		telemetryEvent(event, tenant, params);
+	}
+
+  public void telemetryEvent(String event, String tenant, Map<String,Object> params) {
 
     Environment current = Environment.getCurrent();
     if ( Environment.PRODUCTION == current) {
@@ -43,7 +47,6 @@ public class DefaultTelemetry implements Telemetry {
   
         // Get the response code
         int responseCode = connection.responseCode
-        println "Response Code: ${responseCode}"
   
         // Read the response
         if (responseCode == HttpURLConnection.HTTP_OK) { // Success
