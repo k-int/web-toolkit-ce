@@ -73,7 +73,8 @@ class WebToolkitGrailsPlugin extends Plugin {
     grailsLinkGenerator(cacheUrls ? ProxyAwareCachingLinkGenerator : ProxyAwareLinkGenerator, config.getProperty(Settings.SERVER_URL) ?: null)
 
     usageValidator(DefaultUsageValidator)
-    telemetry(DefaultTelemetry)
+		
+    telemetry(Telemetry)
     
     final String langTag = grailsApplication.config.getProperty('webtoolkit.converters.numbers.fixedLocale', String, null)
     if (langTag?.toBoolean()) {
