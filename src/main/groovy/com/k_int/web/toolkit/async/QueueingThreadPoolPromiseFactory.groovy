@@ -140,7 +140,6 @@ class QueueingThreadPoolPromiseFactory extends AbstractPromiseFactory implements
     public Thread newThread(Runnable r) {
       
       String threadName = namePrefix + threadNumber.getAndIncrement()
-      System.out.println "Creating thread named ${threadName}"
       Thread t = new Thread(group, r,
         namePrefix + threadNumber.getAndIncrement(),
         0
