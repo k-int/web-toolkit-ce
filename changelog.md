@@ -6,6 +6,10 @@
 * [General]
 	* Adding the telemetry data and publisher
 
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
+
 ## Version 10.4.0
 
 ### Changes
