@@ -220,6 +220,20 @@ eclipse {
 }
 
 publishing {
+	
+	repositories {
+		
+		project.gradle.projectsEvaluated {
+			all { ArtifactRepository repo ->
+					
+				String orig = "${repo.url}"
+				def altered = orig.replaceAll('(maven\\.k-int\\.com.*\\/)(.+?)$', '$1maven-$2')  
+//				println "from ${orig} to ${altered}"
+				repo.url = altered
+			}
+		}
+	}
+	
 	publications {
 		maven(MavenPublication) {
 			groupId = project.group
