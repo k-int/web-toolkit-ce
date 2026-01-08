@@ -1,5 +1,17 @@
 # Changelog
 
+## Version 10.5.0
+
+### Additions
+* [General]
+	* Adding the telemetry data and publisher
+
+## Version 10.4.0
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
+
 ## Version 10.3.0
 
 ### Changes
