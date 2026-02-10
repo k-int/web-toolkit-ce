@@ -1,7 +1,7 @@
 package com.k_int.web.toolkit.files
 import java.sql.Blob
 
-import javax.persistence.Lob
+import jakarta.persistence.Lob
 
 import org.hibernate.engine.jdbc.BlobProxy
 import org.springframework.web.multipart.MultipartFile

@@ -3,7 +3,7 @@ package com.k_int.web.toolkit.databinding
 import java.lang.reflect.Field
 import java.util.stream.Collectors
 
-import javax.persistence.ManyToOne
+import jakarta.persistence.ManyToOne
 import org.codehaus.groovy.runtime.metaclass.MultipleSetterProperty
 import org.grails.databinding.ClosureValueConverter
 import org.grails.databinding.xml.GPathResultMap

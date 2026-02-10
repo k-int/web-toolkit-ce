@@ -2,7 +2,7 @@ package com.k_int.web.toolkit.custprops
 
 import java.time.LocalDate
 
-import javax.persistence.Entity
+import jakarta.persistence.Entity
 
 import com.k_int.web.toolkit.custprops.types.CustomPropertyContainer
 import com.k_int.web.toolkit.refdata.RefdataCategory

@@ -24,7 +24,7 @@ import java.security.MessageDigest;
 class WebToolkitGrailsPlugin extends Plugin {
 	
   // the version or versions of Grails the plugin is designed for
-  def grailsVersion = "5.3.2 > *"
+  def grailsVersion = "7.0.0 > *"
 
   // resources that are excluded from plugin packaging
   def pluginExcludes = [

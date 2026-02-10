@@ -29,7 +29,7 @@ class ErrorControllerSpec extends Specification implements ControllerUnitTest<Er
   def "handle500 with #exceptionType.simpleName and config.includeStack=#includeStack should render expected values"() {
     given: 'An exception in request attributes'
       def ex = exceptionInstance
-      controller.request.setAttribute('javax.servlet.error.exception', ex)
+      controller.request.setAttribute('jakarta.servlet.error.exception', ex)
 
     and: 'grailsApplication config is mocked'
       def mockGrailsApp = Mock(GrailsApplication)

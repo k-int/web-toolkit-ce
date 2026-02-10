@@ -13,7 +13,7 @@ class ErrorController {
 
   def handle500() {
     try {
-      Throwable ex = request.getAttribute('javax.servlet.error.exception') ?: request.getAttribute('exception')
+      Throwable ex = request.getAttribute('jakarta.servlet.error.exception') ?: request.getAttribute('exception')
       if (ex?.cause) {
         ex = ex.cause
       }

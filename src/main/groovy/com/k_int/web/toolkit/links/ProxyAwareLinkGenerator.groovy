@@ -1,6 +1,6 @@
 package com.k_int.web.toolkit.links
 
-import javax.annotation.PostConstruct
+import jakarta.annotation.PostConstruct
 
 import org.grails.web.mapping.DefaultLinkGenerator
 import org.grails.web.servlet.mvc.GrailsWebRequest

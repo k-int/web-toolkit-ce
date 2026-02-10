@@ -3,7 +3,7 @@ package com.k_int.web.toolkit.databinding
 import java.text.NumberFormat
 import java.text.ParsePosition
 
-import javax.annotation.PostConstruct
+import jakarta.annotation.PostConstruct
 
 import grails.core.GrailsApplication
 import grails.databinding.converters.ValueConverter

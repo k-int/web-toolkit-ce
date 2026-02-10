@@ -1,7 +1,7 @@
 package com.k_int.web.toolkit.custprops
 
-import javax.persistence.Transient
-import javax.validation.UnexpectedTypeException
+import jakarta.persistence.Transient
+import jakarta.validation.UnexpectedTypeException
 import org.springframework.validation.Errors
 import com.k_int.web.toolkit.databinding.BindUsingWhenRef
 import com.k_int.web.toolkit.refdata.RefdataValue
