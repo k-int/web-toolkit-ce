@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.grails.datastore.gorm.GormStaticApi
 import org.hibernate.criterion.*
+import org.hibernate.criterion.CriteriaSpecification
 import org.hibernate.sql.JoinType
 
 import com.k_int.web.toolkit.grammar.SimpleLookupServiceListenerWtk
@@ -123,8 +124,8 @@ class SimpleLookupService {
   private static final String REGEX_OP = "^(.*?)([=!]~|=i=|([!=<>]{1,2}))(.*?)\$"
   private static final String REGEX_BETWEEN = "^(.*?)([<>]=?)(.*?)([<>]=?)(.*?)\$"
   private static final String REGEX_NONE_ESCAPED_PERCENTAGE = "([^\\\\])(%)"
-    
-  private Criterion parseFilterString ( final DetachedCriteria criteria, final Map<String, String> aliasStack, String filterString, String indentation = null ) {
+
+  private Criterion parseFilterString ( final Object aliasTarget, final Map<String, String> aliasStack, String filterString, String indentation = null, final Class rootEntityClass = null ) {
     final CharStream input = CharStreams.fromString(filterString)
     final SimpleLookupWtkLexer lexer = new SimpleLookupWtkLexer(input);
     final CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -136,8 +137,10 @@ class SimpleLookupService {
     // We have parsed the whole string and now we have the final context.
     
     // Create a listener to act on the tree.
+    Class resolvedRootClass = rootEntityClass
+    String rootEntityName = rootEntityClass?.name
     SimpleLookupServiceListenerWtk listener = new SimpleLookupServiceListenerWtk(
-			log, valueConverterService, criteria, criteria.getCriteriaImpl().getEntityOrClassName(), aliasStack)
+			log, valueConverterService, aliasTarget, resolvedRootClass, rootEntityName, aliasStack)
     ParseTreeWalker.DEFAULT.walk(listener, filters);
     
     Criterion result = listener.result
@@ -145,18 +148,15 @@ class SimpleLookupService {
     return result
   }
   
-  private void parseFilters ( final DetachedCriteria criteria, final Map<String, String> aliasStack, final Collection<String> filters ) {
+  private Criterion parseFilters ( final Object aliasTarget, final Map<String, String> aliasStack, final Collection<String> filters, final Class rootEntityClass = null ) {
     // Jump out of the routine immediately if no filters or empty list
-    if (!filters) return
+    if (!filters) return null
     
     // We parse the filters and build up the criteria.
-		final Criterion filterGroup = parseFilterString (criteria, aliasStack, filters.join('\n'))
-		if (filterGroup) {
-			criteria.add( filterGroup )
-		}
+		return parseFilterString (aliasTarget, aliasStack, filters.join('\n'), null, rootEntityClass)
   }
   
-  private List<Criterion> getTextMatches (final DetachedCriteria criteria, final Map<String, String> aliasStack, final String term, final match_in, MatchMode textMatching = MatchMode.ANYWHERE) {
+  private List<Criterion> getTextMatches (final Object criteriaTarget, final Map<String, String> aliasStack, final String term, final match_in, final Class rootEntityClass, MatchMode textMatching = MatchMode.ANYWHERE) {
     List<Criterion> textMatches = []
     if (term) {
       //First we split out the incoming query into multiple terms by whitespace, treating quoted chunks as a whole
@@ -165,13 +165,13 @@ class SimpleLookupService {
 
       // Add a condition for each parameter we wish to search.
       for (String prop : match_in) {
-        def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true)
+        def propDef = DomainUtils.resolveProperty(rootEntityClass, prop, true)
         
         if (propDef) {
         
           if (propDef.searchable) {
             def propertyType = propDef.type
-            def propName = getAliasedProperty(criteria, aliasStack, prop, true) as String
+            def propName = getAliasedProperty(criteriaTarget, aliasStack, prop, true) as String
             
             // We use equal unless the compared property is a String then we should use iLIKE
             def op = 'eq'
@@ -235,29 +235,45 @@ class SimpleLookupService {
     }
   }
 
-  private DetachedCriteria buildLookupCriteria(final DetachedCriteria criteria, final String term, final match_in, final filters) {
-
+  private void applyLookupCriteria(final Object criteriaTarget, final String term, final match_in, final filters, final Class rootEntityClass) {
     Map<String, String> aliasStack = [:]
     List<Criterion> criterionList = []
 
     // Filters...
-    parseFilters (criteria, aliasStack, filters)
-    
+    final Criterion filterGroup = parseFilters(criteriaTarget, aliasStack, filters, rootEntityClass)
+    if (filterGroup) {
+      criterionList << filterGroup
+    }
+
     // Text matching uses ilike ops for string property and eq for all others.
-    List<Criterion> textMatches = getTextMatches(criteria, aliasStack, term, match_in)
+    List<Criterion> textMatches = getTextMatches(criteriaTarget, aliasStack, term, match_in, rootEntityClass)
     
     // Text searching should be Disjunctive across all properties specified.
     if (textMatches) criterionList << Restrictions.or(textMatches.toArray(new Criterion[textMatches.size()]))
 
     // Conjunction to ensure results returned match any text searches specified and ALL filters specified.
-    if (criterionList) criteria.add(Restrictions.and(criterionList.toArray(new Criterion[criterionList.size()])))
+    if (criterionList) {
+      addCriterionToTarget(criteriaTarget, Restrictions.and(criterionList.toArray(new Criterion[criterionList.size()])))
+    }
+  }
 
-    // Project distinct IDs so as to only include results once on multiple matches.
-    criteria.setProjection(
-      Projections.distinct(Projections.id())
-    )
+  private void addCriterionToTarget(final Object criteriaTarget, final Criterion criterion) {
+    if (!criterion) return
+    if (criteriaTarget?.metaClass?.respondsTo(criteriaTarget, 'add', Criterion)) {
+      criteriaTarget.add(criterion)
+    } else if (criteriaTarget?.metaClass?.hasProperty(criteriaTarget, 'criteria')) {
+      criteriaTarget.criteria.add(criterion)
+    }
+  }
 
-    criteria
+  private void setDistinctRoot(final Object criteriaTarget) {
+    if (criteriaTarget?.metaClass?.respondsTo(criteriaTarget, 'resultTransformer', Object)) {
+      criteriaTarget.resultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY)
+    } else if (criteriaTarget?.metaClass?.respondsTo(criteriaTarget, 'setResultTransformer', Object)) {
+      criteriaTarget.setResultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY)
+    } else if (criteriaTarget?.metaClass?.hasProperty(criteriaTarget, 'criteria')) {
+      criteriaTarget.criteria.setResultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY)
+    }
   }
 
   private final class BatchedStreamIterator implements Iterator {
@@ -411,12 +427,8 @@ class SimpleLookupService {
       }
 
       // Add lookup.
-      criteria.add(
-        Subqueries.propertyIn(
-          'id',
-          buildLookupCriteria(DetachedCriteria.forClass(targetClass, 'uniques'), term, match_in, filters)
-        )
-      )
+      applyLookupCriteria(delegate, term, match_in, filters, c)
+      setDistinctRoot(delegate)
       
       // Add any sorts.
       if (sorts) {
@@ -444,12 +456,8 @@ class SimpleLookupService {
       }
 
       // Add lookup.
-      criteria.add(
-        Subqueries.propertyIn(
-          'id',
-          buildLookupCriteria(DetachedCriteria.forClass(targetClass, 'uniques'), term, match_in, filters)
-        )
-      )
+      applyLookupCriteria(delegate, term, match_in, filters, c)
+      setDistinctRoot(delegate)
       
       // Add any sorts.
       if (sorts) {
@@ -483,12 +491,8 @@ class SimpleLookupService {
       final Closure query = { Closure extra ->
   
         // Add lookup.
-        criteria.add(
-          Subqueries.propertyIn(
-            'id',
-            buildLookupCriteria(DetachedCriteria.forClass(targetClass), term, match_in, filters)
-          )
-        )
+        applyLookupCriteria(delegate, term, match_in, filters, c)
+        setDistinctRoot(delegate)
         
         // Change the delegate and execute.
         if (base) {

@@ -46,7 +46,7 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.stream.Stream
 
-@CompileStatic
+@CompileStatic(SKIP)
 class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
   private static final String REGEX_NONE_ESCAPED_PERCENTAGE = "([^\\\\])(%)"
   
@@ -59,15 +59,17 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
   private final Deque<String> aliasPrefixStack = new ArrayDeque<>()
   private final Deque<Map<String, String>> aliasesStack = new ArrayDeque<>();
   private final Deque<Deque<Criterion>> contextStacks = new ArrayDeque<>();
-  private final Deque<DetachedCriteria> targetStack = new ArrayDeque<>();
+  private final Deque<Object> targetStack = new ArrayDeque<>();
   
   private final StringBuilder trace = new StringBuilder();
+  private final Class rootEntityClass
   private final String rootEntityName
   private final ValueConverterService valueConverterService
   
-  public SimpleLookupServiceListenerWtk(final Logger log, final ValueConverterService valueConverterService, final DetachedCriteria rootTarget, final String rootEntityName, final Map<String, String> rootAliasNames) {
+  public SimpleLookupServiceListenerWtk(final Logger log, final ValueConverterService valueConverterService, final Object rootTarget, final Class rootEntityClass, final String rootEntityName, final Map<String, String> rootAliasNames) {
     this.log = log
-    this.rootEntityName = rootEntityName
+    this.rootEntityClass = rootEntityClass
+    this.rootEntityName = rootEntityName ?: rootEntityClass?.name
     this.targetStack.push(rootTarget)
     this.valueConverterService = valueConverterService
     aliasesStack.push(rootAliasNames) // Add an empty alias stack initially.
@@ -75,7 +77,7 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
     newAliasPrefix()
   }
   
-  private DetachedCriteria getRootTarget() {
+  private Object getRootTarget() {
     targetStack.peek()
   }
   
@@ -338,8 +340,8 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 	// Because the criteriaImpl visibility is package, we need groovy here.
 	// Skip the sattic compiler.
 	@CompileStatic(SKIP)
-	private String getEntityNameFromCriteria( DetachedCriteria dc ) {
-		dc?.criteriaImpl?.entityOrClassName
+	private String getEntityNameFromCriteria( Object dc ) {
+		(dc instanceof DetachedCriteria) ? dc?.criteriaImpl?.entityOrClassName : null
 	}
 	
   @Override
@@ -554,7 +556,7 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 			
 			// Pop the criteria with the aliases defined.
 			final DetachedCriteria sq =
-				targetStack.poll()
+				(targetStack.poll() as DetachedCriteria)
 				.add(groupCriterionStack.poll())
 				
 			// Add as an in to the current stack. The implementation should
@@ -582,7 +584,9 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
     aliasesStack.push([:])
     groupCounter ++;
     targetStack.push (
-      DetachedCriteria.forEntityName(rootEntityName, "__sub_query_${groupCounter}")) 
+      rootEntityClass
+        ? DetachedCriteria.forClass(rootEntityClass, "__sub_query_${groupCounter}")
+        : DetachedCriteria.forEntityName(rootEntityName, "__sub_query_${groupCounter}")) 
     newAliasPrefix()
   }
 

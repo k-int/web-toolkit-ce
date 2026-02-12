@@ -37,6 +37,9 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
     // tooling used within the SimpleLookupService
     HibernateDatastore ds = hibernateDatastore
     ConfigurableListableBeanFactory beanFactory = ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
+    if (beanFactory.containsSingleton(DomainUtils.BEAN_MAPPING_CONTEXT)) {
+      beanFactory.destroySingleton(DomainUtils.BEAN_MAPPING_CONTEXT)
+    }
     beanFactory.registerSingleton(DomainUtils.BEAN_MAPPING_CONTEXT, ds.getMappingContext())
     
     // Manually create a transaction to add the data for the spec.
@@ -449,4 +452,3 @@ class Request {
   }
   static hasMany = [checklists: CheckList]
 }
-
