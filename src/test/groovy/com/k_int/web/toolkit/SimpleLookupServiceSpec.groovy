@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter
 
 import org.grails.orm.hibernate.HibernateDatastore
 import org.grails.orm.hibernate.cfg.Settings
+import org.hibernate.MappingException
 import org.hibernate.criterion.Restrictions
 import org.hibernate.cfg.Environment
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
@@ -529,6 +530,39 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
       service.jpaCriteriaQueryBackend = null
   }
 
+  void 'JPA backend parity for root-field not-equal predicate semantics' () {
+    given: 'Legacy backend baseline for root not-equal operators'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      LocalDate today = LocalDate.now()
+      String todayIso = DateTimeFormatter.ISO_DATE.format(today)
+      List<Request> legacyNumberNeqResults = service.lookup(Request, null, 10, 1, [
+        "number!=2"
+      ])
+      List<Request> legacyDateNeqResults = service.lookup(Request, null, 10, 1, [
+        "date!=${todayIso}"
+      ])
+
+    when: 'Same root not-equal operators are executed with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaNumberNeqResults = service.lookup(Request, null, 10, 1, [
+        "number!=2"
+      ])
+      List<Request> jpaDateNeqResults = service.lookup(Request, null, 10, 1, [
+        "date!=${todayIso}"
+      ])
+
+    then: 'Root not-equal parity is preserved'
+      legacyNumberNeqResults*.id == jpaNumberNeqResults*.id
+      legacyDateNeqResults*.id == jpaDateNeqResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
   void 'JPA backend parity for checklist-name not-equal predicate' () {
     given: 'Legacy backend baseline for checklist-level not-equal'
       service.simpleLookupQueryBackend = null
@@ -660,6 +694,62 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
     then: 'Checklist request-name contains parity is preserved'
       legacyContainsResults*.id == jpaContainsResults*.id
       legacyNotContainsResults*.id == jpaNotContainsResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'Legacy backend raises mapping exception for checklist-request-name isEmpty and isNotEmpty' () {
+    given: 'Legacy backend selector'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+
+    when: 'Legacy backend evaluates checklist-request-name isEmpty'
+      service.lookup(Request, null, 10, 1, [
+        "checklists.request.name isEmpty"
+      ])
+
+    then: 'Legacy behavior is a mapping exception for this unsupported path/operator combination'
+      thrown(MappingException)
+
+    when: 'Legacy backend evaluates checklist-request-name isNotEmpty'
+      service.lookup(Request, null, 10, 1, [
+        "checklists.request.name isNotEmpty"
+      ])
+
+    then: 'Legacy behavior is also a mapping exception for isNotEmpty'
+      thrown(MappingException)
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'Strict JPA mode fails fast for checklist-request-name isEmpty and isNotEmpty' () {
+    given: 'JPA backend is configured without fallback'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(null)
+      service.queryBackend = 'jpa'
+
+    when: 'Strict JPA backend evaluates checklist-request-name isEmpty'
+      service.lookup(Request, null, 10, 1, [
+        "checklists.request.name isEmpty"
+      ])
+
+    then: 'Unsupported operator/path fails fast under strict JPA mode'
+      thrown(UnsupportedOperationException)
+
+    when: 'Strict JPA backend evaluates checklist-request-name isNotEmpty'
+      service.lookup(Request, null, 10, 1, [
+        "checklists.request.name isNotEmpty"
+      ])
+
+    then: 'Unsupported operator/path fails fast under strict JPA mode'
+      thrown(UnsupportedOperationException)
 
     cleanup:
       service.queryBackend = 'legacy'
@@ -985,6 +1075,313 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
       service.jpaCriteriaQueryBackend = null
   }
 
+  void 'JPA backend does not invoke fallback backend for valid schema-driven matchIn path' () {
+    given: 'A JPA backend configured with a fallback mock'
+      def fallbackBackend = Mock(SimpleLookupQueryBackend)
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(fallbackBackend)
+      service.queryBackend = 'jpa'
+
+    when: 'Lookup uses a valid deep matchIn path resolved generically from domain metadata'
+      List<Request> jpaResults = service.lookup(
+        Request,
+        'request',
+        10,
+        1,
+        null,
+        ['checklists.request.checklists.request.checklists.request.checklists.request.name']
+      )
+
+    then: 'JPA backend handles the path natively and fallback is not called'
+      0 * fallbackBackend.apply(_, _)
+      jpaResults != null
+      jpaResults instanceof List
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend invokes fallback backend for unsupported terminal association matchIn path' () {
+    given: 'A JPA backend configured with a fallback mock'
+      def fallbackBackend = Mock(SimpleLookupQueryBackend)
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(fallbackBackend)
+      service.queryBackend = 'jpa'
+
+    when: 'Lookup uses a matchIn path that ends in an association instead of a scalar field'
+      List<Request> jpaResults = service.lookup(
+        Request,
+        'request',
+        10,
+        1,
+        null,
+        ['checklists.request']
+      )
+
+    then: 'JPA backend delegates this unsupported path to fallback'
+      1 * fallbackBackend.apply(_, _)
+      jpaResults != null
+      jpaResults instanceof List
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'Strict JPA mode handles valid schema-driven matchIn path without fallback' () {
+    given: 'JPA backend is configured without a fallback backend'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(null)
+      service.queryBackend = 'jpa'
+
+    when: 'Lookup uses a valid deep matchIn path'
+      List<Request> jpaResults = service.lookup(
+        Request,
+        'request',
+        10,
+        1,
+        null,
+        ['checklists.request.checklists.request.checklists.request.checklists.request.name']
+      )
+
+    then: 'Query is handled natively by JPA backend'
+      jpaResults != null
+      jpaResults instanceof List
+      jpaResults*.name.contains('Request 2')
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'Strict JPA mode fails fast for unsupported terminal association matchIn path' () {
+    given: 'JPA backend is configured without a fallback backend'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(null)
+      service.queryBackend = 'jpa'
+
+    when: 'Lookup uses an unsupported matchIn path ending in an association'
+      service.lookup(
+        Request,
+        'request',
+        10,
+        1,
+        null,
+        ['checklists.request']
+      )
+
+    then: 'Backend fails fast instead of silently falling back'
+      thrown(UnsupportedOperationException)
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend does not invoke fallback backend for deep schema-driven isNotNull filter path' () {
+    given: 'A JPA backend configured with a fallback mock'
+      def fallbackBackend = Mock(SimpleLookupQueryBackend)
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(fallbackBackend)
+      service.queryBackend = 'jpa'
+
+    when: 'Lookup uses a deep null-style filter path'
+      List<Request> jpaResults = service.lookup(
+        Request,
+        null,
+        10,
+        1,
+        ['checklists.request.checklists.request.checklists.request.checklists.request.name isNotNull'],
+        [],
+        []
+      )
+
+    then: 'JPA backend handles the filter natively and fallback is not called'
+      0 * fallbackBackend.apply(_, _)
+      jpaResults != null
+      jpaResults instanceof List
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend does not invoke fallback backend for deep schema-driven equality filter path' () {
+    given: 'A JPA backend configured with a fallback mock'
+      def fallbackBackend = Mock(SimpleLookupQueryBackend)
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(fallbackBackend)
+      service.queryBackend = 'jpa'
+
+    when: 'Lookup uses a deep equality filter path'
+      List<Request> jpaResults = service.lookup(
+        Request,
+        null,
+        10,
+        1,
+        ['checklists.request.checklists.request.checklists.request.checklists.request.name==Request 2'],
+        [],
+        []
+      )
+
+    then: 'JPA backend handles the filter natively and fallback is not called'
+      0 * fallbackBackend.apply(_, _)
+      jpaResults != null
+      jpaResults instanceof List
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend invokes fallback backend for unsupported contains operator on non-string filter path' () {
+    given: 'A JPA backend configured with a fallback mock'
+      def fallbackBackend = Mock(SimpleLookupQueryBackend)
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(fallbackBackend)
+      service.queryBackend = 'jpa'
+
+    when: 'Lookup uses contains operator on a non-string deep path'
+      List<Request> jpaResults = service.lookup(
+        Request,
+        null,
+        10,
+        1,
+        ['checklists.request.checklists.request.number=~2'],
+        [],
+        []
+      )
+
+    then: 'JPA backend delegates to fallback for unsupported type/operator combination'
+      1 * fallbackBackend.apply(_, _)
+      jpaResults != null
+      jpaResults instanceof List
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend does not invoke fallback backend for deep schema-driven numeric comparison filter path' () {
+    given: 'A JPA backend configured with a fallback mock'
+      def fallbackBackend = Mock(SimpleLookupQueryBackend)
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(fallbackBackend)
+      service.queryBackend = 'jpa'
+
+    when: 'Lookup uses a deep numeric comparison filter path'
+      List<Request> jpaResults = service.lookup(
+        Request,
+        null,
+        10,
+        1,
+        ['checklists.request.checklists.request.checklists.request.checklists.request.number>1'],
+        [],
+        []
+      )
+
+    then: 'JPA backend handles the numeric comparison natively and fallback is not called'
+      0 * fallbackBackend.apply(_, _)
+      jpaResults != null
+      jpaResults instanceof List
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend invokes fallback backend for unsupported comparison operator on string filter path' () {
+    given: 'A JPA backend configured with a fallback mock'
+      def fallbackBackend = Mock(SimpleLookupQueryBackend)
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(fallbackBackend)
+      service.queryBackend = 'jpa'
+
+    when: 'Lookup uses numeric comparator on a string deep path'
+      List<Request> jpaResults = service.lookup(
+        Request,
+        null,
+        10,
+        1,
+        ['checklists.request.checklists.request.checklists.request.checklists.request.name>Request 1'],
+        [],
+        []
+      )
+
+    then: 'JPA backend delegates to fallback for unsupported type/operator combination'
+      1 * fallbackBackend.apply(_, _)
+      jpaResults != null
+      jpaResults instanceof List
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'Strict JPA mode handles deep schema-driven numeric comparison filter path without fallback' () {
+    given: 'JPA backend is configured without a fallback backend'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(null)
+      service.queryBackend = 'jpa'
+
+    when: 'Lookup uses a deep numeric comparison filter path'
+      List<Request> jpaResults = service.lookup(
+        Request,
+        null,
+        10,
+        1,
+        ['checklists.request.checklists.request.checklists.request.checklists.request.number>1'],
+        [],
+        []
+      )
+
+    then: 'Filter is handled natively by JPA backend'
+      jpaResults != null
+      jpaResults instanceof List
+      jpaResults*.name.contains('Request 2')
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'Strict JPA mode fails fast for unsupported comparison operator on string filter path' () {
+    given: 'JPA backend is configured without a fallback backend'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(null)
+      service.queryBackend = 'jpa'
+
+    when: 'Lookup uses numeric comparator on a string deep path'
+      service.lookup(
+        Request,
+        null,
+        10,
+        1,
+        ['checklists.request.checklists.request.checklists.request.checklists.request.name>Request 1'],
+        [],
+        []
+      )
+
+    then: 'Backend fails fast instead of silently falling back'
+      thrown(UnsupportedOperationException)
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
   void 'JPA backend parity for quoted text search term and numeric filter' () {
     given: 'Legacy backend baseline for quoted text search with additional numeric filter'
       service.simpleLookupQueryBackend = null
@@ -1155,6 +1552,288 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
       service.jpaCriteriaQueryBackend = null
   }
 
+  void 'JPA backend parity for text search term and checklist-request-checklists-request-name matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-request-name matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'request 2', 10, 1, null, ['checklists.request.checklists.request.name'])
+
+    when: 'Same recursive checklist-request-checklists-request-name matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'request 2', 10, 1, null, ['checklists.request.checklists.request.name'])
+
+    then: 'Recursive checklist-request-checklists-request-name text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for text search term and checklist-request-checklists-request-number matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-request-number matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, '2', 10, 1, null, ['checklists.request.checklists.request.number'])
+
+    when: 'Same recursive checklist-request-checklists-request-number matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, '2', 10, 1, null, ['checklists.request.checklists.request.number'])
+
+    then: 'Recursive checklist-request-checklists-request-number text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for text search term and checklist-request-checklists-request-date matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-request-date matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      String dateTerm = DateTimeFormatter.ISO_DATE.format(LocalDate.now())
+      List<Request> legacyResults = service.lookup(Request, dateTerm, 10, 1, null, ['checklists.request.checklists.request.date'])
+
+    when: 'Same recursive checklist-request-checklists-request-date matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, dateTerm, 10, 1, null, ['checklists.request.checklists.request.date'])
+
+    then: 'Recursive checklist-request-checklists-request-date text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for text search term and checklist-request-checklists-request-checklists-name matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-request-checklists-name matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'list_3', 10, 1, null, ['checklists.request.checklists.request.checklists.name'])
+
+    when: 'Same recursive checklist-request-checklists-request-checklists-name matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'list_3', 10, 1, null, ['checklists.request.checklists.request.checklists.name'])
+
+    then: 'Recursive checklist-request-checklists-request-checklists-name text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for text search term and checklist-request-checklists-request-checklists-request-name matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-request-checklists-request-name matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'request 2', 10, 1, null, ['checklists.request.checklists.request.checklists.request.name'])
+
+    when: 'Same recursive checklist-request-checklists-request-checklists-request-name matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'request 2', 10, 1, null, ['checklists.request.checklists.request.checklists.request.name'])
+
+    then: 'Recursive checklist-request-checklists-request-checklists-request-name text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for text search term and checklist-request-checklists-request-checklists-request-number matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-request-checklists-request-number matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, '2', 10, 1, null, ['checklists.request.checklists.request.checklists.request.number'])
+
+    when: 'Same recursive checklist-request-checklists-request-checklists-request-number matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, '2', 10, 1, null, ['checklists.request.checklists.request.checklists.request.number'])
+
+    then: 'Recursive checklist-request-checklists-request-checklists-request-number text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for text search term and checklist-request-checklists-request-checklists-request-date matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-request-checklists-request-date matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      String dateTerm = DateTimeFormatter.ISO_DATE.format(LocalDate.now())
+      List<Request> legacyResults = service.lookup(Request, dateTerm, 10, 1, null, ['checklists.request.checklists.request.checklists.request.date'])
+
+    when: 'Same recursive checklist-request-checklists-request-checklists-request-date matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, dateTerm, 10, 1, null, ['checklists.request.checklists.request.checklists.request.date'])
+
+    then: 'Recursive checklist-request-checklists-request-checklists-request-date text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for text search term and checklist-request-checklists-request-checklists-request-checklists-name matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-request-checklists-request-checklists-name matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'list_3', 10, 1, null, ['checklists.request.checklists.request.checklists.request.checklists.name'])
+
+    when: 'Same recursive checklist-request-checklists-request-checklists-request-checklists-name matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'list_3', 10, 1, null, ['checklists.request.checklists.request.checklists.request.checklists.name'])
+
+    then: 'Recursive checklist-request-checklists-request-checklists-request-checklists-name text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for text search term and checklist-request-checklists-request-checklists-request-checklists-items-status matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-request-checklists-request-checklists-items-status matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'required', 10, 1, null, ['checklists.request.checklists.request.checklists.request.checklists.items.status'])
+
+    when: 'Same recursive checklist-request-checklists-request-checklists-request-checklists-items-status matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'required', 10, 1, null, ['checklists.request.checklists.request.checklists.request.checklists.items.status'])
+
+    then: 'Recursive checklist-request-checklists-request-checklists-request-checklists-items-status text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for text search term and checklist-request-checklists-request-checklists-request-checklists-items-outcome matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-request-checklists-request-checklists-items-outcome matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'unknown', 10, 1, null, ['checklists.request.checklists.request.checklists.request.checklists.items.outcome'])
+
+    when: 'Same recursive checklist-request-checklists-request-checklists-request-checklists-items-outcome matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'unknown', 10, 1, null, ['checklists.request.checklists.request.checklists.request.checklists.items.outcome'])
+
+    then: 'Recursive checklist-request-checklists-request-checklists-request-checklists-items-outcome text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for text search term and checklist-request-checklists-request-checklists-items-status matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-request-checklists-items-status matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'required', 10, 1, null, ['checklists.request.checklists.request.checklists.items.status'])
+
+    when: 'Same recursive checklist-request-checklists-request-checklists-items-status matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'required', 10, 1, null, ['checklists.request.checklists.request.checklists.items.status'])
+
+    then: 'Recursive checklist-request-checklists-request-checklists-items-status text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for text search term and checklist-request-checklists-request-checklists-items-outcome matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-request-checklists-items-outcome matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'unknown', 10, 1, null, ['checklists.request.checklists.request.checklists.items.outcome'])
+
+    when: 'Same recursive checklist-request-checklists-request-checklists-items-outcome matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'unknown', 10, 1, null, ['checklists.request.checklists.request.checklists.items.outcome'])
+
+    then: 'Recursive checklist-request-checklists-request-checklists-items-outcome text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for text search term and checklist-request-checklists-items-status matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-items-status matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'required', 10, 1, null, ['checklists.request.checklists.items.status'])
+
+    when: 'Same recursive checklist-request-checklists-items-status matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'required', 10, 1, null, ['checklists.request.checklists.items.status'])
+
+    then: 'Recursive checklist-request-checklists-items-status text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for text search term and checklist-request-checklists-items-outcome matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-items-outcome matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'unknown', 10, 1, null, ['checklists.request.checklists.items.outcome'])
+
+    when: 'Same recursive checklist-request-checklists-items-outcome matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'unknown', 10, 1, null, ['checklists.request.checklists.items.outcome'])
+
+    then: 'Recursive checklist-request-checklists-items-outcome text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
   void 'JPA backend parity for text search term and deep item-checklist-request-name matchIn field' () {
     given: 'Legacy backend baseline for deep item->checklist->request name matchIn text search'
       service.simpleLookupQueryBackend = null
@@ -1227,6 +1906,268 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
       List<Request> jpaResults = service.lookup(Request, 'list_3', 10, 1, null, ['checklists.items.checklist.request.checklists.name'])
 
     then: 'Recursive checklist-name path text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for deep recursive checklist-request-name matchIn path' () {
+    given: 'Legacy backend baseline for recursive deep checklist-request-name matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'request 2', 10, 1, null, ['checklists.items.checklist.request.checklists.request.name'])
+
+    when: 'Same recursive deep checklist-request-name matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'request 2', 10, 1, null, ['checklists.items.checklist.request.checklists.request.name'])
+
+    then: 'Recursive checklist-request-name path text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for deep recursive checklist-request-number matchIn path' () {
+    given: 'Legacy backend baseline for recursive deep checklist-request-number matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, '2', 10, 1, null, ['checklists.items.checklist.request.checklists.request.number'])
+
+    when: 'Same recursive deep checklist-request-number matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, '2', 10, 1, null, ['checklists.items.checklist.request.checklists.request.number'])
+
+    then: 'Recursive checklist-request-number path text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for deep recursive checklist-request-date matchIn path' () {
+    given: 'Legacy backend baseline for recursive deep checklist-request-date matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      String dateTerm = DateTimeFormatter.ISO_DATE.format(LocalDate.now())
+      List<Request> legacyResults = service.lookup(Request, dateTerm, 10, 1, null, ['checklists.items.checklist.request.checklists.request.date'])
+
+    when: 'Same recursive deep checklist-request-date matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, dateTerm, 10, 1, null, ['checklists.items.checklist.request.checklists.request.date'])
+
+    then: 'Recursive checklist-request-date path text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for deep recursive checklist-request-checklists-items-status matchIn path' () {
+    given: 'Legacy backend baseline for recursive deep checklist-request-checklists-items-status matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'required', 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.items.status'])
+
+    when: 'Same recursive deep checklist-request-checklists-items-status matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'required', 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.items.status'])
+
+    then: 'Recursive deep checklist-request-checklists-items-status path text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for deep recursive checklist-request-checklists-items-outcome matchIn path' () {
+    given: 'Legacy backend baseline for recursive deep checklist-request-checklists-items-outcome matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'unknown', 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.items.outcome'])
+
+    when: 'Same recursive deep checklist-request-checklists-items-outcome matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'unknown', 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.items.outcome'])
+
+    then: 'Recursive deep checklist-request-checklists-items-outcome path text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for deep recursive checklist-request-checklists-request-name matchIn path' () {
+    given: 'Legacy backend baseline for recursive deep checklist-request-checklists-request-name matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'request 2', 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.request.name'])
+
+    when: 'Same recursive deep checklist-request-checklists-request-name matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'request 2', 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.request.name'])
+
+    then: 'Recursive deep checklist-request-checklists-request-name path text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for deep recursive checklist-request-checklists-request-number matchIn path' () {
+    given: 'Legacy backend baseline for recursive deep checklist-request-checklists-request-number matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, '2', 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.request.number'])
+
+    when: 'Same recursive deep checklist-request-checklists-request-number matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, '2', 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.request.number'])
+
+    then: 'Recursive deep checklist-request-checklists-request-number path text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for deep recursive checklist-request-checklists-request-date matchIn path' () {
+    given: 'Legacy backend baseline for recursive deep checklist-request-checklists-request-date matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      String dateTerm = DateTimeFormatter.ISO_DATE.format(LocalDate.now())
+      List<Request> legacyResults = service.lookup(Request, dateTerm, 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.request.date'])
+
+    when: 'Same recursive deep checklist-request-checklists-request-date matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, dateTerm, 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.request.date'])
+
+    then: 'Recursive deep checklist-request-checklists-request-date path text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for deep recursive checklist-request-checklists-request-checklists-name matchIn path' () {
+    given: 'Legacy backend baseline for recursive deep checklist-request-checklists-request-checklists-name matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'list_3', 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.request.checklists.name'])
+
+    when: 'Same recursive deep checklist-request-checklists-request-checklists-name matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'list_3', 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.request.checklists.name'])
+
+    then: 'Recursive deep checklist-request-checklists-request-checklists-name path text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for deep recursive checklist-request-checklists-request-checklists-items-status matchIn path' () {
+    given: 'Legacy backend baseline for recursive deep checklist-request-checklists-request-checklists-items-status matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'required', 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.request.checklists.items.status'])
+
+    when: 'Same recursive deep checklist-request-checklists-request-checklists-items-status matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'required', 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.request.checklists.items.status'])
+
+    then: 'Recursive deep checklist-request-checklists-request-checklists-items-status path text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for deep recursive checklist-request-checklists-request-checklists-items-outcome matchIn path' () {
+    given: 'Legacy backend baseline for recursive deep checklist-request-checklists-request-checklists-items-outcome matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'unknown', 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.request.checklists.items.outcome'])
+
+    when: 'Same recursive deep checklist-request-checklists-request-checklists-items-outcome matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'unknown', 10, 1, null, ['checklists.items.checklist.request.checklists.request.checklists.request.checklists.items.outcome'])
+
+    then: 'Recursive deep checklist-request-checklists-request-checklists-items-outcome path text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for deep recursive checklist-items-status matchIn path' () {
+    given: 'Legacy backend baseline for recursive deep checklist-items-status matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'required', 10, 1, null, ['checklists.items.checklist.request.checklists.items.status'])
+
+    when: 'Same recursive deep checklist-items-status matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'required', 10, 1, null, ['checklists.items.checklist.request.checklists.items.status'])
+
+    then: 'Recursive checklist-items-status path text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for deep recursive checklist-items-outcome matchIn path' () {
+    given: 'Legacy backend baseline for recursive deep checklist-items-outcome matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'unknown', 10, 1, null, ['checklists.items.checklist.request.checklists.items.outcome'])
+
+    when: 'Same recursive deep checklist-items-outcome matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'unknown', 10, 1, null, ['checklists.items.checklist.request.checklists.items.outcome'])
+
+    then: 'Recursive checklist-items-outcome path text-search parity is preserved'
       legacyResults*.id == jpaResults*.id
 
     cleanup:
