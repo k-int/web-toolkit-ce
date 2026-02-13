@@ -260,6 +260,225 @@ class JpaCriteriaQueryBackend implements SimpleLookupQueryBackend {
       )
     }
 
+    final def checklistRequestNameEqMatcher = (expression =~ /^checklists\.request\.name==(.+)$/)
+    if (checklistRequestNameEqMatcher.matches()) {
+      final String paramName = nextParam(state)
+      return new ParsedPredicate(
+        clause: "cl.request.name = :${paramName}",
+        params: [(paramName): checklistRequestNameEqMatcher[0][1]],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestNameIeqMatcher = (expression =~ /(?i)^checklists\.request\.name=i=(.+)$/)
+    if (checklistRequestNameIeqMatcher.matches()) {
+      final String paramName = nextParam(state)
+      final String value = (checklistRequestNameIeqMatcher[0][1] as String)?.toLowerCase()
+      return new ParsedPredicate(
+        clause: "lower(cl.request.name) = :${paramName}",
+        params: [(paramName): value],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestNameNeqMatcher = (expression =~ /^checklists\.request\.name!=(.+)$/)
+    if (checklistRequestNameNeqMatcher.matches()) {
+      final String paramName = nextParam(state)
+      return new ParsedPredicate(
+        clause: "cl.request.name <> :${paramName}",
+        params: [(paramName): checklistRequestNameNeqMatcher[0][1]],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestNameNullMatcher = (expression =~ /(?i)^checklists\.request\.name\s+isNull$/)
+    if (checklistRequestNameNullMatcher.matches()) {
+      return new ParsedPredicate(
+        clause: "cl.request.name is null",
+        params: [:],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestNameNotNullMatcher = (expression =~ /(?i)^checklists\.request\.name\s+isNotNull$/)
+    if (checklistRequestNameNotNullMatcher.matches()) {
+      return new ParsedPredicate(
+        clause: "cl.request.name is not null",
+        params: [:],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestNameIsSetMatcher = (expression =~ /(?i)^checklists\.request\.name\s+isSet$/)
+    if (checklistRequestNameIsSetMatcher.matches()) {
+      return new ParsedPredicate(
+        clause: "cl.request.name is not null",
+        params: [:],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestNameIsNotSetMatcher = (expression =~ /(?i)^checklists\.request\.name\s+isNotSet$/)
+    if (checklistRequestNameIsNotSetMatcher.matches()) {
+      return new ParsedPredicate(
+        clause: "cl.request.name is null",
+        params: [:],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestNameContainsMatcher = (expression =~ /^checklists\.request\.name=~(.+)$/)
+    if (checklistRequestNameContainsMatcher.matches()) {
+      final String paramName = nextParam(state)
+      final String value = '%' + ((checklistRequestNameContainsMatcher[0][1] as String)?.toLowerCase()) + '%'
+      return new ParsedPredicate(
+        clause: "lower(cl.request.name) like :${paramName}",
+        params: [(paramName): value],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestNameNotContainsMatcher = (expression =~ /^checklists\.request\.name!~(.+)$/)
+    if (checklistRequestNameNotContainsMatcher.matches()) {
+      final String paramName = nextParam(state)
+      final String value = '%' + ((checklistRequestNameNotContainsMatcher[0][1] as String)?.toLowerCase()) + '%'
+      return new ParsedPredicate(
+        clause: "(not (lower(cl.request.name) like :${paramName}))",
+        params: [(paramName): value],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestRangeMatcher = (expression =~ /^(.+?)(<=|<)checklists\.request\.(number|date)(<=|<)(.+)$/)
+    if (checklistRequestRangeMatcher.matches()) {
+      final String leftValueRaw = checklistRequestRangeMatcher[0][1]?.trim()
+      final String leftOp = checklistRequestRangeMatcher[0][2]
+      final String field = checklistRequestRangeMatcher[0][3]
+      final String rightOp = checklistRequestRangeMatcher[0][4]
+      final String rightValueRaw = checklistRequestRangeMatcher[0][5]?.trim()
+
+      final String lp = nextParam(state)
+      final String rp = nextParam(state)
+      final Object leftValue = convertChecklistRequestValue(field, leftValueRaw)
+      final Object rightValue = convertChecklistRequestValue(field, rightValueRaw)
+      if (leftValue == null || rightValue == null) return null
+
+      final String leftComparator = (leftOp == '<') ? '>' : '>='
+      final String rightComparator = (rightOp == '<') ? '<' : '<='
+      return new ParsedPredicate(
+        clause: "(cl.request.${field} ${leftComparator} :${lp} and cl.request.${field} ${rightComparator} :${rp})",
+        params: [(lp): leftValue, (rp): rightValue],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestCmpMatcher = (expression =~ /^checklists\.request\.(number|date)(>=|<=|>|<)(.+)$/)
+    if (checklistRequestCmpMatcher.matches()) {
+      final String field = checklistRequestCmpMatcher[0][1]
+      final String op = checklistRequestCmpMatcher[0][2]
+      final String valueRaw = checklistRequestCmpMatcher[0][3]?.trim()
+      final Object value = convertChecklistRequestValue(field, valueRaw)
+      if (value == null) return null
+      final String paramName = nextParam(state)
+      return new ParsedPredicate(
+        clause: "cl.request.${field} ${op} :${paramName}",
+        params: [(paramName): value],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestEqMatcher = (expression =~ /^checklists\.request\.(number|date)==(.+)$/)
+    if (checklistRequestEqMatcher.matches()) {
+      final String field = checklistRequestEqMatcher[0][1]
+      final String paramName = nextParam(state)
+      final Object value = convertChecklistRequestValue(field, checklistRequestEqMatcher[0][2]?.trim())
+      if (value == null) return null
+      return new ParsedPredicate(
+        clause: "cl.request.${field} = :${paramName}",
+        params: [(paramName): value],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestContainsMatcher = (expression =~ /^checklists\.request\.(number|date)=~(.+)$/)
+    if (checklistRequestContainsMatcher.matches()) {
+      final String field = checklistRequestContainsMatcher[0][1]
+      final String paramName = nextParam(state)
+      final Object value = convertChecklistRequestValue(field, checklistRequestContainsMatcher[0][2]?.trim())
+      if (value == null) return null
+      return new ParsedPredicate(
+        clause: "cl.request.${field} = :${paramName}",
+        params: [(paramName): value],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestNotContainsMatcher = (expression =~ /^checklists\.request\.(number|date)!~(.+)$/)
+    if (checklistRequestNotContainsMatcher.matches()) {
+      final String field = checklistRequestNotContainsMatcher[0][1]
+      final String paramName = nextParam(state)
+      final Object value = convertChecklistRequestValue(field, checklistRequestNotContainsMatcher[0][2]?.trim())
+      if (value == null) return null
+      return new ParsedPredicate(
+        clause: "(not (cl.request.${field} = :${paramName}))",
+        params: [(paramName): value],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestNeqMatcher = (expression =~ /^checklists\.request\.(number|date)!=(.+)$/)
+    if (checklistRequestNeqMatcher.matches()) {
+      final String field = checklistRequestNeqMatcher[0][1]
+      final String paramName = nextParam(state)
+      final Object value = convertChecklistRequestValue(field, checklistRequestNeqMatcher[0][2]?.trim())
+      if (value == null) return null
+      return new ParsedPredicate(
+        clause: "cl.request.${field} <> :${paramName}",
+        params: [(paramName): value],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestNullMatcher = (expression =~ /(?i)^checklists\.request\.(number|date)\s+isNull$/)
+    if (checklistRequestNullMatcher.matches()) {
+      final String field = checklistRequestNullMatcher[0][1]
+      return new ParsedPredicate(
+        clause: "cl.request.${field} is null",
+        params: [:],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestNotNullMatcher = (expression =~ /(?i)^checklists\.request\.(number|date)\s+isNotNull$/)
+    if (checklistRequestNotNullMatcher.matches()) {
+      final String field = checklistRequestNotNullMatcher[0][1]
+      return new ParsedPredicate(
+        clause: "cl.request.${field} is not null",
+        params: [:],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestIsSetMatcher = (expression =~ /(?i)^checklists\.request\.(number|date)\s+isSet$/)
+    if (checklistRequestIsSetMatcher.matches()) {
+      final String field = checklistRequestIsSetMatcher[0][1]
+      return new ParsedPredicate(
+        clause: "cl.request.${field} is not null",
+        params: [:],
+        usesChecklistJoin: true
+      )
+    }
+
+    final def checklistRequestIsNotSetMatcher = (expression =~ /(?i)^checklists\.request\.(number|date)\s+isNotSet$/)
+    if (checklistRequestIsNotSetMatcher.matches()) {
+      final String field = checklistRequestIsNotSetMatcher[0][1]
+      return new ParsedPredicate(
+        clause: "cl.request.${field} is null",
+        params: [:],
+        usesChecklistJoin: true
+      )
+    }
+
     final def checklistIeqMatcher = (expression =~ /(?i)^checklists\.name=i=(.+)$/)
     if (checklistIeqMatcher.matches()) {
       final String paramName = nextParam(state)
@@ -576,6 +795,26 @@ class JpaCriteriaQueryBackend implements SimpleLookupQueryBackend {
     null
   }
 
+  private Object convertChecklistRequestValue(final String field, final String valueRaw) {
+    if ('number' == field) {
+      try {
+        return Integer.valueOf(valueRaw)
+      } catch (Exception ignored) {
+        return null
+      }
+    }
+
+    if ('date' == field) {
+      try {
+        return LocalDate.parse(valueRaw)
+      } catch (Exception ignored) {
+        return null
+      }
+    }
+
+    null
+  }
+
   private static String stripOuterParentheses(final String input) {
     if (!input) return input
     String out = input.trim()
@@ -750,9 +989,21 @@ class JpaCriteriaQueryBackend implements SimpleLookupQueryBackend {
     if ('checklists.request.date' == prop) {
       return new ParsedFieldMatch(aliasPath: 'cl.request.date', fieldType: type, isString: false, usesChecklistJoin: true)
     }
+    if ('checklists.request.checklists.name' == prop) {
+      if (!String.isAssignableFrom(type)) return null
+      return new ParsedFieldMatch(
+        fieldType: type,
+        isString: true,
+        customStringClauseTemplate: "(exists (select 1 from r.checklists cl0 join cl0.request r0 join r0.checklists scl where lower(scl.name) like :__PARAM__))"
+      )
+    }
     if ('checklists.items.checklist.request.name' == prop) {
       if (!String.isAssignableFrom(type)) return null
       return new ParsedFieldMatch(aliasPath: 'i.checklist.request.name', fieldType: type, isString: true, usesItemJoin: true, usesChecklistJoin: true)
+    }
+    if ('checklists.items.checklist.name' == prop) {
+      if (!String.isAssignableFrom(type)) return null
+      return new ParsedFieldMatch(aliasPath: 'i.checklist.name', fieldType: type, isString: true, usesItemJoin: true, usesChecklistJoin: true)
     }
     if ('checklists.items.checklist.request.date' == prop) {
       return new ParsedFieldMatch(aliasPath: 'i.checklist.request.date', fieldType: type, isString: false, usesItemJoin: true, usesChecklistJoin: true)

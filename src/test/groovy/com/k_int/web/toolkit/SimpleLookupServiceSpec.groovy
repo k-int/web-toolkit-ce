@@ -553,6 +553,268 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
       service.jpaCriteriaQueryBackend = null
   }
 
+  void 'JPA backend parity for checklist-request-name equality predicates' () {
+    given: 'Legacy backend baseline for checklist request-name equality and case-insensitive equality'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyEqResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name==Request 2"
+      ])
+      List<Request> legacyIeqResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name=i=request 2"
+      ])
+
+    when: 'Same checklist request-name predicates run with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaEqResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name==Request 2"
+      ])
+      List<Request> jpaIeqResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name=i=request 2"
+      ])
+
+    then: 'Checklist request-name equality parity is preserved'
+      legacyEqResults*.id == jpaEqResults*.id
+      legacyIeqResults*.id == jpaIeqResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for checklist-request-name null and not-equal semantics' () {
+    given: 'Legacy backend baseline for checklist request-name null and not-equal operators'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyNeqResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name!=Request 2"
+      ])
+      List<Request> legacyNullResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name isNull"
+      ])
+      List<Request> legacyNotNullResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name isNotNull"
+      ])
+      List<Request> legacyIsSetResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name isSet"
+      ])
+      List<Request> legacyIsNotSetResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name isNotSet"
+      ])
+
+    when: 'Same checklist request-name operators run with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaNeqResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name!=Request 2"
+      ])
+      List<Request> jpaNullResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name isNull"
+      ])
+      List<Request> jpaNotNullResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name isNotNull"
+      ])
+      List<Request> jpaIsSetResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name isSet"
+      ])
+      List<Request> jpaIsNotSetResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name isNotSet"
+      ])
+
+    then: 'Checklist request-name null and not-equal parity is preserved'
+      legacyNeqResults*.id == jpaNeqResults*.id
+      legacyNullResults*.id == jpaNullResults*.id
+      legacyNotNullResults*.id == jpaNotNullResults*.id
+      legacyIsSetResults*.id == jpaIsSetResults*.id
+      legacyIsNotSetResults*.id == jpaIsNotSetResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for checklist-request-name contains semantics' () {
+    given: 'Legacy backend baseline for checklist request-name contains operators'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyContainsResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name=~Request"
+      ])
+      List<Request> legacyNotContainsResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name!~3"
+      ])
+
+    when: 'Same checklist request-name contains operators run with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaContainsResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name=~Request"
+      ])
+      List<Request> jpaNotContainsResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.name!~3"
+      ])
+
+    then: 'Checklist request-name contains parity is preserved'
+      legacyContainsResults*.id == jpaContainsResults*.id
+      legacyNotContainsResults*.id == jpaNotContainsResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for checklist-request number/date comparison predicates' () {
+    given: 'Legacy backend baseline for checklist request numeric/date predicates'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      LocalDate today = LocalDate.now()
+      String todayIso = DateTimeFormatter.ISO_DATE.format(today)
+      List<Request> legacyEqResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.number==2"
+      ])
+      List<Request> legacyCmpResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.date>${todayIso}"
+      ])
+      List<Request> legacyRangeResults = service.lookup(Request, null, 10, 1, [
+        "1<=checklists.request.number<3"
+      ])
+
+    when: 'Same checklist request numeric/date predicates run with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaEqResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.number==2"
+      ])
+      List<Request> jpaCmpResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.date>${todayIso}"
+      ])
+      List<Request> jpaRangeResults = service.lookup(Request, null, 10, 1, [
+        "1<=checklists.request.number<3"
+      ])
+
+    then: 'Checklist request number/date parity is preserved'
+      legacyEqResults*.id == jpaEqResults*.id
+      legacyCmpResults*.id == jpaCmpResults*.id
+      legacyRangeResults*.id == jpaRangeResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for checklist-request number/date null and not-equal semantics' () {
+    given: 'Legacy backend baseline for checklist request number/date null and not-equal operators'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      LocalDate today = LocalDate.now()
+      String todayIso = DateTimeFormatter.ISO_DATE.format(today)
+      List<Request> legacyNeqResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.number!=2"
+      ])
+      List<Request> legacyNullResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.date isNull"
+      ])
+      List<Request> legacyNotNullResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.date isNotNull"
+      ])
+      List<Request> legacyIsSetResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.number isSet"
+      ])
+      List<Request> legacyIsNotSetResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.date isNotSet"
+      ])
+      List<Request> legacyDateNeqResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.date!=${todayIso}"
+      ])
+
+    when: 'Same checklist request number/date operators run with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaNeqResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.number!=2"
+      ])
+      List<Request> jpaNullResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.date isNull"
+      ])
+      List<Request> jpaNotNullResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.date isNotNull"
+      ])
+      List<Request> jpaIsSetResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.number isSet"
+      ])
+      List<Request> jpaIsNotSetResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.date isNotSet"
+      ])
+      List<Request> jpaDateNeqResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.date!=${todayIso}"
+      ])
+
+    then: 'Checklist request number/date null and not-equal parity is preserved'
+      legacyNeqResults*.id == jpaNeqResults*.id
+      legacyNullResults*.id == jpaNullResults*.id
+      legacyNotNullResults*.id == jpaNotNullResults*.id
+      legacyIsSetResults*.id == jpaIsSetResults*.id
+      legacyIsNotSetResults*.id == jpaIsNotSetResults*.id
+      legacyDateNeqResults*.id == jpaDateNeqResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for checklist-request number/date contains semantics' () {
+    given: 'Legacy backend baseline for checklist request numeric/date contains operators'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      LocalDate today = LocalDate.now()
+      String todayIso = DateTimeFormatter.ISO_DATE.format(today)
+      List<Request> legacyNumberContainsResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.number=~2"
+      ])
+      List<Request> legacyNumberNotContainsResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.number!~2"
+      ])
+      List<Request> legacyDateContainsResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.date=~${todayIso}"
+      ])
+      List<Request> legacyDateNotContainsResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.date!~${todayIso}"
+      ])
+
+    when: 'Same checklist request numeric/date contains operators run with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaNumberContainsResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.number=~2"
+      ])
+      List<Request> jpaNumberNotContainsResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.number!~2"
+      ])
+      List<Request> jpaDateContainsResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.date=~${todayIso}"
+      ])
+      List<Request> jpaDateNotContainsResults = service.lookup(Request, null, 10, 1, [
+        "checklists.request.date!~${todayIso}"
+      ])
+
+    then: 'Checklist request numeric/date contains parity is preserved'
+      legacyNumberContainsResults*.id == jpaNumberContainsResults*.id
+      legacyNumberNotContainsResults*.id == jpaNumberNotContainsResults*.id
+      legacyDateContainsResults*.id == jpaDateContainsResults*.id
+      legacyDateNotContainsResults*.id == jpaDateNotContainsResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
   void 'JPA backend parity for root-name isSet special operator' () {
     given: 'Legacy backend baseline for root name isSet'
       service.simpleLookupQueryBackend = null
@@ -873,6 +1135,26 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
       service.jpaCriteriaQueryBackend = null
   }
 
+  void 'JPA backend parity for text search term and checklist-request-checklists-name matchIn field' () {
+    given: 'Legacy backend baseline for recursive checklist-request-checklists-name matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'list_3', 10, 1, null, ['checklists.request.checklists.name'])
+
+    when: 'Same recursive checklist-request-checklists-name matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'list_3', 10, 1, null, ['checklists.request.checklists.name'])
+
+    then: 'Recursive checklist-request-checklists-name text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
   void 'JPA backend parity for text search term and deep item-checklist-request-name matchIn field' () {
     given: 'Legacy backend baseline for deep item->checklist->request name matchIn text search'
       service.simpleLookupQueryBackend = null
@@ -885,6 +1167,26 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
       List<Request> jpaResults = service.lookup(Request, 'request 2', 10, 1, null, ['checklists.items.checklist.request.name'])
 
     then: 'Deep item->checklist->request name text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend parity for text search term and deep item-checklist-name matchIn field' () {
+    given: 'Legacy backend baseline for deep item->checklist name matchIn text search'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'list_3', 10, 1, null, ['checklists.items.checklist.name'])
+
+    when: 'Same deep checklist-name matchIn text search runs with JPA backend selector'
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'list_3', 10, 1, null, ['checklists.items.checklist.name'])
+
+    then: 'Deep item->checklist name text-search parity is preserved'
       legacyResults*.id == jpaResults*.id
 
     cleanup:
