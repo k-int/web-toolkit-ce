@@ -11,12 +11,15 @@ import com.k_int.web.toolkit.utils.GormUtils
 import grails.gorm.multitenancy.Tenants
 import grails.util.GrailsClassUtils
 import groovy.util.logging.Slf4j
+import org.springframework.beans.factory.annotation.Value
 
 @Slf4j
 class SimpleLookupService {
   
   String queryBackend = 'legacy'
   boolean allowLegacyQueryBackend = true
+  @Value('${k_int.webToolkit.query.jpa.astFilterParserEnabled:false}')
+  boolean jpaAstFilterParserEnabled = false
   ValueConverterService valueConverterService
   SimpleLookupQueryBackend simpleLookupQueryBackend
   SimpleLookupQueryBackend legacyCriteriaQueryBackend
@@ -295,7 +298,7 @@ class SimpleLookupService {
       legacyCriteriaQueryBackend ?: new LegacyCriteriaQueryBackend(valueConverterService)
 
     if ('jpa' == selectedBackend) {
-      return jpaCriteriaQueryBackend ?: new JpaCriteriaQueryBackend(legacyBackend)
+      return jpaCriteriaQueryBackend ?: newJpaQueryBackend(legacyBackend, jpaAstFilterParserEnabled)
     }
 
     if (!allowLegacyQueryBackend) {
@@ -304,6 +307,13 @@ class SimpleLookupService {
 
     log.warn("SimpleLookupService is using deprecated legacy query backend. Configure queryBackend='jpa' for Grails 7 readiness.")
     legacyBackend
+  }
+
+  protected SimpleLookupQueryBackend newJpaQueryBackend(
+    final SimpleLookupQueryBackend legacyBackend,
+    final boolean useAstFilterParser
+  ) {
+    new JpaCriteriaQueryBackend(legacyBackend, useAstFilterParser)
   }
 
   private synchronized def doMethod (final Class c, final String method, final Map methodPars = null, final Closure crit) {

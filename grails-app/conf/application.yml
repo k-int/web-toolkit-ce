@@ -30,8 +30,18 @@ spring:
                 - '**/*.gson'
                 - 'logback.groovy'
                 - '*.properties'
+k_int:
+    webToolkit:
+        query:
+            jpa:
+                astFilterParserEnabled: true
 environments:
     development:
+        k_int:
+            webToolkit:
+                query:
+                    jpa:
+                        astFilterParserEnabled: true
         management:
             endpoints:
                 enabled-by-default: true
@@ -42,7 +52,19 @@ environments:
         logging:
             config: classpath:logback-development.xml
 
+    staging:
+        k_int:
+            webToolkit:
+                query:
+                    jpa:
+                        astFilterParserEnabled: true
+
     production:
+        k_int:
+            webToolkit:
+                query:
+                    jpa:
+                        astFilterParserEnabled: true
         management:
             endpoints:
                 enabled-by-default: false
@@ -134,5 +156,3 @@ environments:
           # For testing it's OK to use the DISCRIMINATOR mode
           mode: DATABASE
           tenantResolverClass: org.grails.datastore.mapping.multitenancy.resolvers.FixedTenantResolver
-
-

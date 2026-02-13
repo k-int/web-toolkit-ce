@@ -163,6 +163,60 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
       results instanceof List
   }
 
+  void 'Lookup constructs JPA backend with AST parser gate disabled by default' () {
+    given: 'JPA selection uses service-created backend and default AST gate'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'jpa'
+      service.jpaAstFilterParserEnabled = false
+      Boolean capturedAstFlag = null
+      service.metaClass.newJpaQueryBackend = { SimpleLookupQueryBackend legacyBackend, boolean useAstFilterParser ->
+        capturedAstFlag = useAstFilterParser
+        ([apply: { Object criteriaTarget, LookupQuerySpec spec -> }] as SimpleLookupQueryBackend)
+      }
+
+    when: 'Lookup resolves and constructs JPA backend'
+      service.lookup(Request, null, 10, 1, [
+        "name==Request 1"
+      ], [], [])
+
+    then: 'AST parser gate remains disabled by default'
+      capturedAstFlag == false
+
+    cleanup:
+      GroovySystem.metaClassRegistry.removeMetaClass(SimpleLookupService)
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'Lookup constructs JPA backend with AST parser gate enabled when configured' () {
+    given: 'JPA selection uses service-created backend and AST gate is enabled'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'jpa'
+      service.jpaAstFilterParserEnabled = true
+      Boolean capturedAstFlag = null
+      service.metaClass.newJpaQueryBackend = { SimpleLookupQueryBackend legacyBackend, boolean useAstFilterParser ->
+        capturedAstFlag = useAstFilterParser
+        ([apply: { Object criteriaTarget, LookupQuerySpec spec -> }] as SimpleLookupQueryBackend)
+      }
+
+    when: 'Lookup resolves and constructs JPA backend'
+      service.lookup(Request, null, 10, 1, [
+        "name==Request 1"
+      ], [], [])
+
+    then: 'AST parser gate is passed through to backend construction'
+      capturedAstFlag == true
+
+    cleanup:
+      GroovySystem.metaClassRegistry.removeMetaClass(SimpleLookupService)
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
   void 'Lookup defaults to legacy backend bean when selector is not overridden' () {
     given: 'Default backend selector and a legacy backend bean'
       def legacyBackend = Mock(SimpleLookupQueryBackend)
@@ -327,6 +381,104 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
 
     then: 'Grouped expression parity is preserved'
       legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend AST parser parity for grouped item expression filter' () {
+    given: 'Legacy backend baseline for grouped item predicates'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, null, 10, 1, [
+        "(checklists.items.outcome==unknown&&checklists.items.status==required)||(checklists.items.outcome==yes&&checklists.items.status==required)"
+      ])
+
+    when: 'JPA backend uses AST filter parser for the same grouped expression'
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(null, true)
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, null, 10, 1, [
+        "(checklists.items.outcome==unknown&&checklists.items.status==required)||(checklists.items.outcome==yes&&checklists.items.status==required)"
+      ])
+
+    then: 'AST path preserves parity with legacy results'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend AST parser parity for nested item not-equal filter' () {
+    given: 'Legacy backend baseline for item not-equal'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, null, 10, 1, [
+        "checklists.items.outcome!=yes"
+      ])
+
+    when: 'JPA backend uses AST parser for same item not-equal filter'
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(null, true)
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, null, 10, 1, [
+        "checklists.items.outcome!=yes"
+      ])
+
+    then: 'AST path preserves item not-equal parity'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend AST parser parity with default JPA for item isEmpty special operator' () {
+    given: 'Default JPA backend baseline for item isEmpty'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'jpa'
+      List<Request> defaultJpaResults = service.lookup(Request, null, 10, 1, [
+        "checklists.items.outcome isEmpty"
+      ])
+
+    when: 'JPA backend uses AST parser for same item isEmpty filter'
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(null, true)
+      List<Request> astJpaResults = service.lookup(Request, null, 10, 1, [
+        "checklists.items.outcome isEmpty"
+      ])
+
+    then: 'AST path preserves default JPA item isEmpty semantics'
+      defaultJpaResults*.id == astJpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend AST parser parity with default JPA for item isNotEmpty special operator' () {
+    given: 'Default JPA backend baseline for item isNotEmpty'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'jpa'
+      List<Request> defaultJpaResults = service.lookup(Request, null, 10, 1, [
+        "checklists.items.outcome isNotEmpty"
+      ])
+
+    when: 'JPA backend uses AST parser for same item isNotEmpty filter'
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(null, true)
+      List<Request> astJpaResults = service.lookup(Request, null, 10, 1, [
+        "checklists.items.outcome isNotEmpty"
+      ])
+
+    then: 'AST path preserves default JPA item isNotEmpty semantics'
+      defaultJpaResults*.id == astJpaResults*.id
 
     cleanup:
       service.queryBackend = 'legacy'
@@ -580,6 +732,118 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
 
     then: 'Checklist not-equal parity is preserved'
       legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'Legacy backend raises mapping exception for checklist-name isEmpty and isNotEmpty' () {
+    given: 'Legacy backend selector'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+
+    when: 'Legacy backend evaluates checklist-name isEmpty'
+      service.lookup(Request, null, 10, 1, [
+        "checklists.name isEmpty"
+      ])
+
+    then: 'Legacy behavior is a mapping exception for this unsupported path/operator combination'
+      thrown(MappingException)
+
+    when: 'Legacy backend evaluates checklist-name isNotEmpty'
+      service.lookup(Request, null, 10, 1, [
+        "checklists.name isNotEmpty"
+      ])
+
+    then: 'Legacy behavior is also a mapping exception for isNotEmpty'
+      thrown(MappingException)
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'Strict JPA mode fails fast for checklist-name isEmpty and isNotEmpty' () {
+    given: 'JPA backend is configured without fallback'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(null)
+      service.queryBackend = 'jpa'
+
+    when: 'Strict JPA backend evaluates checklist-name isEmpty'
+      service.lookup(Request, null, 10, 1, [
+        "checklists.name isEmpty"
+      ])
+
+    then: 'Unsupported operator/path fails fast under strict JPA mode'
+      thrown(UnsupportedOperationException)
+
+    when: 'Strict JPA backend evaluates checklist-name isNotEmpty'
+      service.lookup(Request, null, 10, 1, [
+        "checklists.name isNotEmpty"
+      ])
+
+    then: 'Unsupported operator/path fails fast under strict JPA mode'
+      thrown(UnsupportedOperationException)
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'Legacy root-name isEmpty and isNotEmpty remain unsupported' () {
+    given: 'Legacy backend is active'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+
+    when: 'Legacy backend evaluates root-name isEmpty'
+      service.lookup(Request, null, 10, 1, [
+        "name isEmpty"
+      ])
+
+    then: 'Legacy behavior is a mapping exception for this unsupported operator'
+      thrown(MappingException)
+
+    when: 'Legacy backend evaluates root-name isNotEmpty'
+      service.lookup(Request, null, 10, 1, [
+        "name isNotEmpty"
+      ])
+
+    then: 'Legacy behavior is also a mapping exception for isNotEmpty'
+      thrown(MappingException)
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'Strict JPA mode fails fast for root-name isEmpty and isNotEmpty' () {
+    given: 'JPA backend is configured without fallback'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(null)
+      service.queryBackend = 'jpa'
+
+    when: 'Strict JPA backend evaluates root-name isEmpty'
+      service.lookup(Request, null, 10, 1, [
+        "name isEmpty"
+      ])
+
+    then: 'Unsupported operator/path fails fast under strict JPA mode'
+      thrown(UnsupportedOperationException)
+
+    when: 'Strict JPA backend evaluates root-name isNotEmpty'
+      service.lookup(Request, null, 10, 1, [
+        "name isNotEmpty"
+      ])
+
+    then: 'Unsupported operator/path fails fast under strict JPA mode'
+      thrown(UnsupportedOperationException)
 
     cleanup:
       service.queryBackend = 'legacy'
@@ -1025,6 +1289,31 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
       service.jpaCriteriaQueryBackend = null
   }
 
+  void 'JPA backend AST parser parity for mixed root-range and item predicate expression' () {
+    given: 'Legacy backend baseline for mixed root and item conjunction'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, null, 10, 1, [
+        "1<=number<4&&checklists.items.status=i=required"
+      ])
+
+    when: 'JPA backend uses AST parser for same mixed expression'
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(null, true)
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, null, 10, 1, [
+        "1<=number<4&&checklists.items.status=i=required"
+      ])
+
+    then: 'AST path preserves mixed-expression parity'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
   void 'JPA backend parity for negated grouped item predicate expression' () {
     given: 'Legacy backend baseline for negated grouped item expression'
       service.simpleLookupQueryBackend = null
@@ -1051,6 +1340,33 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
       service.jpaCriteriaQueryBackend = null
   }
 
+  void 'JPA backend AST parser parity for negated grouped item predicate expression' () {
+    given: 'Legacy backend baseline for negated grouped item expression'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, null, 10, 1, [
+        "!(checklists.items.outcome==unknown&&checklists.items.status==required)",
+        "(checklists.items.outcome=i=yes&&checklists.items.status==required)"
+      ])
+
+    when: 'JPA backend uses AST parser for same negated grouped expression'
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(null, true)
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, null, 10, 1, [
+        "!(checklists.items.outcome==unknown&&checklists.items.status==required)",
+        "(checklists.items.outcome=i=yes&&checklists.items.status==required)"
+      ])
+
+    then: 'AST path preserves negated-group parity'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
   void 'JPA backend parity for text search term and matchIn root field' () {
     given: 'Legacy backend baseline for text search with root-field matchIn'
       service.simpleLookupQueryBackend = null
@@ -1067,6 +1383,31 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
       ], ['name'])
 
     then: 'Text-search parity is preserved'
+      legacyResults*.id == jpaResults*.id
+
+    cleanup:
+      service.queryBackend = 'legacy'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+  }
+
+  void 'JPA backend AST parser parity for text search term and matchIn root field' () {
+    given: 'Legacy backend baseline for text search with root-field matchIn'
+      service.simpleLookupQueryBackend = null
+      service.jpaCriteriaQueryBackend = null
+      service.queryBackend = 'legacy'
+      List<Request> legacyResults = service.lookup(Request, 'request', 10, 1, [
+        "0<number<3"
+      ], ['name'])
+
+    when: 'JPA backend uses AST parser for same text-search request'
+      service.jpaCriteriaQueryBackend = new JpaCriteriaQueryBackend(null, true)
+      service.queryBackend = 'jpa'
+      List<Request> jpaResults = service.lookup(Request, 'request', 10, 1, [
+        "0<number<3"
+      ], ['name'])
+
+    then: 'AST path preserves text-search parity'
       legacyResults*.id == jpaResults*.id
 
     cleanup:
@@ -2526,6 +2867,44 @@ public class SimpleLookupServiceSpec extends HibernateSpec implements ServiceUni
     
       requests.size() == 1
   }
+
+  void 'Paged duplicate-root dedup preserves first-seen id order' () {
+    given: 'A list containing duplicate root ids in encounter order'
+      final List<LookupDedupProbe> rows = [
+        new LookupDedupProbe(id: 3L, label: 'a'),
+        new LookupDedupProbe(id: 1L, label: 'b'),
+        new LookupDedupProbe(id: 3L, label: 'c'),
+        new LookupDedupProbe(id: 2L, label: 'd'),
+        new LookupDedupProbe(id: 1L, label: 'e')
+      ]
+
+    when: 'Service-level dedup is applied'
+      final def method = SimpleLookupService.getDeclaredMethod('deduplicateEntityResultsById', List)
+      method.accessible = true
+      method.invoke(null, rows)
+
+    then: 'Only first-seen id rows remain and order is preserved'
+      rows*.id == [3L, 1L, 2L]
+      rows*.label == ['a', 'b', 'd']
+  }
+
+  void 'Paged duplicate-root dedup is a no-op for rows without id property' () {
+    given: 'Rows that do not expose an id property'
+      final List<LookupNoIdProbe> rows = [
+        new LookupNoIdProbe(label: 'a'),
+        new LookupNoIdProbe(label: 'b'),
+        new LookupNoIdProbe(label: 'a')
+      ]
+      final List<String> before = rows*.label
+
+    when: 'Service-level dedup is applied'
+      final def method = SimpleLookupService.getDeclaredMethod('deduplicateEntityResultsById', List)
+      method.accessible = true
+      method.invoke(null, rows)
+
+    then: 'Rows are unchanged because id-based policy does not apply'
+      rows*.label == before
+  }
   
   
   @Override
@@ -2597,4 +2976,15 @@ class Request {
     name  nullable: false, blank: false
   }
   static hasMany = [checklists: CheckList]
+}
+
+@GrailsCompileStatic
+class LookupDedupProbe {
+  Long id
+  String label
+}
+
+@GrailsCompileStatic
+class LookupNoIdProbe {
+  String label
 }
