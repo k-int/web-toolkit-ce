@@ -20,7 +20,6 @@ import org.hibernate.sql.JoinType
 import org.slf4j.Logger
 
 import com.k_int.web.toolkit.ValueConverterService
-import com.k_int.web.toolkit.SimpleLookupService.PropertyDef
 import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.AmbiguousFilterContext
 import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.ConjunctiveFilterContext
 import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.DisjunctiveFilterContext
@@ -49,6 +48,21 @@ import java.util.stream.Stream
 @CompileStatic(SKIP)
 class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
   private static final String REGEX_NONE_ESCAPED_PERCENTAGE = "([^\\\\])(%)"
+
+  private static final class PropertyDef extends HashMap<String, String> {
+    @Override
+    String toString () {
+      String al = this.get('alias')
+      "${al ? al + '.' : ''}${this.get('property')}".toString()
+    }
+
+    Object asType(Class type) {
+      if (type == String) {
+        return this.toString()
+      }
+      super.asType(type)
+    }
+  }
   
   private int indent = 0
   
@@ -419,14 +433,28 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 		if (partialPathBySubQuery) {
 			subject = subject.substring(partialPathBySubQuery.length() + 1)
 			
-			// Check if the class implements the method.
-			def methods = propDef.owner.metaClass.respondsTo(propDef.owner, 'handleLookupViaSubquery', [String.class] as Object[])
-			
-			// Did we get a sub criteria?
-			DetachedCriteria subRoot = methods?.get(0)?.invoke(propDef.owner, [subject] as Object[]) as DetachedCriteria
-			
-			// Bail early if no criteria
-			if (!subRoot) return
+				// Check if the class implements the method.
+				def methods = propDef.owner.metaClass.respondsTo(propDef.owner, 'handleLookupViaSubquery', [String.class] as Object[])
+				
+				// Either receive a detached root directly (legacy behavior) or metadata
+				// needed to build a detached subquery root.
+				def subqueryDescriptor = methods?.get(0)?.invoke(propDef.owner, [subject] as Object[])
+				DetachedCriteria subRoot = null
+				if (subqueryDescriptor instanceof DetachedCriteria) {
+					subRoot = subqueryDescriptor as DetachedCriteria
+				} else if (subqueryDescriptor instanceof Map) {
+					final Class targetType = (subqueryDescriptor.targetType ?: subqueryDescriptor.type) as Class
+					final String definitionName = subqueryDescriptor.definitionName as String
+					if (targetType && definitionName) {
+						subRoot = DetachedCriteria.forClass(targetType)
+							.createAlias('definition', 'definition')
+							.add(Restrictions.eq('definition.name', definitionName))
+							.setProjection(Property.forName('parent'))
+					}
+				}
+				
+				// Bail early if no criteria
+				if (!subRoot) return
 			
 			contextStacks.push(new ArrayDeque<>())
 			
@@ -446,7 +474,7 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 		
 		// Can't ilike on none-strings. So we should change back to eq.
 		final boolean requiresConversion = !String.class.isAssignableFrom(subjectType)
-		final String propertyName = getAliasedProperty(subject)
+		final String propertyName = getAliasedProperty(subject) as String
 		final def compValue = (value && requiresConversion) ? valueConverterService.attemptConversion(subjectType, value) : value
 		
 		boolean negateWholeSubq = false;

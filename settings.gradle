@@ -2,11 +2,11 @@
 pluginManagement {
     repositories {
         mavenLocal()
-        maven { url "https://repo.grails.org/grails/core/" }
+        maven { url = "https://repo.grails.org/grails/core/" }
         gradlePluginPortal()
     }
     plugins {
     }
 }
 
-rootProject.name="web-toolkit-ce"
+rootProject.name = "web-toolkit-ce"
