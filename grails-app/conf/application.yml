@@ -37,11 +37,6 @@ k_int:
                 astFilterParserEnabled: true
 environments:
     development:
-        k_int:
-            webToolkit:
-                query:
-                    jpa:
-                        astFilterParserEnabled: true
         management:
             endpoints:
                 enabled-by-default: true
@@ -52,19 +47,7 @@ environments:
         logging:
             config: classpath:logback-development.xml
 
-    staging:
-        k_int:
-            webToolkit:
-                query:
-                    jpa:
-                        astFilterParserEnabled: true
-
     production:
-        k_int:
-            webToolkit:
-                query:
-                    jpa:
-                        astFilterParserEnabled: true
         management:
             endpoints:
                 enabled-by-default: false
