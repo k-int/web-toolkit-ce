@@ -1,264 +1,29 @@
 package com.k_int.web.toolkit
 
-import org.antlr.v4.runtime.CharStream
-import org.antlr.v4.runtime.CharStreams
-import org.antlr.v4.runtime.CommonTokenStream
-import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.grails.datastore.gorm.GormStaticApi
-import org.hibernate.criterion.*
-import org.hibernate.sql.JoinType
 
-import com.k_int.web.toolkit.grammar.SimpleLookupServiceListenerWtk
-import com.k_int.web.toolkit.grammar.SimpleLookupWtkLexer
-import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser
-import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.FiltersContext
-import com.k_int.web.toolkit.utils.DomainUtils
+import com.k_int.web.toolkit.query.JpaCriteriaQueryBackend
+import com.k_int.web.toolkit.query.LegacyCriteriaQueryBackend
+import com.k_int.web.toolkit.query.LookupQuerySpec
+import com.k_int.web.toolkit.query.SimpleLookupQueryBackend
 import com.k_int.web.toolkit.utils.GormUtils
 
 import grails.gorm.multitenancy.Tenants
 import grails.util.GrailsClassUtils
 import groovy.util.logging.Slf4j
-import java.util.concurrent.Callable
+import org.springframework.beans.factory.annotation.Value
 
 @Slf4j
 class SimpleLookupService {
   
+  String queryBackend = 'legacy'
+  boolean allowLegacyQueryBackend = true
+  @Value('${k_int.webToolkit.query.jpa.astFilterParserEnabled:false}')
+  boolean jpaAstFilterParserEnabled = false
   ValueConverterService valueConverterService
-
-  public static class PropertyDef extends HashMap<String, String> {
-    PropertyDef () {
-      super()
-    }
-    
-    @Override
-    public String toString () {
-      String al = this.get('alias')
-      "${al ? al + '.' : ''}${this.get('property')}".toString()
-    }
-    
-    public Object asType(Class type) {
-      if (type == String) {
-        return this.toString()
-      }
-      
-      super.asType(type)
-    }
-  }
-
-  private static final String checkAlias(def target, final Map<String, String> aliasStack, String dotNotationString, boolean leftJoin) {
-    
-    log.debug ("Checking for ${dotNotationString}")
-    
-    def str = aliasStack[dotNotationString]
-    if (!str) {
-
-      log.debug "Full match not found..."
-        
-      // No alias found for exact match.
-      // Start from the front and build up aliases.
-      String[] props = dotNotationString.split("\\.")
-      String propStr = "${props[0]}"
-      String alias = aliasStack[propStr]
-      String currentAlias = alias
-      int counter = 1
-      while (currentAlias && counter < props.length) {
-        str = "${currentAlias}"
-        String test = propStr + ".${props[counter]}"
-        log.debug "Testing for ${test}"
-        currentAlias = aliasStack[test]
-        if (currentAlias) {
-          alias = currentAlias
-          propStr = test
-        }
-        counter ++
-      }
-      
-      log.debug "...propStr: ${propStr}"
-      log.debug "...alias: ${alias}"
-
-      // At this point we should have a dot notated alias string, where the aliases already been created for this query.
-      // Any none existent aliases will need creating but also adding to the map for traversing.
-      if (counter <= props.length) {
-        // The counter denotes how many aliases were present, so we should start at the counter and create the missing
-        // aliases.
-        for (int i=(counter-1); i<props.length; i++) {
-          String aliasVal = alias ? "${alias}.${props[i]}" : "${props[i]}"
-          alias = "alias${aliasStack.size()}"
-
-          // Create the alias.
-          log.debug ("Creating alias: ${aliasVal} -> ${alias}")
-          target.criteria.createAlias(aliasVal, alias, (leftJoin ? JoinType.LEFT_OUTER_JOIN : JoinType.INNER_JOIN))
-
-          // Add to the map.
-          propStr = i>0 ? "${propStr}.${props[i]}" : "${props[i]}"
-          aliasStack[propStr] = alias
-          log.debug ("Added quick string: ${propStr} -> ${alias}")
-        }
-      }
-
-      // Set the string to the alias we ended on.
-      str = alias
-    }
-
-    str
-  }
-
-  private static final Map getAliasedProperty (def target, final Map<String, String> aliasStack, final String propname, final boolean leftJoin = false) {
-    
-    log.debug "Looking for property ${propname}"
-    
-    // Split at the dot.
-    String[] levels = propname.split("\\.")
-
-    PropertyDef ret = new PropertyDef()
-    ret.putAll([
-      'alias' : levels.length > 1 ? checkAlias ( target, aliasStack, levels[0..(levels.length - 2)].join('.'), leftJoin) : '',
-      'property' : levels[levels.length - 1]
-    ])
-
-    ret
-  }
-  
-  private static final String REGEX_SPECIAL_OP = "(?i)^(.*?)\\s+(is)(Not)?(Null|Empty|Set)\\s*\$"
-  private static final String REGEX_OP = "^(.*?)([=!]~|=i=|([!=<>]{1,2}))(.*?)\$"
-  private static final String REGEX_BETWEEN = "^(.*?)([<>]=?)(.*?)([<>]=?)(.*?)\$"
-  private static final String REGEX_NONE_ESCAPED_PERCENTAGE = "([^\\\\])(%)"
-    
-  private Criterion parseFilterString ( final DetachedCriteria criteria, final Map<String, String> aliasStack, String filterString, String indentation = null ) {
-    final CharStream input = CharStreams.fromString(filterString)
-    final SimpleLookupWtkLexer lexer = new SimpleLookupWtkLexer(input);
-    final CommonTokenStream tokens = new CommonTokenStream(lexer);
-    final SimpleLookupWtkParser parser = new SimpleLookupWtkParser(tokens);
-    final FiltersContext filters = parser.filters();
-    
-    log.info "Parse tree: ${filters.toStringTree(parser)}"
-    
-    // We have parsed the whole string and now we have the final context.
-    
-    // Create a listener to act on the tree.
-    SimpleLookupServiceListenerWtk listener = new SimpleLookupServiceListenerWtk(
-			log, valueConverterService, criteria, criteria.getCriteriaImpl().getEntityOrClassName(), aliasStack)
-    ParseTreeWalker.DEFAULT.walk(listener, filters);
-    
-    Criterion result = listener.result
-    
-    return result
-  }
-  
-  private void parseFilters ( final DetachedCriteria criteria, final Map<String, String> aliasStack, final Collection<String> filters ) {
-    // Jump out of the routine immediately if no filters or empty list
-    if (!filters) return
-    
-    // We parse the filters and build up the criteria.
-		final Criterion filterGroup = parseFilterString (criteria, aliasStack, filters.join('\n'))
-		if (filterGroup) {
-			criteria.add( filterGroup )
-		}
-  }
-  
-  private List<Criterion> getTextMatches (final DetachedCriteria criteria, final Map<String, String> aliasStack, final String term, final match_in, MatchMode textMatching = MatchMode.ANYWHERE) {
-    List<Criterion> textMatches = []
-    if (term) {
-      //First we split out the incoming query into multiple terms by whitespace, treating quoted chunks as a whole
-      String[] splitTerm = term.split( /(?!\B"[^"]*)\s+(?![^"]*"\B)/ )
-      // We have now turned something like: `Elvis "The King" Presley` into [Elvis, "The King", Presley]
-
-      // Add a condition for each parameter we wish to search.
-      for (String prop : match_in) {
-        def propDef = DomainUtils.resolveProperty(criteria.criteriaImpl.entityOrClassName, prop, true)
-        
-        if (propDef) {
-        
-          if (propDef.searchable) {
-            def propertyType = propDef.type
-            def propName = getAliasedProperty(criteria, aliasStack, prop, true) as String
-            
-            // We use equal unless the compared property is a String then we should use iLIKE
-            def op = 'eq'
-            if (String.class.isAssignableFrom(propertyType)) {
-              // Create a conjunction to AND all the split terms together
-              Conjunction termByTermRestrictions = Restrictions.conjunction();
-              for (String t : splitTerm) {
-                // Remember to replace any leftover quotes with empty space
-                termByTermRestrictions.add(Restrictions.ilike("${propName}", "${t.replace("\"", "")}", textMatching))
-                log.debug ("Looking for term '${t}' in ${propName}" )
-              }
-              textMatches << termByTermRestrictions
-            } else {
-              // Create a conjunction to AND all the split terms together
-              Conjunction termByTermRestrictions = Restrictions.conjunction();
-              for (String t : splitTerm) {
-                // Attempt to convert the value into one comparable with the target.
-                def val = valueConverterService.attemptConversion(propertyType, t.replace("\"", ""))
-                termByTermRestrictions.add(Restrictions.eq("${propName}", val))
-                log.debug ("Converted ${t} into ${val} as type '${propertyType}'")
-              }
-              textMatches << termByTermRestrictions
-            }
-          } else {
-            log.debug "Search on ${prop} has been disallowed."
-          }
-        } else {
-          log.debug "Could not process ${prop}"
-        }
-      }
-    }
-    
-    textMatches
-  }
-  
-  private addSorts (final target, final sorts) {
-    final Map<String, String> aliasStack = [:]
-    
-    sorts.each { String sort ->
-      final String[] sortParts = sort.split(/;/)
-      final String prop = sortParts[0]
-      
-      def propDef = DomainUtils.resolveProperty(target.targetClass, prop, true)
-      if (propDef) {
-        if (propDef.sortable) {
-        
-          // Sort direction for this field.
-          final String direction = (sortParts.length > 1 ? sortParts[1] : 'asc')?.toLowerCase() == 'desc' ? 'desc' : 'asc'
-          
-          def propName = getAliasedProperty(target, aliasStack, prop, true) as String
-          if (propName) {
-            target.addOrder(Order."${direction}"(propName))
-            log.debug "Sort on ${propName} ${direction}."
-          }
-        } else {
-          log.debug "Sort on ${prop} has been disallowed."
-        }
-      } else {
-        log.debug "Could not process sort ${prop}"
-      }
-    }
-  }
-
-  private DetachedCriteria buildLookupCriteria(final DetachedCriteria criteria, final String term, final match_in, final filters) {
-
-    Map<String, String> aliasStack = [:]
-    List<Criterion> criterionList = []
-
-    // Filters...
-    parseFilters (criteria, aliasStack, filters)
-    
-    // Text matching uses ilike ops for string property and eq for all others.
-    List<Criterion> textMatches = getTextMatches(criteria, aliasStack, term, match_in)
-    
-    // Text searching should be Disjunctive across all properties specified.
-    if (textMatches) criterionList << Restrictions.or(textMatches.toArray(new Criterion[textMatches.size()]))
-
-    // Conjunction to ensure results returned match any text searches specified and ALL filters specified.
-    if (criterionList) criteria.add(Restrictions.and(criterionList.toArray(new Criterion[criterionList.size()])))
-
-    // Project distinct IDs so as to only include results once on multiple matches.
-    criteria.setProjection(
-      Projections.distinct(Projections.id())
-    )
-
-    criteria
-  }
+  SimpleLookupQueryBackend simpleLookupQueryBackend
+  SimpleLookupQueryBackend legacyCriteriaQueryBackend
+  SimpleLookupQueryBackend jpaCriteriaQueryBackend
 
   private final class BatchedStreamIterator implements Iterator {
     
@@ -401,6 +166,14 @@ class SimpleLookupService {
 			tid = null;
 		}
 
+    final LookupQuerySpec querySpec = new LookupQuerySpec(
+      term: term,
+      matchIn: match_in ?: [],
+      filters: filters ?: [],
+      sorts: sorts ?: [],
+      rootEntityClass: c
+    )
+
     // Return our special wrapper class that should allow for forward iteration
     // through the results.
     new BatchedStreamIterator (c, chunkSizeSuggestion, Optional.ofNullable(tid), {
@@ -410,18 +183,7 @@ class SimpleLookupService {
         base()
       }
 
-      // Add lookup.
-      criteria.add(
-        Subqueries.propertyIn(
-          'id',
-          buildLookupCriteria(DetachedCriteria.forClass(targetClass, 'uniques'), term, match_in, filters)
-        )
-      )
-      
-      // Add any sorts.
-      if (sorts) {
-        addSorts (delegate, sorts)
-      }
+      resolveQueryBackend().apply(delegate, querySpec)
     })
   }
   
@@ -429,6 +191,14 @@ class SimpleLookupService {
 
     // Results per page, cap at 1000 for safety here. This will probably be capped by the implementing controller to a lower value.
     int pageSize = Math.min(perPage, 1000)
+
+    final LookupQuerySpec querySpec = new LookupQuerySpec(
+      term: term,
+      matchIn: match_in ?: [],
+      filters: filters ?: [],
+      sorts: sorts ?: [],
+      rootEntityClass: c
+    )
 
     // If we have a page then we should add a max and offset.
     def query_params = ["max": (pageSize)]
@@ -443,27 +213,21 @@ class SimpleLookupService {
         base()
       }
 
-      // Add lookup.
-      criteria.add(
-        Subqueries.propertyIn(
-          'id',
-          buildLookupCriteria(DetachedCriteria.forClass(targetClass, 'uniques'), term, match_in, filters)
-        )
-      )
-      
-      // Add any sorts.
-      if (sorts) {
-        addSorts (delegate, sorts)
-      }
+      resolveQueryBackend().apply(delegate, querySpec)
     })
   }
 
   public def lookupWithStats (final Class c, final String term, final Integer perPage = 10, final Integer page = 1, final List filters = [], final List match_in = [], final List sorts = [], final Map<String,Closure> extraStats = null, final Closure base = null) {
-
-    Map aliasStack = [:]
-
     // Results per page, cap at 1000 for safety here.This will probably be capped by the implementing controller to a lower value.
     int pageSize = Math.min(perPage, 1000)
+
+    final LookupQuerySpec querySpec = new LookupQuerySpec(
+      term: term,
+      matchIn: match_in ?: [],
+      filters: filters ?: [],
+      sorts: sorts ?: [],
+      rootEntityClass: c
+    )
     
     def statMap = [
       'results'     : lookup(c, term, pageSize, page, filters, match_in, sorts, base),
@@ -482,14 +246,6 @@ class SimpleLookupService {
       
       final Closure query = { Closure extra ->
   
-        // Add lookup.
-        criteria.add(
-          Subqueries.propertyIn(
-            'id',
-            buildLookupCriteria(DetachedCriteria.forClass(targetClass), term, match_in, filters)
-          )
-        )
-        
         // Change the delegate and execute.
         if (base) {
           base.setDelegate(delegate)
@@ -502,10 +258,7 @@ class SimpleLookupService {
           extra()
         }
         
-        // Add any sorts.
-        if (sorts) {
-          addSorts (delegate, sorts)
-        }
+        resolveQueryBackend().apply(delegate, querySpec)
       }
       
       extraStats.each { String k, Closure v ->
@@ -534,6 +287,35 @@ class SimpleLookupService {
     doMethod (c, "list", methodPars, crit)
   }
 
+  private SimpleLookupQueryBackend resolveQueryBackend() {
+    if (simpleLookupQueryBackend) {
+      return simpleLookupQueryBackend
+    }
+
+    final String selectedBackend = (queryBackend ?: 'legacy').toLowerCase()
+
+    final SimpleLookupQueryBackend legacyBackend =
+      legacyCriteriaQueryBackend ?: new LegacyCriteriaQueryBackend(valueConverterService)
+
+    if ('jpa' == selectedBackend) {
+      return jpaCriteriaQueryBackend ?: newJpaQueryBackend(legacyBackend, jpaAstFilterParserEnabled)
+    }
+
+    if (!allowLegacyQueryBackend) {
+      throw new UnsupportedOperationException('Legacy query backend is disabled. Configure queryBackend=jpa.')
+    }
+
+    log.warn("SimpleLookupService is using deprecated legacy query backend. Configure queryBackend='jpa' for Grails 7 readiness.")
+    legacyBackend
+  }
+
+  protected SimpleLookupQueryBackend newJpaQueryBackend(
+    final SimpleLookupQueryBackend legacyBackend,
+    final boolean useAstFilterParser
+  ) {
+    new JpaCriteriaQueryBackend(legacyBackend, useAstFilterParser)
+  }
+
   private synchronized def doMethod (final Class c, final String method, final Map methodPars = null, final Closure crit) {
     final Closure newCrit = {
       
@@ -549,11 +331,37 @@ class SimpleLookupService {
       crit ()
     };
 
+    def res
     if (methodPars) {
-
-      c.createCriteria()."${method}" (methodPars, newCrit)
+      res = c.createCriteria()."${method}" (methodPars, newCrit)
     } else {
-      c.createCriteria()."${method}" (newCrit)
+      res = c.createCriteria()."${method}" (newCrit)
+    }
+
+    // Hibernate/Grails upgrades can surface duplicate root entities for joined OR
+    // criteria in paged queries; collapse duplicates by entity id while preserving
+    // the existing list container.
+    if (method == 'list' && methodPars && (res instanceof List)) {
+      deduplicateEntityResultsById(res as List)
+    }
+    
+    res
+  }
+
+  private static void deduplicateEntityResultsById(final List results) {
+    if (!results || results.size() < 2) return
+    if (!results[0]?.metaClass?.hasProperty(results[0], 'id')) return
+
+    final Set seenIds = new LinkedHashSet()
+    final Iterator it = results.iterator()
+    while (it.hasNext()) {
+      final Object item = it.next()
+      final Object idVal = item?.id
+      if (seenIds.contains(idVal)) {
+        it.remove()
+      } else {
+        seenIds.add(idVal)
+      }
     }
   }
 }

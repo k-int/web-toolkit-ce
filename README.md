@@ -25,6 +25,12 @@ _NOTE:_ You may need to substitute the version number with the latest release.
 
 See: https://knowledge-integration.gitlab.io/dev-ops/kint-gradle-plugin/
 
+## Grails 7 Upgrade
+
+For downstream-module migration guidance (including `SimpleLookupService` query behavior/config updates), see:
+
+- [grails7-upgrade.md](grails7-upgrade.md)
+
 ## Releasing
 ```
 ./gradlew cgTagFinal to tag a final "release"
@@ -128,4 +134,3 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-

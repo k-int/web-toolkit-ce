@@ -3,6 +3,7 @@ package com.k_int.web.toolkit.utils
 import org.grails.datastore.gorm.GormEnhancer
 import org.grails.datastore.gorm.GormInstanceApi
 import org.grails.datastore.gorm.GormStaticApi
+import org.grails.datastore.mapping.model.MappingContext
 import org.grails.datastore.mapping.model.PersistentEntity
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
@@ -18,7 +19,11 @@ class GormUtils {
   
   private static PlatformTransactionManager transactionManager
   public static <D>PersistentEntity currentGormEntity( Class<D> entityClass ) {
-    gormStaticApi(entityClass).persistentEntity
+    mappingContext.getPersistentEntity(entityClass.name)
+  }
+
+  private static MappingContext getMappingContext() {
+    Holders.applicationContext.getBean('grailsDomainClassMappingContext', MappingContext)
   }
   
   private static PlatformTransactionManager getTransactionManager() {

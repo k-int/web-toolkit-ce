@@ -24,9 +24,8 @@ class CustomPropertiesBinder {
       log.debug ("Looking for properties ${propertyNames}")
   
       // Grab the defs present for all properties supplied.
-      final Set<CustomPropertyDefinition> propDefs = CustomPropertyDefinition.createCriteria().list {
-        'in' "name", propertyNames
-      } as Set<CustomPropertyDefinition>
+      final Set<CustomPropertyDefinition> propDefs =
+        (CustomPropertyDefinition.findAllByNameInList(propertyNames as List<String>) ?: []) as Set<CustomPropertyDefinition>
       
       log.debug ("... found ${propDefs.size()}")
       // Go through every property...

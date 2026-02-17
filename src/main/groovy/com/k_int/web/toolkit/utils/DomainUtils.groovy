@@ -20,7 +20,7 @@ public class DomainUtils {
   
   public static final String BEAN_MAPPING_CONTEXT = 'grailsDomainClassMappingContext'
   
-  public static class InternalPropertyDefinition extends Serializable {
+  public static class InternalPropertyDefinition implements Serializable {
     boolean cacheable = false
     boolean searchable = true
     boolean filterable = true

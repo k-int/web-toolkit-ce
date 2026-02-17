@@ -1,9 +1,5 @@
 package com.k_int.web.toolkit.custprops.types
 
-import org.hibernate.criterion.DetachedCriteria
-import org.hibernate.criterion.Projections
-import org.hibernate.criterion.Restrictions
-
 import com.k_int.web.toolkit.custprops.CustomPropertiesBinder
 import com.k_int.web.toolkit.custprops.CustomProperty
 import com.k_int.web.toolkit.custprops.CustomPropertyDefinition
@@ -31,7 +27,7 @@ class CustomPropertyContainer extends CustomProperty<Set<CustomProperty>> implem
    * @param property
    * @return
    */
-  public static DetachedCriteria handleLookupViaSubquery ( final String property ) {
+  public static Map<String, Object> handleLookupViaSubquery ( final String property ) {
     String[] parts = property.split(/\./)
     
     // We know we should have at least 2 parts...
@@ -42,11 +38,10 @@ class CustomPropertyContainer extends CustomProperty<Set<CustomProperty>> implem
     if (!knownDef) {
       knownDef = getPropertyDefByName(parts[0])
     }
-    // This criteria should operate on the targetted property but should return matching container id(s)
-    new DetachedCriteria( knownDef.type.name )
-      .createAlias('definition', 'definition')
-      .add( Restrictions.eq('definition.name', parts[0]) )
-    .setProjection( Projections.property('parent') )
+    [
+      targetType: knownDef.type,
+      definitionName: parts[0]
+    ]
   }
   
   public static InternalPropertyDefinition getPropertyDefByName ( final String name ) {

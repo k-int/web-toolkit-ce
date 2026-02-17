@@ -3,8 +3,8 @@ package com.k_int.web.toolkit.databinding
 import grails.databinding.DataBindingSource
 import grails.web.mime.MimeType
 
-import javax.servlet.ServletRequest
-import javax.servlet.http.HttpServletRequest
+import jakarta.servlet.ServletRequest
+import jakarta.servlet.http.HttpServletRequest
 
 import org.grails.web.databinding.bindingsource.JsonDataBindingSourceCreator
 

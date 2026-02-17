@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
 import java.util.concurrent.atomic.AtomicInteger
 
-import javax.annotation.PreDestroy
+import jakarta.annotation.PreDestroy
 
 import org.grails.async.factory.BoundPromise
 import org.grails.async.factory.future.ExecutorPromiseFactory

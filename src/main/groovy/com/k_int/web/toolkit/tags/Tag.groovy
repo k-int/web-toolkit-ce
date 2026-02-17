@@ -1,7 +1,6 @@
 package com.k_int.web.toolkit.tags
 
 import org.grails.datastore.mapping.model.PersistentProperty
-import org.hibernate.NonUniqueResultException
 import com.k_int.web.toolkit.databinding.BindUsingWhenRef
 import com.k_int.web.toolkit.utils.DomainUtils
 
@@ -31,20 +30,9 @@ import grails.web.databinding.DataBindingUtils
     final boolean normValueMatch = String.isAssignableFrom(data.class) || !idMatch
     
     // Assume a single value to match either the id or normValue.
-    try {
-      match = Tag.createCriteria().get {
-        or {
-          if (idMatch) {
-            idEq (data.asType(pp.type))
-          }
-          if (normValueMatch) {
-            eq "normValue" , Tag.normalizeValue( Tag.cleanValue("${data}") )
-          }
-        }
-      }
-    } catch (NonUniqueResultException e) {
-      match = null
-    }
+    final Serializable castId = idMatch ? (data as Serializable).asType(pp.type) : null
+    final String normValue = normValueMatch ? Tag.normalizeValue(Tag.cleanValue("${data}")) : null
+    match = findUniqueByIdOrNormValue(castId, normValue)
     
     // New tag. Assume this is the value.
     if (!match && String.isAssignableFrom(data.class)) {
@@ -54,22 +42,11 @@ import grails.web.databinding.DataBindingUtils
     }
   } else {
     // Map
-    try {
-      match = Tag.createCriteria().get {
-        if (data[pp.name]) {
-          idEq (data[pp.name].asType(pp.type))
-          
-        } else if (data['normValue']) {
-          eq "normValue" , "${data['normValue']}"
-          
-        } else if (data['value']) {
-          eq "normValue" , Tag.normalizeValue( Tag.cleanValue( data['value'] ) )
-        }
-        
-      }
-    } catch (NonUniqueResultException e) {
-      match = null
-    }
+    final Serializable castId = data[pp.name] ? (data[pp.name] as Serializable).asType(pp.type) : null
+    final String normValue = data['normValue']
+      ? "${data['normValue']}"
+      : (data['value'] ? Tag.normalizeValue(Tag.cleanValue(data['value'])) : null)
+    match = findUniqueByIdOrNormValue(castId, normValue)
     
     if (!match) {
       
@@ -108,5 +85,19 @@ class Tag implements MultiTenant<Tag> {
   static constraints = {
     value     (nullable: false, blank:false)
     normValue (nullable: false, blank:false, bindable: false)
+  }
+
+  private static Tag findUniqueByIdOrNormValue(final Serializable id, final String normValue) {
+    final List<Tag> matches
+    if (id != null && normValue != null) {
+      matches = Tag.findAllByIdOrNormValue(id, normValue, [max: 2])
+    } else if (id != null) {
+      matches = Tag.findAllById(id, [max: 2])
+    } else if (normValue != null) {
+      matches = Tag.findAllByNormValue(normValue, [max: 2])
+    } else {
+      matches = []
+    }
+    matches?.size() == 1 ? matches[0] : null
   }
 }

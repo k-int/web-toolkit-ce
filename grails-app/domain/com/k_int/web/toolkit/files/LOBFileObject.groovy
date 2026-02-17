@@ -1,10 +1,11 @@
 package com.k_int.web.toolkit.files
 import java.sql.Blob
 
-import javax.persistence.Lob
+import jakarta.persistence.Lob
 
 import org.hibernate.engine.jdbc.BlobProxy
 import org.springframework.web.multipart.MultipartFile
+import groovy.transform.CompileDynamic
 
 import com.k_int.web.toolkit.domain.traits.Clonable
 
@@ -18,10 +19,16 @@ import grails.gorm.annotation.Entity
 class LOBFileObject extends FileObject implements MultiTenant<LOBFileObject>, Clonable<LOBFileObject> {
 
   static cloneStaticValues = [
-    fileContents: { 
-      BlobProxy.generateProxy(owner.fileContents.getBinaryStream(), owner.fileContents.length()) 
+    fileContents: { ->
+      cloneFileContents(delegate)
     }
   ]
+
+  @CompileDynamic
+  private static Blob cloneFileContents(Object instance) {
+    def fileContents = instance.fileContents
+    BlobProxy.generateProxy(fileContents.getBinaryStream(), fileContents.length())
+  }
   
   @Lob
   Blob fileContents

@@ -3,6 +3,10 @@
 !.gitignore
 /bin
 /docs
+!/docs/
+!/docs/backlog/
+!/docs/backlog/current/
+!/docs/backlog/current/*.md
 /web-toolkit-*
 /web-toolkit
 /bin-default

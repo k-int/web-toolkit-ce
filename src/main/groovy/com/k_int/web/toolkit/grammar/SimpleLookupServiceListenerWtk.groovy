@@ -20,7 +20,6 @@ import org.hibernate.sql.JoinType
 import org.slf4j.Logger
 
 import com.k_int.web.toolkit.ValueConverterService
-import com.k_int.web.toolkit.SimpleLookupService.PropertyDef
 import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.AmbiguousFilterContext
 import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.ConjunctiveFilterContext
 import com.k_int.web.toolkit.grammar.SimpleLookupWtkParser.DisjunctiveFilterContext
@@ -46,9 +45,24 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.stream.Stream
 
-@CompileStatic
+@CompileStatic(SKIP)
 class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
   private static final String REGEX_NONE_ESCAPED_PERCENTAGE = "([^\\\\])(%)"
+
+  private static final class PropertyDef extends HashMap<String, String> {
+    @Override
+    String toString () {
+      String al = this.get('alias')
+      "${al ? al + '.' : ''}${this.get('property')}".toString()
+    }
+
+    Object asType(Class type) {
+      if (type == String) {
+        return this.toString()
+      }
+      super.asType(type)
+    }
+  }
   
   private int indent = 0
   
@@ -59,15 +73,17 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
   private final Deque<String> aliasPrefixStack = new ArrayDeque<>()
   private final Deque<Map<String, String>> aliasesStack = new ArrayDeque<>();
   private final Deque<Deque<Criterion>> contextStacks = new ArrayDeque<>();
-  private final Deque<DetachedCriteria> targetStack = new ArrayDeque<>();
+  private final Deque<Object> targetStack = new ArrayDeque<>();
   
   private final StringBuilder trace = new StringBuilder();
+  private final Class rootEntityClass
   private final String rootEntityName
   private final ValueConverterService valueConverterService
   
-  public SimpleLookupServiceListenerWtk(final Logger log, final ValueConverterService valueConverterService, final DetachedCriteria rootTarget, final String rootEntityName, final Map<String, String> rootAliasNames) {
+  public SimpleLookupServiceListenerWtk(final Logger log, final ValueConverterService valueConverterService, final Object rootTarget, final Class rootEntityClass, final String rootEntityName, final Map<String, String> rootAliasNames) {
     this.log = log
-    this.rootEntityName = rootEntityName
+    this.rootEntityClass = rootEntityClass
+    this.rootEntityName = rootEntityName ?: rootEntityClass?.name
     this.targetStack.push(rootTarget)
     this.valueConverterService = valueConverterService
     aliasesStack.push(rootAliasNames) // Add an empty alias stack initially.
@@ -75,7 +91,7 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
     newAliasPrefix()
   }
   
-  private DetachedCriteria getRootTarget() {
+  private Object getRootTarget() {
     targetStack.peek()
   }
   
@@ -338,8 +354,8 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 	// Because the criteriaImpl visibility is package, we need groovy here.
 	// Skip the sattic compiler.
 	@CompileStatic(SKIP)
-	private String getEntityNameFromCriteria( DetachedCriteria dc ) {
-		dc?.criteriaImpl?.entityOrClassName
+	private String getEntityNameFromCriteria( Object dc ) {
+		(dc instanceof DetachedCriteria) ? dc?.criteriaImpl?.entityOrClassName : null
 	}
 	
   @Override
@@ -417,14 +433,28 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 		if (partialPathBySubQuery) {
 			subject = subject.substring(partialPathBySubQuery.length() + 1)
 			
-			// Check if the class implements the method.
-			def methods = propDef.owner.metaClass.respondsTo(propDef.owner, 'handleLookupViaSubquery', [String.class] as Object[])
-			
-			// Did we get a sub criteria?
-			DetachedCriteria subRoot = methods?.get(0)?.invoke(propDef.owner, [subject] as Object[]) as DetachedCriteria
-			
-			// Bail early if no criteria
-			if (!subRoot) return
+				// Check if the class implements the method.
+				def methods = propDef.owner.metaClass.respondsTo(propDef.owner, 'handleLookupViaSubquery', [String.class] as Object[])
+				
+				// Either receive a detached root directly (legacy behavior) or metadata
+				// needed to build a detached subquery root.
+				def subqueryDescriptor = methods?.get(0)?.invoke(propDef.owner, [subject] as Object[])
+				DetachedCriteria subRoot = null
+				if (subqueryDescriptor instanceof DetachedCriteria) {
+					subRoot = subqueryDescriptor as DetachedCriteria
+				} else if (subqueryDescriptor instanceof Map) {
+					final Class targetType = (subqueryDescriptor.targetType ?: subqueryDescriptor.type) as Class
+					final String definitionName = subqueryDescriptor.definitionName as String
+					if (targetType && definitionName) {
+						subRoot = DetachedCriteria.forClass(targetType)
+							.createAlias('definition', 'definition')
+							.add(Restrictions.eq('definition.name', definitionName))
+							.setProjection(Property.forName('parent'))
+					}
+				}
+				
+				// Bail early if no criteria
+				if (!subRoot) return
 			
 			contextStacks.push(new ArrayDeque<>())
 			
@@ -444,7 +474,7 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 		
 		// Can't ilike on none-strings. So we should change back to eq.
 		final boolean requiresConversion = !String.class.isAssignableFrom(subjectType)
-		final String propertyName = getAliasedProperty(subject)
+		final String propertyName = getAliasedProperty(subject) as String
 		final def compValue = (value && requiresConversion) ? valueConverterService.attemptConversion(subjectType, value) : value
 		
 		boolean negateWholeSubq = false;
@@ -554,7 +584,7 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
 			
 			// Pop the criteria with the aliases defined.
 			final DetachedCriteria sq =
-				targetStack.poll()
+				(targetStack.poll() as DetachedCriteria)
 				.add(groupCriterionStack.poll())
 				
 			// Add as an in to the current stack. The implementation should
@@ -582,7 +612,9 @@ class SimpleLookupServiceListenerWtk implements SimpleLookupWtkListener {
     aliasesStack.push([:])
     groupCounter ++;
     targetStack.push (
-      DetachedCriteria.forEntityName(rootEntityName, "__sub_query_${groupCounter}")) 
+      rootEntityClass
+        ? DetachedCriteria.forClass(rootEntityClass, "__sub_query_${groupCounter}")
+        : DetachedCriteria.forEntityName(rootEntityName, "__sub_query_${groupCounter}")) 
     newAliasPrefix()
   }
 

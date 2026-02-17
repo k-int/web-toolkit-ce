@@ -1,7 +1,5 @@
 package com.k_int.web.toolkit.telemetry
 
-import org.apache.tools.ant.taskdefs.DefaultExcludes
-
 import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import groovy.transform.ToString

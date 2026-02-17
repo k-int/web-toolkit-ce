@@ -1,39 +1,40 @@
 buildscript {
 	repositories {
-    maven { url "https://maven.k-int.com/content/repositories/public" }
+	    maven { url = "https://maven.k-int.com/content/repositories/public" }
 		mavenCentral()
-		maven { url "https://plugins.gradle.org/m2/" }
-		maven { url "https://repo.grails.org/grails/core" }
-		maven { url "https://maven.k-int.com/content/repositories/releases" }
+			maven { url = "https://plugins.gradle.org/m2/" }
+			maven { url = "https://repo.grails.org/grails/core" }
+			maven { url = "https://maven.k-int.com/content/repositories/releases" }
 	}
 	dependencies {
-		classpath "org.grails:grails-gradle-plugin:$grailsGradlePluginVersion"
-		classpath "org.grails.plugins:views-gradle:2.3.2"
+		classpath platform("org.apache.grails:grails-gradle-bom:$grailsVersion")
+		classpath "org.apache.grails:grails-gradle-plugins"
 		
-		classpath 'com.k_int.gradle:kint-gradle-plugin:2.2.0'
+		classpath 'com.k_int.gradle:k-int-gradle-plugin:3.1.0'
 		// classpath "org.grails.plugins:hibernate5:$gormVersion" // Prev 7.3.1
 	}
 }
 
 plugins {
 	id 'antlr'
+	id 'org.asciidoctor.jvm.convert' version '3.3.2'
 }
 
 repositories {
-  maven { url "https://maven.k-int.com/content/repositories/public" }
+  maven { url = "https://maven.k-int.com/content/repositories/public" }
   mavenCentral()
-  maven { url "https://repo.grails.org/grails/core/" }
+  maven { url = "https://repo.grails.org/grails/core/" }
 }
 
 //version "0.1"
-group 'com.k_int.grails'
+group = 'com.k_int.grails'
 
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'maven-publish'
-apply plugin: 'org.grails.grails-plugin'
+apply plugin: 'org.apache.grails.gradle.grails-plugin'
 
-apply plugin: 'org.grails.plugins.views-json'
+apply plugin: 'org.apache.grails.gradle.grails-gson'
 apply plugin: 'com.k_int.gradle.plugin'
 apply plugin: 'com.k_int.gradle.conventional-git'
 
@@ -51,10 +52,12 @@ configurations {
 		extendsFrom developmentOnly
 		extendsFrom implementation
 	}
+
+  groovyCompiler
 }
 
 bootRun {
-	ignoreExitValue true
+		ignoreExitValue = true
 	jvmArgs(
 			'-Dspring.output.ansi.enabled=always',
 			'-noverify',
@@ -74,53 +77,59 @@ sourceSets {
 }
 
 dependencies {
-  developmentOnly "org.grails:grails-core"
-  developmentOnly "org.grails:grails-logging"
-  developmentOnly "org.grails:grails-plugin-databinding"
-  developmentOnly "org.grails:grails-plugin-i18n"
-  developmentOnly "org.grails:grails-plugin-interceptors"
-  developmentOnly "org.grails:grails-plugin-rest"
-  developmentOnly "org.grails:grails-plugin-services"
-  developmentOnly "org.grails:grails-plugin-url-mappings"
-  developmentOnly "org.grails:grails-web-boot"
-  developmentOnly "org.grails.plugins:async"
-  developmentOnly "org.grails.plugins:hibernate5"
+  implementation platform("org.apache.grails:grails-bom:$grailsVersion")
+  compileOnly platform("org.apache.grails:grails-bom:$grailsVersion")
+  testImplementation platform("org.apache.grails:grails-bom:$grailsVersion")
+
+  implementation "org.apache.grails:grails-core"
+  implementation "org.apache.grails:grails-logging"
+  implementation "org.apache.grails:grails-databinding"
+  implementation "org.apache.grails:grails-interceptors"
+  implementation "org.apache.grails:grails-rest-transforms"
+  implementation "org.apache.grails:grails-services"
+  implementation "org.apache.grails:grails-url-mappings"
+  implementation "org.apache.grails:grails-web-boot"
+  implementation "org.apache.grails.async:grails-async-core"
+  implementation "org.apache.grails:grails-data-hibernate5-spring-boot"
+  implementation "org.apache.grails:grails-events"
   // Do we need this?
   //implementation("org.hibernate:hibernate-core:5.6.15.Final")
 
-  developmentOnly "org.springframework.boot:spring-boot-starter-undertow"
+  implementation "org.springframework.boot:spring-boot-starter-undertow"
 
-  developmentOnly "org.springframework.boot:spring-boot-autoconfigure"
-  developmentOnly "org.springframework.boot:spring-boot-starter-logging"
-  developmentOnly "org.springframework.boot:spring-boot-starter-validation"
+  implementation "org.springframework.boot:spring-boot-autoconfigure"
+  implementation "org.springframework.boot:spring-boot-starter-logging"
+  implementation "org.springframework.boot:spring-boot-starter-validation"
 
-  developmentOnly "io.micronaut:micronaut-inject-groovy"
+  implementation "org.apache.grails:grails-micronaut"
 
-  console("org.grails:grails-console")
+  console("org.apache.grails:grails-console")
   runtimeOnly("com.h2database:h2")
   
-  testImplementation("io.micronaut:micronaut-inject-groovy")
 
-  // For some reason testImplementation for these two fails on gradlew check
-	compileOnly("org.grails:grails-gorm-testing-support")
-	testImplementation "org.grails:grails-web-testing-support"
+  // Grails 7 testing support
+	testImplementation "org.apache.grails.testing:grails-testing-support-core:$grailsTestingVersion"
+	testImplementation "org.apache.grails:grails-testing-support-web:$grailsTestingVersion"
+	testImplementation "org.apache.grails:grails-data-hibernate5:$grailsVersion"
 
-	compileOnly("org.spockframework:spock-core")
+	testImplementation("org.apache.grails:grails-testing-support-datamapping")
+	testImplementation("org.spockframework:spock-core")
+	implementation("org.apache.groovy:groovy-xml:4.0.30")
+	testImplementation("org.apache.groovy:groovy-xml")
+  integrationTestImplementation("org.apache.groovy:groovy-xml:4.0.30")
+  groovyCompiler("org.apache.groovy:groovy-xml:4.0.30")
+  compileOnly("junit:junit")
 
-  testImplementation("org.grails:grails-gorm-testing-support")
-  testImplementation("org.spockframework:spock-core")
 
-  testImplementation("io.micronaut:micronaut-http-client")
-
-  profile "org.grails.profiles:rest-api-plugin"
+  profile "org.apache.grails.profiles:rest-api-plugin"
 
   // --------------------------------- Custom Deps Below -----------------------------------//
-	developmentOnly "org.grails.plugins:views-json"
-	developmentOnly "org.postgresql:postgresql:42.7.4"
-	developmentOnly 'org.codehaus.janino:janino:3.1.9' // Needed for conditional logging
+  implementation "org.apache.grails:grails-views-gson"
+	implementation "org.postgresql:postgresql:42.7.4"
+	implementation 'org.codehaus.janino:janino:3.1.9' // Needed for conditional logging
 
 
-	developmentOnly "org.springframework.security:spring-security-core:6.1.9", { // Prev 5.8.1
+	implementation "org.springframework.security:spring-security-core", {
 		[
 			'spring-aop',
 			'spring-beans',
@@ -131,20 +140,20 @@ dependencies {
 			exclude module: it
 		}
 	}
-	developmentOnly "org.springframework.security:spring-security-web:5.8.14", {
+	implementation "org.springframework.security:spring-security-web", {
 		exclude module: 'spring-web'
 	}
 
-	developmentOnly 'com.ibm.icu:icu4j:62.1'
+	implementation 'com.ibm.icu:icu4j:62.1'
 
 	// Minio for file storage to S3
-	developmentOnly "io.minio:minio:8.5.12"
-	developmentOnly 'com.squareup.okhttp3:okhttp:4.8.1'
-	developmentOnly 'org.jetbrains.kotlin:kotlin-stdlib:1.3.70'
-	developmentOnly 'com.amazonaws:aws-java-sdk-s3:1.12.770'
+	implementation "io.minio:minio:8.5.12"
+	implementation 'com.squareup.okhttp3:okhttp:4.8.1'
+	implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.3.70'
+	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.770'
 
 	// SHould be replaced and rewritten out of this module.
-	developmentOnly 'io.github.http-builder-ng:http-builder-ng-core:1.0.4'
+	implementation 'io.github.http-builder-ng:http-builder-ng-core:1.0.4'
 
 	antlr "org.antlr:antlr4:4.7" // use ANTLR version 4
 
@@ -155,19 +164,32 @@ dependencies {
   mainClass.set("web.toolkit.ce.Application")
 } */
 
-/* 
 java {
-  sourceCompatibility = JavaVersion.toVersion("11")
-} */
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(17)
+  }
+  withSourcesJar()
+  withJavadocJar()
+}
 
 tasks.withType(GroovyCompile) {
 	configure(groovyOptions) {
 		forkOptions.jvmArgs = ['-Xmx1024m']
 	}
+  groovyClasspath += configurations.groovyCompiler
 }
 
 tasks.withType(Test) {
   useJUnitPlatform()
+}
+
+tasks.withType(Javadoc) {
+	dependsOn tasks.named('compileGsonViews')
+	options.addStringOption('Xdoclint:none', '-quiet')
+	failOnError = false
+	exclude('**/build/**')
 }
 
 // enable if you wish to package this plugin as a standalone application
