@@ -10,13 +10,14 @@ buildscript {
 		classpath platform("org.apache.grails:grails-gradle-bom:$grailsVersion")
 		classpath "org.apache.grails:grails-gradle-plugins"
 		
-		classpath 'com.k_int.gradle:kint-gradle-plugin:2.2.0'
+		classpath 'com.k_int.gradle:k-int-gradle-plugin:3.1.0'
 		// classpath "org.grails.plugins:hibernate5:$gormVersion" // Prev 7.3.1
 	}
 }
 
 plugins {
 	id 'antlr'
+	id 'org.asciidoctor.jvm.convert' version '3.3.2'
 }
 
 repositories {
