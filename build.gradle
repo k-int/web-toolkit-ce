@@ -192,6 +192,11 @@ tasks.withType(Javadoc) {
 	exclude('**/build/**')
 }
 
+tasks.named("sourcesJar") {
+	dependsOn(tasks.named("generateGrammarSource"))
+	dependsOn(tasks.named("generateAstGrammarSource"))
+}
+
 // enable if you wish to package this plugin as a standalone application
 bootJar.enabled = false
 
@@ -244,6 +249,18 @@ eclipse {
 publishing {
 	
 	repositories {
+		maven {
+			name = "KInt"
+			url = uri(
+				(project.version.toString().endsWith("-SNAPSHOT")
+					? "https://maven.k-int.com/content/repositories/snapshots"
+					: "https://maven.k-int.com/content/repositories/releases")
+			)
+			credentials {
+				username = (project.findProperty("kintMavenUser") ?: System.getenv("KINT_MAVEN_USER")) as String
+				password = (project.findProperty("kintMavenPassword") ?: System.getenv("KINT_MAVEN_PASSWORD")) as String
+			}
+		}
 		
 		project.gradle.projectsEvaluated {
 			all { ArtifactRepository repo ->
@@ -263,8 +280,6 @@ publishing {
 			version = project.version
 
 			from components.java
-			artifact sourcesJar
-			artifact javadocJar
 
 			pom {
 				name = 'Web Toolkit'
