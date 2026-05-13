@@ -1,18 +1,14 @@
 package com.k_int.web.toolkit.files
 
+import io.minio.credentials.IamAwsProvider
+import io.minio.credentials.Provider
+import io.minio.credentials.StaticProvider
 import org.springframework.web.multipart.MultipartFile
 import com.k_int.web.toolkit.settings.AppSetting
 
-import io.minio.BucketExistsArgs;
-import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
-import io.minio.UploadObjectArgs;
 import io.minio.PutObjectArgs;
 import io.minio.GetObjectArgs;
-import io.minio.errors.MinioException;
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import org.hibernate.Hibernate;
 
 class FileUploadService {
@@ -100,13 +96,11 @@ class FileUploadService {
 
     log.debug("s3FileObjectFromStream ${s3_endpoint} ${s3_access_key} ${s3_secret_key} ${s3_bucket} ${s3_region}");
 
-    // Create a minioClient with the MinIO server playground, its access key and secret key.
+    // Create a minioClient with the MinIO server playground, its credentials provider.
     // See https://blogs.ashrithgn.com/spring-boot-uploading-and-downloading-file-from-minio-object-store/
-    MinioClient minioClient =
-          MinioClient.builder()
-              .endpoint(s3_endpoint)
-              .credentials(s3_access_key, s3_secret_key)
-              .build();
+    Provider provider = resolveCredentialsProvider(s3_access_key, s3_secret_key);
+    log.info("{} MinIO credentials provider created.", provider.getClass().getSimpleName());
+    MinioClient minioClient = buildMinioClient(s3_endpoint, provider);
 
      minioClient.putObject(
        PutObjectArgs.builder()
@@ -241,13 +235,11 @@ class FileUploadService {
     String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
     String s3_region = AppSetting.getSettingValue('fileStorage', 'S3BucketRegion') ?: 'us-east-1';
 
-    // Create a minioClient with the MinIO server playground, its access key and secret key.
+    // Create a minioClient with the MinIO server playground, its credentials provider.
     // See https://blogs.ashrithgn.com/spring-boot-uploading-and-downloading-file-from-minio-object-store/
-    MinioClient minioClient =
-          MinioClient.builder()
-              .endpoint(s3_endpoint)
-              .credentials(s3_access_key, s3_secret_key)
-              .build();
+    Provider provider = resolveCredentialsProvider(s3_access_key, s3_secret_key);
+    log.info("{} MinIO credentials provider created.", provider.getClass().getSimpleName());
+    MinioClient minioClient = buildMinioClient(s3_endpoint, provider);
 
     log.debug("Attempt to retrieve file ${fo.s3ref} from bucket ${s3_bucket}");
 
@@ -279,5 +271,36 @@ class FileUploadService {
     }
 
     return result;
+  }
+
+  /**
+   * Resolves the appropriate MinIO credentials provider based on the given access key and secret key.
+   * If both accessKey and secretKey are provided, a {@link StaticProvider} is returned.
+   * Otherwise, falls back to {@link IamAwsProvider} for IAM-based authentication (e.g. AWS instance roles).
+   *
+   * @param accessKey the S3/MinIO access key, may be null
+   * @param secretKey the S3/MinIO secret key, may be null
+   * @return a {@link Provider} instance to use for MinIO client authentication
+   */
+  protected static Provider resolveCredentialsProvider(String accessKey, String secretKey) {
+    if (accessKey && secretKey) {
+      return new StaticProvider(accessKey, secretKey, null)
+    } else {
+      return new IamAwsProvider(null, null)
+    }
+  }
+
+  /**
+   * Builds a {@link MinioClient} instance configured with the given endpoint and credentials provider.
+   *
+   * @param endpoint the S3/MinIO server endpoint URL
+   * @param provider the credentials provider to use for authentication
+   * @return a configured {@link MinioClient} instance
+   */
+  protected static MinioClient buildMinioClient(String endpoint, Provider provider) {
+    return MinioClient.builder()
+            .endpoint(endpoint)
+            .credentialsProvider(provider)
+            .build()
   }
 }
