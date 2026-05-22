@@ -2,6 +2,10 @@
 
 ## Version 10.6.2
 
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
+
 ### Fixes
 * [File Upload]
 	* Simplify checkS3Configured -- ERM-3984 (#25)
