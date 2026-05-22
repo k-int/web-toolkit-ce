@@ -1,5 +1,23 @@
 # Changelog
 
+## Version 10.6.2
+
+### Fixes
+* [File Upload]
+	* Simplify checkS3Configured -- ERM-3984 (#25)
+
+## Version 10.6.1
+
+### Fixes
+* [Build]
+	* Accidentally built the last jar with java 21, causing build errors
+
+## Version 10.6.0
+
+### Additions
+* [File Upload Service]
+	* Support S3 access with implicit AWS role authorization -- ERM-4000 (#23)
+
 ## Version 10.5.0
 
 ### Additions
