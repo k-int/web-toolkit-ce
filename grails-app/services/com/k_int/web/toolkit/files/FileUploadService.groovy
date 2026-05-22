@@ -212,15 +212,9 @@ class FileUploadService {
   
   private boolean checkS3Configured() {
     String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
-    String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
-
-    //String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
-    String s3_secret_key = getS3Secret();
     String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
 
     return ( ( s3_endpoint != null ) &&
-             ( s3_access_key != null ) &&
-             ( s3_secret_key != null ) &&
              ( s3_bucket != null ) )
   }
 
