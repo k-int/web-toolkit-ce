@@ -61,7 +61,8 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
 //  ]
   
   static constraints = {
-    name            (nullable: false, blank: false, unique: true)
+    // matches the stripes-kint-components UI validation rule for the same field.
+    name            (nullable: false, blank: false, unique: true, matches: /^[A-Za-z][A-Za-z0-9]*$/)
     description     (nullable: true, blank: false)
     type            (bindable: false, nullable: false)
     label           (nullable: false, blank: false)
