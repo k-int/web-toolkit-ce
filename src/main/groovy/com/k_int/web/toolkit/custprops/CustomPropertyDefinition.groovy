@@ -66,7 +66,7 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
     // and for loaded entities whose name has been modified, so legacy data is left untouched.
     name            (nullable: false, blank: false, unique: true, validator: { String val, CustomPropertyDefinition obj, Errors errors ->
       if (obj.hasChanged('name') && !(val ==~ /^\p{L}[\p{L}\p{N}_]*$/)) {
-        errors.rejectValue('name', 'matches.invalid')
+        errors.rejectValue('name', 'custprop.name.invalid')
       }
     })
     description     (nullable: true, blank: false)
