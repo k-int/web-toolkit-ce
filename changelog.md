@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 10.6.3
+
+### Fixes
+* [Custom Properties]
+	* Bring Custom Property name validation in line with expectations -- ERM-3465 (#26)
+* [Dependencies]
+	* Patch bump to KInt gradle plugin version
+
 ## Version 10.6.2
 
 ### Changes
