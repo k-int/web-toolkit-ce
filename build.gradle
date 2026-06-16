@@ -9,8 +9,8 @@ buildscript {
 	dependencies {
 		classpath "org.grails:grails-gradle-plugin:$grailsGradlePluginVersion"
 		classpath "org.grails.plugins:views-gradle:2.3.2"
-		
-		classpath 'com.k_int.gradle:kint-gradle-plugin:2.2.0'
+
+		classpath "com.k_int.gradle:kint-gradle-plugin:$kintGradlePluginVersion"
 		// classpath "org.grails.plugins:hibernate5:$gormVersion" // Prev 7.3.1
 	}
 }
@@ -173,6 +173,23 @@ tasks.withType(Test) {
 // enable if you wish to package this plugin as a standalone application
 bootJar.enabled = false
 
+//task debugVersioner {
+//	doLast {
+//		def versioner = project.ext.versioner
+//		def git = project.ext.git
+//
+//		println "=== HEAD: ${git.head().abbreviatedId} ==="
+//		println "=== headIsRelease: ${versioner.headIsRelease()} ==="
+//		println "=== lastVersion: ${versioner.lastVersion} ==="
+//		println "=== version: ${versioner.version} ==="
+//
+//		// Dump raw commits the log sees
+//		println "\n=== Raw commits in log range ==="
+//		git.log([includes: ['HEAD']]).take(10).each { commit ->
+//			println "  [${commit.abbreviatedId}] ${commit.shortMessage}"
+//		}
+//	}
+//}
 
 eclipse {
 	autoBuildTasks ([
