@@ -51,17 +51,24 @@ class CustomPropertyDefinition implements MultiTenant<CustomPropertyDefinition> 
       this.label = nameToLabel(this.name)
     }
   }
-  
+
 //  static hasMany = [
 //    propertyInstances: CustomProperty
 //  ]
-//  
+//
 //  static mappedBy = [
 //    propertyInstances: "definition"
 //  ]
-  
+
   static constraints = {
-    name            (nullable: false, blank: false, unique: true)
+    // Restrict new/changed names to Unicode letters, digits and underscore (must start with a letter).
+    // Existing rows are grandfathered: hasChanged('name') returns true for new entities (no snapshot)
+    // and for loaded entities whose name has been modified, so legacy data is left untouched.
+    name            (nullable: false, blank: false, unique: true, validator: { String val, CustomPropertyDefinition obj, Errors errors ->
+      if (obj.hasChanged('name') && !(val ==~ /^\p{L}[\p{L}\p{N}_]*$/)) {
+        errors.rejectValue('name', 'custprop.name.invalid')
+      }
+    })
     description     (nullable: true, blank: false)
     type            (bindable: false, nullable: false)
     label           (nullable: false, blank: false)

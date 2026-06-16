@@ -197,6 +197,133 @@ class CustomPropertiesSpec extends Specification {
       ids.contains(refdataThree)
   }
 
+  /////////////////////////// Name validation ///////////////////////////
+
+  @Transactional
+  def "Name validation accepts valid name '#validName'" (String validName) {
+    when: 'Creating a definition with a valid name'
+      CustomPropertyDefinition cpd = CustomPropertyDefinition.forType('Text', [
+        name: validName,
+        label: "Label ${validName}",
+        description: 'name-validation positive case',
+        primary: true
+      ])
+      def saved = cpd.save(flush: true)
+
+    then: 'Save succeeds and no errors are raised on name'
+      saved != null
+      !cpd.hasErrors()
+
+    where:
+      validName << [
+        'plainName',
+        'with_underscore',
+        'startsWithLetterThenDigits1',
+        '日本語Term',
+        'Юніт_тест',
+        'ÉlémentTest'
+      ]
+  }
+
+  @Transactional
+  def "Name validation rejects invalid name '#invalidName'" (String invalidName) {
+    when: 'Creating a definition with an invalid name'
+      CustomPropertyDefinition cpd = CustomPropertyDefinition.forType('Text', [
+        name: invalidName,
+        label: 'Label invalid case',
+        description: 'name-validation negative case',
+        primary: true
+      ])
+      def saved = cpd.save(flush: true)
+
+    then: 'Save fails with a validation error on the name field'
+      saved == null
+      cpd.hasErrors()
+      cpd.errors.getFieldError('name') != null
+
+    where:
+      invalidName << [
+        '1startsWithDigit',
+        'has.dot',
+        'has space',
+        'has-hyphen',
+        'has(paren',
+        'has,comma',
+        'has/slash',
+        'has#hash'
+      ]
+  }
+
+  @Transactional
+  def "Legacy row with a forbidden name can be updated without renaming" () {
+    given: 'A row persisted bypassing validation, simulating data created before the constraint existed'
+      CustomPropertyDefinition legacy = CustomPropertyDefinition.forType('Text', [
+        name: 'legacy.unmodified.name',
+        label: 'Legacy term',
+        description: 'original description',
+        primary: true
+      ])
+      legacy.save(flush: true, validate: false)
+      String legacyId = legacy.id
+
+    when: 'Reloading and updating only the description'
+      CustomPropertyDefinition reloaded = CustomPropertyDefinition.get(legacyId)
+      reloaded.description = 'updated description'
+      def saved = reloaded.save(flush: true)
+
+    then: 'Save succeeds because the validator is skipped when name is not dirty'
+      saved != null
+      !reloaded.hasErrors()
+      reloaded.description == 'updated description'
+      reloaded.name == 'legacy.unmodified.name'
+  }
+
+  @Transactional
+  def "Legacy row name cannot be changed to another forbidden value" () {
+    given: 'A row with a forbidden legacy name'
+      CustomPropertyDefinition legacy = CustomPropertyDefinition.forType('Text', [
+        name: 'legacy.rename.attempt',
+        label: 'Legacy term rename attempt',
+        description: 'desc',
+        primary: true
+      ])
+      legacy.save(flush: true, validate: false)
+      String legacyId = legacy.id
+
+    when: 'Changing the name to another invalid value'
+      CustomPropertyDefinition reloaded = CustomPropertyDefinition.get(legacyId)
+      reloaded.name = 'still.invalid'
+      def saved = reloaded.save(flush: true)
+
+    then: 'Validation fires because name is dirty and the new value also fails the rule'
+      saved == null
+      reloaded.hasErrors()
+      reloaded.errors.getFieldError('name') != null
+  }
+
+  @Transactional
+  def "Legacy row name can be migrated to a valid value" () {
+    given: 'A row with a forbidden legacy name'
+      CustomPropertyDefinition legacy = CustomPropertyDefinition.forType('Text', [
+        name: 'legacy.migrate.source',
+        label: 'Legacy term migrate',
+        description: 'desc',
+        primary: true
+      ])
+      legacy.save(flush: true, validate: false)
+      String legacyId = legacy.id
+
+    when: 'Renaming to a compliant value'
+      CustomPropertyDefinition reloaded = CustomPropertyDefinition.get(legacyId)
+      reloaded.name = 'cleanedUpName'
+      def saved = reloaded.save(flush: true)
+
+    then: 'Save succeeds'
+      saved != null
+      !reloaded.hasErrors()
+      reloaded.name == 'cleanedUpName'
+  }
+
   // CustomPropertyContainer is already tested via the above, nesting is _not_ tested currently
 }
 
