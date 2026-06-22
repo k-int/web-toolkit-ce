@@ -19,7 +19,7 @@ class LOBFileObject extends FileObject implements MultiTenant<LOBFileObject>, Cl
 
   static cloneStaticValues = [
     fileContents: { 
-      BlobProxy.generateProxy(owner.fileContents.getBinaryStream(), owner.fileContents.length()) 
+      BlobProxy.generateProxy(((LOBFileObject) owner).fileContents.getBinaryStream(), ((LOBFileObject) owner).fileContents.length())
     }
   ]
   
