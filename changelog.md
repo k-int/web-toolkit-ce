@@ -1,6 +1,18 @@
 # Changelog
 
+## Version 10.6.4
+
+### Fixes
+* [Security]
+	* Version bumps to bring in line with other plugins/modules
+* [General]
+	* Allow static type checking on LOBFileObject cloneStaticValues
+
 ## Version 10.6.3
+
+### Changes
+* [Chore]
+	* Changelog - Generate the changelog
 
 ### Fixes
 * [Custom Properties]
