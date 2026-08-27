@@ -32,7 +32,7 @@ import grails.web.databinding.DataBindingUtils
     // Assume a single value to match either the id or normValue.
     final Serializable castId = idMatch ? (data as Serializable).asType(pp.type) : null
     final String normValue = normValueMatch ? Tag.normalizeValue(Tag.cleanValue("${data}")) : null
-    match = findUniqueByIdOrNormValue(castId, normValue)
+    match = Tag.findUniqueByIdOrNormValue(castId, normValue)
     
     // New tag. Assume this is the value.
     if (!match && String.isAssignableFrom(data.class)) {
@@ -46,7 +46,7 @@ import grails.web.databinding.DataBindingUtils
     final String normValue = data['normValue']
       ? "${data['normValue']}"
       : (data['value'] ? Tag.normalizeValue(Tag.cleanValue(data['value'])) : null)
-    match = findUniqueByIdOrNormValue(castId, normValue)
+    match = Tag.findUniqueByIdOrNormValue(castId, normValue)
     
     if (!match) {
       
