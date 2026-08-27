@@ -1,6 +1,6 @@
 # Web Toolkit Community Edition
 
-Toolkit and value-add module for grails 6.x.x
+Toolkit and value-add module for Grails 7. Requires JDK 21.
 
 Copyright (C) 2015-2024 Knowledge Integration
 
@@ -17,7 +17,7 @@ GUIDANCE.md however, particularly if you are building pay-for SAAS solutions on 
 # Installation
 
 ```
-  compile "com.k_int.grails:web-toolkit-ce:9.0.3"
+  implementation "com.k_int.grails:web-toolkit-ce:11.x"
 ```
 _NOTE:_ You may need to substitute the version number with the latest release.
 
