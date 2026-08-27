@@ -33,6 +33,7 @@ apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'maven-publish'
 apply plugin: 'org.apache.grails.gradle.grails-plugin'
+apply plugin: 'java-test-fixtures'
 
 apply plugin: 'org.apache.grails.gradle.grails-gson'
 apply plugin: 'com.k_int.gradle.plugin'
@@ -114,6 +115,10 @@ dependencies {
 
 	testImplementation("org.apache.grails:grails-testing-support-datamapping")
 	testImplementation("org.spockframework:spock-core")
+	testFixturesApi("org.spockframework:spock-core")
+	testFixturesImplementation("org.apache.grails.testing:grails-testing-support-core:$grailsTestingVersion")
+	testFixturesImplementation("io.github.http-builder-ng:http-builder-ng-core:1.0.4")
+	integrationTestImplementation(testFixtures(project))
 	implementation("org.apache.groovy:groovy-xml:4.0.30")
 	testImplementation("org.apache.groovy:groovy-xml")
   integrationTestImplementation("org.apache.groovy:groovy-xml:4.0.30")
@@ -183,6 +188,7 @@ tasks.withType(GroovyCompile) {
 
 tasks.withType(Test) {
   useJUnitPlatform()
+  classpath = sourceSets.main.output + classpath
 }
 
 tasks.withType(Javadoc) {

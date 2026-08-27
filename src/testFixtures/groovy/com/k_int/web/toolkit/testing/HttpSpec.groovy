@@ -7,7 +7,6 @@ import groovy.json.JsonOutput
 
 import java.util.concurrent.Executors
 
-import org.junit.Before
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
