@@ -34,7 +34,6 @@ import groovy.util.logging.Slf4j
 import io.micronaut.context.annotation.Any
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.core.util.ArrayUtils
-import io.micronaut.spring.context.MicronautApplicationContext
 
 @Slf4j
 @CompileStatic

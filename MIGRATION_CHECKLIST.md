@@ -3,10 +3,11 @@
 ## Baseline
 - [x] Record current branch and confirm no local changes to discard.
   - Branch: `grails-7-upgrade`
-- [x] Ensure JDK 17 is available for builds/tests.
-  - Java toolchain configured to 17; `./gradlew check` passes.
+- [x] Ensure JDK 21 is available for builds/tests.
+  - Java toolchain configured to 21; unit and integration suites pass.
 - [x] Note current Grails version in `gradle.properties`.
-  - `grailsVersion=7.0.7`
+  - Initial Grails 7 baseline: `grailsVersion=7.0.7`; supported alignment:
+    `grailsVersion=7.0.15`.
 
 ## Build Alignment
 - [x] Update to Grails 7.x in `gradle.properties`.
@@ -18,7 +19,7 @@
 - [x] Ensure Gradle plugin coordinates are for Grails 7.
 - [x] If this plugin is a subproject of an app, apply `org.apache.grails.gradle.grails-exploded` for exploded reloading.
   - Not required for this standalone plugin build.
-- [x] Set Java 17 compatibility if not already set.
+- [x] Set Java 21 compatibility if not already set.
 - [x] Remove or confirm any Grails 6 era workarounds (e.g., migration sourceSet tweaks).
   - Integration test disables removed from `build.gradle`.
 
@@ -32,7 +33,7 @@
   - Build/test passes with Grails Micronaut integration enabled.
 
 ## Tests and Verification
-- [x] Run `./gradlew check` (or a smaller compile target) with JDK 17.
+- [x] Run unit and integration suites with JDK 21.
 - [x] Resolve compilation errors.
   - Added Groovy 4 compatibility bridge for `groovy.util.slurpersupport.GPathResult`.
 - [x] Re-run tests until green.
