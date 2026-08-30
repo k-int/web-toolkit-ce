@@ -1,5 +1,37 @@
 # Changelog
 
+## Version 11.0.0
+
+### Changes
+* [Build]
+	* align Grails 7 security baseline
+
+## Version 11.0.0-rc.4
+
+### Changes
+* [Build]
+	* test-fixtures - publish reusable HTTP integration fixture
+
+### Fixes
+* [Databinding]
+	* qualify tag lookup for Groovy 4
+
+## Version 11.0.0-rc.3
+
+### Changes
+* [Build]
+	* target JDK 21
+
+## Version 11.0.0-rc.1
+
+### Additions
+* [General]
+	* upgrade to Grails 7
+
+### Changes
+* [General]
+	* **BREAKING** -  Drops Grails 6 support and requires JDK 21.
+
 ## Version 10.5.0
 
 ### Additions
