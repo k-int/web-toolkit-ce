@@ -2,7 +2,7 @@
 
 ## Baseline
 - [x] Record current branch and confirm no local changes to discard.
-  - Branch: `grails-7-upgrade`
+  - Branch: `feat/grails-7-2`.
 - [x] Ensure JDK 21 is available for builds/tests.
   - Java toolchain configured to 21; unit and integration suites pass.
 - [x] Note current Grails version in `gradle.properties`.
@@ -43,8 +43,12 @@
 
 ## Release Readiness
 - [x] Update plugin metadata (`grailsVersion` range in plugin descriptor).
-- [ ] Confirm published POM is consistent with Grails 7.
-- [ ] Update README/NEWS if needed.
+- [x] Confirm published POM is consistent with Grails 7.
+  - Generated POM imports the Grails `7.2.3` BOMs; Gradle module metadata
+    retains the richer test-fixtures model.
+- [x] Update README/NEWS if needed.
+  - README records the Grails 7/JDK 21 requirement and links the upgrade guide;
+    release detail is recorded in `changelog.md`, so `NEWS.md` needs no change.
 
 ## Grails 7.2 alignment
 
@@ -53,5 +57,5 @@
 - [x] Confirm Grails 7.2.3 retains the supported Micronaut 4.9.4 platform.
 - [x] Upgrade the production MinIO client to 8.6.0, removing the vulnerable
   XML property-substitution implementation used by earlier clients.
-- [x] Qualify the resulting `11.1.0-SNAPSHOT` in `grails-okapi` and the
-  Agreements canary before final publication.
+- [x] Qualify `11.1.0` in `grails-okapi` and the Agreements canary before final
+  publication.
