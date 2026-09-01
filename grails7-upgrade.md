@@ -13,7 +13,9 @@ This document summarizes downstream-impacting changes in `web-toolkit-ce` on bra
 ## Required Downstream Actions
 
 1. Upgrade to the Grails 7-compatible plugin version.
-2. Confirm the service is using JPA backend (`queryBackend: jpa`) where `SimpleLookupService` is used.
+2. Configure the service to use the JPA backend where `SimpleLookupService` is
+   used:
+   - `k_int.webToolkit.query.backend: jpa`
 3. Confirm AST gate is enabled (global default is on):
    - `k_int.webToolkit.query.jpa.astFilterParserEnabled: true`
 4. Re-run your own query parity tests and saved-filter scenarios on your domain model.
@@ -55,7 +57,7 @@ These remain intentionally special/test-locked for parity with legacy behavior:
 ## Downstream Validation Checklist
 
 - [ ] Upgrade plugin dependency and verify startup.
-- [ ] Set/confirm `queryBackend=jpa`.
+- [ ] Set/confirm `k_int.webToolkit.query.backend=jpa`.
 - [ ] Set/confirm `k_int.webToolkit.query.jpa.astFilterParserEnabled=true`.
 - [ ] Run clean no-cache build in downstream module.
 - [ ] Run query parity tests for grouped filters (`&&`, `||`, `!`) and to-many filters.

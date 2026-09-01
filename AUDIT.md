@@ -8,7 +8,7 @@ not a retrospective charge or fixed invoice.
 
 ## Issue TBC: Grails 7.2 shared-toolkit alignment
 
-Headline: **14.0 developer-days plus product-owner and release-owner effort
+Headline: **18.0 developer-days plus product-owner and release-owner effort
 (TBC).**
 
 | Area | Complexity | Effort | Basis |
@@ -18,14 +18,18 @@ Headline: **14.0 developer-days plus product-owner and release-owner effort
 | Security dependency analysis and remediation | High | 2.00 d | MinIO XML-substitution reachability, supported upgrade and downstream reassessment |
 | Test and publication qualification | High | 3.00 d | Unit, integration, fixtures and Gradle metadata |
 | Downstream consumer proof | High | 2.00 d | Okapi, Access Control and module composites |
+| Query-backend configuration contract | High | 3.00 d | Diagnose downstream bean failure, expose the documented JPA selector and prove OA query parity |
 | Documentation and release engineering | Medium | 1.00 d | Migration checklist and semantic-release readiness |
-| Explicit integration contingency | High | 2.00 d | Shared binary and dependency-graph uncertainty |
-| **Known total** |  | **14.00 d** | **Excludes TBC human contributions** |
+| Explicit integration contingency | High | 3.00 d | Shared binary, query-semantic and dependency-graph uncertainty |
+| **Known total** |  | **18.00 d** | **Excludes TBC human contributions** |
 
 Evidence:
 
 - 119 unit and 8 integration tests pass on Grails 7.2.3/JDK 21;
 - publication to Maven Local produces Gradle metadata for 11.1.0-SNAPSHOT;
 - MinIO 8.6.0 removes the identified XML-substitution vulnerability; and
+- the documented JPA query backend is now selectable through a real Spring
+  configuration key, with all 42 `mod-oa` integration tests proving its
+  downstream domain/query behavior; and
 - Okapi, Access Control and module composites consume the candidate. Final
   external-resolution evidence remains pending the reviewed shared release.

@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value
 @Slf4j
 class SimpleLookupService {
   
+  @Value('${k_int.webToolkit.query.backend:legacy}')
   String queryBackend = 'legacy'
   boolean allowLegacyQueryBackend = true
   @Value('${k_int.webToolkit.query.jpa.astFilterParserEnabled:false}')
