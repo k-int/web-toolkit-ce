@@ -26,10 +26,12 @@ Headline: **18.0 developer-days plus product-owner and release-owner effort
 Evidence:
 
 - 119 unit and 8 integration tests pass on Grails 7.2.3/JDK 21;
-- publication to Maven Local produces Gradle metadata for 11.1.0-SNAPSHOT;
+- final 11.1.0 JAR and Gradle metadata are published and externally resolvable
+  from K-Int Nexus;
 - MinIO 8.6.0 removes the identified XML-substitution vulnerability; and
 - the documented JPA query backend is now selectable through a real Spring
   configuration key, with all 42 `mod-oa` integration tests proving its
   downstream domain/query behavior; and
-- Okapi, Access Control and module composites consume the candidate. Final
-  external-resolution evidence remains pending the reviewed shared release.
+- Okapi 9.1.0, Access Control 2.1.0 and all six upgraded module consumers pass
+  their repository gates using final external coordinates without composite
+  substitution.
