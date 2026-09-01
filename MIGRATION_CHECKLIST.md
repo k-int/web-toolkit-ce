@@ -6,8 +6,9 @@
 - [x] Ensure JDK 21 is available for builds/tests.
   - Java toolchain configured to 21; unit and integration suites pass.
 - [x] Note current Grails version in `gradle.properties`.
-  - Initial Grails 7 baseline: `grailsVersion=7.0.7`; supported alignment:
-    `grailsVersion=7.0.15`.
+  - Initial Grails 7 baseline: `grailsVersion=7.0.7`; current supported
+    alignment: Grails `7.2.3`, testing support `7.2.3`, Gradle `8.14.5` and
+    JDK 21.
 
 ## Build Alignment
 - [x] Update to Grails 7.x in `gradle.properties`.
@@ -44,3 +45,13 @@
 - [x] Update plugin metadata (`grailsVersion` range in plugin descriptor).
 - [ ] Confirm published POM is consistent with Grails 7.
 - [ ] Update README/NEWS if needed.
+
+## Grails 7.2 alignment
+
+- [x] Verify the complete unit and integration suites on Grails 7.2.3/JDK 21.
+- [x] Verify Gradle module metadata with `publishToMavenLocal`.
+- [x] Confirm Grails 7.2.3 retains the supported Micronaut 4.9.4 platform.
+- [x] Upgrade the production MinIO client to 8.6.0, removing the vulnerable
+  XML property-substitution implementation used by earlier clients.
+- [x] Qualify the resulting `11.1.0-SNAPSHOT` in `grails-okapi` and the
+  Agreements canary before final publication.

@@ -163,7 +163,7 @@ dependencies {
 	implementation 'com.ibm.icu:icu4j:62.1'
 
 	// Minio for file storage to S3
-	implementation "io.minio:minio:8.5.12"
+	implementation "io.minio:minio:8.6.0"
 	implementation "org.bouncycastle:bcprov-jdk18on:$bouncyCastleVersion"
 	implementation 'com.squareup.okhttp3:okhttp:4.8.1'
 	implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.3.70'
