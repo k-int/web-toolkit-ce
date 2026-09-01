@@ -1,10 +1,22 @@
 # Changelog
 
+## Version 11.1.0
+
+### Additions
+* [General]
+	* align web toolkit with Grails 7.2
+
+### Fixes
+* [General]
+	* expose the toolkit query backend setting
+
 ## Version 11.0.0
 
 ### Changes
 * [Build]
 	* align Grails 7 security baseline
+* [Chore]
+	* Changelog - Generate the changelog
 
 ## Version 11.0.0-rc.4
 
