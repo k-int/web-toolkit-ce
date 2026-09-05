@@ -8,8 +8,9 @@ import java.util.concurrent.RunnableFuture
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.RejectedExecutionException
+import org.springframework.core.task.TaskDecorator
 
 import jakarta.annotation.PreDestroy
 
@@ -27,12 +28,39 @@ class QueueingThreadPoolPromiseFactory extends AbstractPromiseFactory implements
 
   final @Delegate ExecutorService executorService
 
+  // Optional submission context. An AutoCloseable decorated task releases its
+  // reservation if rejected/discarded; close must not interrupt a running task.
+  volatile TaskDecorator taskDecorator = { Runnable task -> task } as TaskDecorator
+
   public QueueingThreadPoolPromiseFactory(int maxPoolSize = 1000, int maxQueueLength = 1000, long timeout = 3L, TimeUnit unit = TimeUnit.MINUTES) {
     final QueueingThreadPoolPromiseFactory pf = this
     this.executorService = new ThreadPoolExecutor(5, maxPoolSize, timeout, unit,
           new LinkedBlockingQueue<Runnable>(maxQueueLength),
           new NamedThreadFactory('Promises'),
-          new CallerRunsPolicy()) {
+          { Runnable task, ThreadPoolExecutor executor ->
+            if (executor.isShutdown()) throw new RejectedExecutionException('Promise executor is shut down')
+            task.run()
+          } as java.util.concurrent.RejectedExecutionHandler) {
+
+      @Override
+      void execute(Runnable command) {
+        Runnable decorated = pf.taskDecorator.decorate(command)
+        try {
+          super.execute(decorated)
+        } catch (RuntimeException | Error failure) {
+          if (decorated instanceof AutoCloseable) ((AutoCloseable)decorated).close()
+          throw failure
+        }
+      }
+
+      @Override
+      List<Runnable> shutdownNow() {
+        List<Runnable> discarded = super.shutdownNow()
+        discarded.each { Runnable task ->
+          if (task instanceof AutoCloseable) ((AutoCloseable)task).close()
+        }
+        discarded
+      }
           
       @Override
       protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
@@ -62,9 +90,8 @@ class QueueingThreadPoolPromiseFactory extends AbstractPromiseFactory implements
     Promise<T> tasks
     
     if(closures.length == 1) {
-      def callable = closures[0]
-      applyDecorators(callable, null)
-      tasks = (Promise<T>)executorService.submit((Callable)callable)
+      def callable = applyDecorators(closures[0], null)
+      tasks = createPromiseInternal(callable)
     }
     else {
       PromiseList list = new PromiseList()
@@ -75,6 +102,13 @@ class QueueingThreadPoolPromiseFactory extends AbstractPromiseFactory implements
     }
     
     tasks
+  }
+
+  @Override
+  protected <T> Promise<T> createPromiseInternal(Closure<T> callable) {
+    // AbstractPromiseFactory's closure/list overload has already decorated it.
+    // Do not send it back through the varargs overload and decorate twice.
+    (Promise<T>)executorService.submit((Callable<T>)callable)
   }
 
   @Override
@@ -152,4 +186,3 @@ class QueueingThreadPoolPromiseFactory extends AbstractPromiseFactory implements
     }
   }
 }
-
