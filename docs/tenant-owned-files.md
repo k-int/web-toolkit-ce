@@ -49,5 +49,19 @@ is unchanged.
 
 Agreements integration tests cover real LOB/S3 clone/deletion, rollback, upload
 and metadata-save failure, retained deletion/retry and a 200 MiB streamed upload
-with byte-integrity verification. This does not yet prove whole-tenant cleanup,
-crash recovery, versioned storage, or other module consumers.
+with byte-integrity verification. These ordinary-file tests do not prove managed reconstruction, crash recovery,
+versioned storage, or other module consumers. Public purge is covered below.
+
+## Synchronous purge follow-on
+
+`purgeOwned(schema)` runs after the module quiesces and deactivates that tenant.
+It preflights retained locations, detaches references in the still-present schema
+and deletes each owned S3 object, retaining pending records on failure. The
+Grails purge participant must propagate failure and retain the schema. Legacy
+rows remain outside automatic external cleanup; managed reset must first call
+`requireCompleteOwnership(schema)` and reject ambiguous legacy or unqualified
+versioned storage. This does not retrofit historical ownership.
+
+New S3 keys use the configured prefix plus a UUID. Filenames remain metadata;
+a legal 255-character filename must not exceed a provider's physical path-component
+limit. Existing keys remain readable through their stored coordinates.

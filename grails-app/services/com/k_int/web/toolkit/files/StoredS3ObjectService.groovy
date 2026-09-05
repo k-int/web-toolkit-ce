@@ -122,6 +122,57 @@ class StoredS3ObjectService {
         ids.count { String id -> cleanup(id) }
     }
 
+    /** Called synchronously after the owning module quiesces and disables a tenant. */
+    void purgeOwned(Serializable tenant) {
+        // Resolve configuration before changing references. Empty LOB-only
+        // tenants do not need working S3 configuration to be purged.
+        independent(tenant) { Sql sql, String objects, String files ->
+            if (sql.firstRow('SELECT EXISTS(SELECT 1 FROM ' + objects + ') AS present').present) {
+                Map config = configuration(sql)
+                if (sql.firstRow('SELECT EXISTS(SELECT 1 FROM ' + objects +
+                    ' WHERE endpoint<>? OR bucket<>? OR region<>?) AS mismatch',
+                    [config.endpoint, config.bucket, config.region]).mismatch) {
+                    throw new IllegalStateException('S3 configuration does not match retained ownership')
+                }
+            }
+        }
+        while (true) {
+            List<String> ids = independent(tenant) { Sql sql, String objects, String files ->
+                sql.rows('SELECT id FROM ' + objects + ' ORDER BY id LIMIT 100')*.id
+            }
+            if (ids.isEmpty()) return
+            for (String id : ids) {
+                independent(tenant) { Sql sql, String objects, String files ->
+                    def object = sql.firstRow('SELECT id FROM ' + objects + ' WHERE id=? FOR UPDATE', [id])
+                    if (object != null) {
+                        sql.executeUpdate('UPDATE ' + files +
+                            ' SET fo_stored_s3_object_id=NULL,fo_s3ref=NULL WHERE fo_stored_s3_object_id=?', [id])
+                        sql.executeUpdate('UPDATE ' + objects +
+                            " SET state='DELETE_PENDING',last_updated=current_timestamp WHERE id=?", [id])
+                    }
+                }
+                if (!cleanupInTenant(id, tenant)) throw new IllegalStateException('S3 tenant cleanup incomplete')
+            }
+        }
+    }
+
+    /** Managed reset must reject legacy keys whose physical ownership is unknown. */
+    void requireCompleteOwnership(Serializable tenant) {
+        independent(tenant) { Sql sql, String objects, String files ->
+            if (sql.firstRow('SELECT EXISTS(SELECT 1 FROM ' + files +
+                ' WHERE fo_s3ref IS NOT NULL AND fo_stored_s3_object_id IS NULL) AS legacy').legacy) {
+                throw new IllegalStateException('S3 tenant contains unqualified legacy ownership')
+            }
+            if (sql.firstRow('SELECT EXISTS(SELECT 1 FROM ' + objects + ') AS present').present) {
+                Map config = configuration(sql)
+                if (client(config).getBucketVersioning(GetBucketVersioningArgs.builder().bucket(config.bucket).build()).status()
+                    != VersioningConfiguration.Status.OFF) {
+                    throw new IllegalStateException('Managed reset requires qualified unversioned storage')
+                }
+            }
+        }
+    }
+
     private void abandonUpload(String id, Serializable tenant) {
         try {
             independent(tenant) { Sql sql, String objects, String files ->

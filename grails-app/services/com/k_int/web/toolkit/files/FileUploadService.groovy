@@ -64,7 +64,9 @@ class FileUploadService {
     FileUpload.withTransaction { status ->
       try {
         String prefix = AppSetting.getSettingValue('fileStorage', 'S3ObjectPrefix') ?: ''
-        String key = "${prefix}${UUID.randomUUID()}-${file.originalFilename}"
+        // Filename stays in metadata. Opaque keys avoid provider path-component
+        // limits turning an otherwise legal filename into an undeletable intent.
+        String key = "${prefix}${UUID.randomUUID()}"
         FileObject object = file.inputStream.withCloseable { stream ->
           s3FileObjectFromStream(key, stream, file.size, -1)
         }
