@@ -3,19 +3,11 @@ package com.k_int.web.toolkit.files
 import org.springframework.web.multipart.MultipartFile
 import com.k_int.web.toolkit.settings.AppSetting
 
-import io.minio.BucketExistsArgs;
-import io.minio.MakeBucketArgs;
-import io.minio.MinioClient;
-import io.minio.UploadObjectArgs;
-import io.minio.PutObjectArgs;
-import io.minio.GetObjectArgs;
-import io.minio.errors.MinioException;
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import org.hibernate.Hibernate;
 
 class FileUploadService {
+
+  StoredS3ObjectService storedS3ObjectService
 
   public static final String LOB_STORAGE_ENGINE='LOB';
   public static final String S3_STORAGE_ENGINE='S3';
@@ -64,89 +56,28 @@ class FileUploadService {
     fileUpload
   }
 
-  private String getS3Secret() {
-    // Strategy -- We wish to stop using the AppSettings which store/retrieve the S3 Secret in plain text
-    // First check for the pre-existing setting, use if exists & not null
-    String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
-
-    if (s3_secret_key == null) {
-      // Next check for tenant_specific environment variable from settings
-      String s3_key_variable = AppSetting.getSettingValue('fileStorage', 'S3SecretEnvironmentVariable');
-
-      if (s3_key_variable == null) {
-        s3_key_variable = "GLOBAL_S3_SECRET_KEY"
-      }
-      s3_secret_key = System.getenv(s3_key_variable);
-    }
-    return s3_secret_key;
-  }
-
-  // Create a FileObject from the given stream details
-  private FileObject s3FileObjectFromStream(String object_key,
-                                            InputStream is,
-                                            long stream_size,
-                                            long offset) {
-
-    // Strategy -- We wish to stop using the AppSettings which store/retrieve the S3 Secret in plain text
-    // First check for the pre-existing setting, use if exists & not null
-    String s3_secret_key = getS3Secret();
-
-    String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
-    String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
-    // Deprecated, using getS3Secret method now
-    //String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
-    String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
-    String s3_region = AppSetting.getSettingValue('fileStorage', 'S3BucketRegion') ?: 'us-east-1';
-
-    log.debug("s3FileObjectFromStream ${s3_endpoint} ${s3_access_key} ${s3_secret_key} ${s3_bucket} ${s3_region}");
-
-    // Create a minioClient with the MinIO server playground, its access key and secret key.
-    // See https://blogs.ashrithgn.com/spring-boot-uploading-and-downloading-file-from-minio-object-store/
-    MinioClient minioClient =
-          MinioClient.builder()
-              .endpoint(s3_endpoint)
-              .credentials(s3_access_key, s3_secret_key)
-              .build();
-
-     minioClient.putObject(
-       PutObjectArgs.builder()
-         .bucket(s3_bucket)
-         .region(s3_region)
-         .object(object_key)
-         .stream(is, stream_size, offset)
-         .build());
-
-    FileObject fobject = new S3FileObject()
-    fobject.s3ref=object_key
-
-    return fobject
+  private FileObject s3FileObjectFromStream(String objectKey, InputStream stream, long size, long partSize) {
+    storedS3ObjectService.upload(objectKey, stream, size, partSize)
   }
 
   private FileUpload S3save(MultipartFile file) {
-
-    log.debug("S3save....");
-    FileUpload fileUpload = null;
-
-    try {
-
-      String object_uuid = java.util.UUID.randomUUID().toString()
-      String s3_object_prefix = AppSetting.getSettingValue('fileStorage', 'S3ObjectPrefix');
-      String object_key = "${s3_object_prefix?:''}${object_uuid}-${file.originalFilename}"
-
-      FileObject fobject = s3FileObjectFromStream(object_key, file.getInputStream(), file.size, -1);
-      fileUpload = new FileUpload()
-      fileUpload.fileContentType = file.contentType
-      fileUpload.fileName = file.originalFilename
-      fileUpload.fileSize = file.size
-      fileUpload.fileObject = fobject
-  
-      fileUpload.save(flush:true)
+    FileUpload.withTransaction { status ->
+      try {
+        String prefix = AppSetting.getSettingValue('fileStorage', 'S3ObjectPrefix') ?: ''
+        String key = "${prefix}${UUID.randomUUID()}-${file.originalFilename}"
+        FileObject object = file.inputStream.withCloseable { stream ->
+          s3FileObjectFromStream(key, stream, file.size, -1)
+        }
+        FileUpload upload = new FileUpload(fileContentType: file.contentType,
+          fileName: file.originalFilename, fileSize: file.size, fileObject: object)
+        upload.save(flush: true, failOnError: true)
+        upload
+      } catch (Exception failure) {
+        status.setRollbackOnly()
+        log.error('S3 upload failed ({})', failure.class.simpleName)
+        null
+      }
     }
-    catch ( Exception e ) {
-      log.error("Problem with S3 upload",e);
-    }
-
-    return fileUpload
   }
 
 
@@ -217,47 +148,14 @@ class FileUploadService {
   }
   
   private boolean checkS3Configured() {
-    String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
-    String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
-
-    //String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
-    String s3_secret_key = getS3Secret();
-    String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
-
-    return ( ( s3_endpoint != null ) &&
-             ( s3_access_key != null ) &&
-             ( s3_secret_key != null ) &&
-             ( s3_bucket != null ) )
+    storedS3ObjectService.configured()
   }
 
   /**
    * Return the inputStream for the given S3FileObject so we can stream the contents to a user
    */
-  private InputStream getS3FileStream(S3FileObject fo) {
-    String s3_endpoint = AppSetting.getSettingValue('fileStorage', 'S3Endpoint');
-    String s3_access_key = AppSetting.getSettingValue('fileStorage', 'S3AccessKey');
-    //String s3_secret_key = AppSetting.getSettingValue('fileStorage', 'S3SecretKey');
-    String s3_secret_key = getS3Secret();
-    String s3_bucket = AppSetting.getSettingValue('fileStorage', 'S3BucketName');
-    String s3_region = AppSetting.getSettingValue('fileStorage', 'S3BucketRegion') ?: 'us-east-1';
-
-    // Create a minioClient with the MinIO server playground, its access key and secret key.
-    // See https://blogs.ashrithgn.com/spring-boot-uploading-and-downloading-file-from-minio-object-store/
-    MinioClient minioClient =
-          MinioClient.builder()
-              .endpoint(s3_endpoint)
-              .credentials(s3_access_key, s3_secret_key)
-              .build();
-
-    log.debug("Attempt to retrieve file ${fo.s3ref} from bucket ${s3_bucket}");
-
-    // return minioClient.getObject(s3_bucket, fo.s3ref)
-    return minioClient.getObject(
-             GetObjectArgs.builder()
-             .bucket(s3_bucket)
-             .region(s3_region)
-             .object(fo.s3ref)
-             .build());
+  private InputStream getS3FileStream(S3FileObject file) {
+    storedS3ObjectService.read(file)
   }
 
   private InputStream getInputStreamFor(FileObject fo) {

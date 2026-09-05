@@ -19,8 +19,10 @@ import grails.gorm.annotation.Entity
 class LOBFileObject extends FileObject implements MultiTenant<LOBFileObject>, Clonable<LOBFileObject> {
 
   static cloneStaticValues = [
-    fileContents: { ->
-      cloneFileContents(delegate)
+    fileContents: { Object target ->
+      // Clonable rehydrates with the source as owner and the new object as
+      // delegate, then passes the target argument. Read bytes from the source.
+      cloneFileContents(owner)
     }
   ]
 
@@ -34,6 +36,9 @@ class LOBFileObject extends FileObject implements MultiTenant<LOBFileObject>, Cl
   Blob fileContents
     
   void setFileContents ( Blob fileContents ) {
+    // GORM does not instrument every overloaded setter. Explicitly mark the
+    // Blob path so replacement is persisted and its old OID can be released.
+    markDirty('fileContents')
     this.fileContents = fileContents
   }
   
