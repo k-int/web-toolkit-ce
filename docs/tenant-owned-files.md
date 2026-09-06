@@ -65,3 +65,8 @@ versioned storage. This does not retrofit historical ownership.
 New S3 keys use the configured prefix plus a UUID. Filenames remain metadata;
 a legal 255-character filename must not exceed a provider's physical path-component
 limit. Existing keys remain readable through their stored coordinates.
+
+Real servlet multipart streams need not support reset. LOB JDBC binding may read
+them more than once, so the multipart adapter reopens the same source on rewind
+and closes it at transaction completion. It does not buffer the full file or
+change upload/download interfaces. The regression uses a non-resettable source.

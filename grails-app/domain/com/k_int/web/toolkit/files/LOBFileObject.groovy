@@ -6,6 +6,8 @@ import jakarta.persistence.Lob
 import org.hibernate.engine.jdbc.BlobProxy
 import org.springframework.web.multipart.MultipartFile
 import groovy.transform.CompileDynamic
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import com.k_int.web.toolkit.domain.traits.Clonable
 
@@ -47,7 +49,15 @@ class LOBFileObject extends FileObject implements MultiTenant<LOBFileObject>, Cl
   }
   
   void setFileContents( MultipartFile file ) {
-    setFileContents( file.inputStream, file.size )
+    // Real servlet multipart streams need not support reset. Hibernate can bind
+    // the same Blob again at flush/commit; reopen its source instead of buffering.
+    ReopenableMultipartInputStream stream = new ReopenableMultipartInputStream(file)
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        @Override void afterCompletion(int status) { stream.close() }
+      })
+    }
+    setFileContents(stream, file.size)
   }
 
   static constraints = {
