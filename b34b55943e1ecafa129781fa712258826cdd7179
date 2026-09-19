@@ -1,0 +1,4 @@
+Audit-Item: WTK-STORAGE-PREREQUISITES
+Audit-Role: supporting-work
+
+Reviewed correction: the original engineering role is not a permitted contribution role. This CI wiring is supporting work; no change to the audit value or source tree.
