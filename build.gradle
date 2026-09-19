@@ -34,6 +34,8 @@ repositories {
 gitConventions {
 	releaseTagPrefix.set('fsl/v')
 	changelog.location.set(file('changelog.md'))
+	// Historical releases include build/chore-only changes; retain those sections.
+	changelog.ignoreTypes.set([])
 }
 
 version = gitConventions.version().get()

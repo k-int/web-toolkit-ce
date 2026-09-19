@@ -39,6 +39,8 @@ Use JDK 21 and the maintained `k-int.git-conventions` plugin. Versions come
 from Git; do not assign a release version in `gradle.properties`. The plugin
 creates and recognises `fsl/v` tags through `releaseTagPrefix`, while recognising
 historical `v` tags. The single changelog is lowercase `changelog.md`.
+Build/chore changes remain included to preserve historical release sections;
+generated changelog commits themselves remain excluded by scope.
 
 Before publication, review the full source interval, update `AUDIT.md` and the
 changelog, and run the unit, database/storage and dependency checks below.
