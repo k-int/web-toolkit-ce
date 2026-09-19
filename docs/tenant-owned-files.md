@@ -124,11 +124,14 @@ The runner retains JUnit, raw Gradle output in
 `build/reports/toolkit-qualification.log`, and a compact JSON result in
 `build/reports/toolkit-qualification.json` with source/input hashes, fixture image
 IDs, counts and cleanup status. Missing required suites, skips, test failures or
-failed disposable-container cleanup fail the command. This repository currently
-has no configured CI workflow; local proof does not imply CI qualification.
+failed disposable-container cleanup fail the command. GitHub's
+`Toolkit qualification` workflow runs the same command for main and pull requests
+on a disposable Ubuntu runner with JDK 21 and Podman. It has read-only repository
+permissions, uses pinned action commits and needs no publishing credentials.
 
 Retained source qualification: 125 unit + 41 integration cases, zero failures,
 errors or skips; final dependency gate and disposable cleanup passed. See
-[qualification summary](storage-prerequisite-qualification.json). CI wiring needs
-an owner-approved runner with JDK 21, Podman, Python 3, Gradle repository access
-and access to the existing private MinIO fixture image; none is configured here.
+[qualification summary](storage-prerequisite-qualification.json). The existing
+MinIO fixture permits anonymous pulls (verified using `skopeo --no-creds`);
+CI does not receive registry credentials. Workflow source alone is not a passing
+remote run; retain the actual run URL/result before release qualification.

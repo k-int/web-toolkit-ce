@@ -1,0 +1,41 @@
+name: Toolkit qualification
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: toolkit-qualification-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  storage-and-release-inputs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install disposable fixture tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes podman python3 curl
+      - name: Qualify runtime, real migrations and release dependencies
+        run: scripts/test-integration.sh test verifyReleaseDependencies
+      - name: Retain evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: toolkit-qualification-${{ github.sha }}
+          path: |
+            build/test-results/**/*.xml
+            build/reports/toolkit-qualification.json
+            build/reports/toolkit-qualification.log
+          if-no-files-found: error
+          retention-days: 14

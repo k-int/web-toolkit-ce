@@ -94,3 +94,7 @@ fails on missing/skipped required coverage and retains compact evidence. Full
 consumer changelogs and lifecycle admission remain separate qualification gates;
 this work does not publish the existing local release tag. Engineering and
 product-owner assessments remain unknown.
+
+The same unattended command is wired into GitHub main/PR qualification with
+read-only permissions and anonymous fixture pulls. Remote success is a separate
+release gate; the workflow never tags or publishes artifacts to Maven.

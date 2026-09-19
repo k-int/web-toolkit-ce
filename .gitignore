@@ -11,3 +11,8 @@
 /web-toolkit
 /bin-default
 /*.db
+
+# Reviewed CI source is versioned despite the general hidden-file exclusion.
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml
