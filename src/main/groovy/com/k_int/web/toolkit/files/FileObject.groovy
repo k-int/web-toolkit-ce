@@ -30,6 +30,14 @@ abstract class FileObject implements MultiTenant<FileObject> {
     id column: 'fo_id', generator: 'uuid2', length: 36
   }
   
+  def beforeInsert() { requireStorageSchema() }
+  def beforeUpdate() { requireStorageSchema() }
+  def beforeDelete() { requireStorageSchema() }
+
+  private void requireStorageSchema() {
+    grails.util.Holders.applicationContext.getBean(StorageSchemaValidator).validateCurrentTenant()
+  }
+
   // See if this resolves the clone issue
   public abstract FileObject clone();
 

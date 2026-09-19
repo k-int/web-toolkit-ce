@@ -46,6 +46,8 @@ class FileUpload implements MultiTenant<FileUpload>, Clonable<FileUpload> {
       Tenants.withId(currentTenantId) {
         try {
           FileUpload.get(toDelete).delete()
+        } catch(StorageSchemaPrerequisiteException prerequisite) {
+          throw prerequisite
         } catch(Exception e) {
           log.error("Error trying to delete ownerless fileUpload objects: ${e.getMessage()}")
         }

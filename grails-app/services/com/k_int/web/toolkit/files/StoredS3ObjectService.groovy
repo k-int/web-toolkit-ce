@@ -13,6 +13,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 /** Existing S3 storage, with durable ownership and post-commit deletion. */
 class StoredS3ObjectService {
     DataSource dataSource
+    StorageSchemaValidator storageSchemaValidator
     S3FileObject upload(String key, InputStream stream, long size, long partSize) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
             throw new IllegalStateException('S3 file persistence requires a transaction')
@@ -55,6 +56,7 @@ class StoredS3ObjectService {
 
     boolean configured() {
         try { configuration(); return true }
+        catch (StorageSchemaPrerequisiteException prerequisite) { throw prerequisite }
         catch (IllegalStateException absent) { return false }
     }
 
@@ -101,6 +103,8 @@ class StoredS3ObjectService {
                 sql.executeUpdate(("DELETE FROM " + objects + " WHERE id=?"), [id])
                 true
             }
+        } catch (StorageSchemaPrerequisiteException prerequisite) {
+            throw prerequisite
         } catch (Exception failure) {
             // Do not retain provider response bodies or credentials in diagnostics.
             try {
@@ -182,6 +186,8 @@ class StoredS3ObjectService {
                 }
             }
             cleanupInTenant(id, tenant)
+        } catch (StorageSchemaPrerequisiteException prerequisite) {
+            throw prerequisite
         } catch (Exception failure) {
             log.warn('S3 upload ownership retained for reconciliation: {}', id)
         }
@@ -208,6 +214,7 @@ class StoredS3ObjectService {
                 sql.execute("SET LOCAL lock_timeout='5s'")
                 sql.execute('SET LOCAL search_path TO ' + quoted)
                 sql.withStatement { it.queryTimeout = 10 }
+                storageSchemaValidator.validate(connection, schema)
                 T result = work.call(sql, quoted + '.stored_s3_object', quoted + '.file_object')
                 connection.commit()
                 return result

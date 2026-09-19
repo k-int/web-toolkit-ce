@@ -8,6 +8,7 @@ import org.hibernate.Hibernate;
 class FileUploadService {
 
   StoredS3ObjectService storedS3ObjectService
+  StorageSchemaValidator storageSchemaValidator
 
   public static final String LOB_STORAGE_ENGINE='LOB';
   public static final String S3_STORAGE_ENGINE='S3';
@@ -21,6 +22,7 @@ class FileUploadService {
 
   public FileUpload save(MultipartFile file, String storageEngine) {
 
+    storageSchemaValidator.validateCurrentTenant()
     FileUpload result = null;
 
     switch ( storageEngine ) {
@@ -74,6 +76,9 @@ class FileUploadService {
           fileName: file.originalFilename, fileSize: file.size, fileObject: object)
         upload.save(flush: true, failOnError: true)
         upload
+      } catch (StorageSchemaPrerequisiteException prerequisite) {
+        status.setRollbackOnly()
+        throw prerequisite
       } catch (Exception failure) {
         status.setRollbackOnly()
         log.error('S3 upload failed ({})', failure.class.simpleName)
@@ -103,6 +108,8 @@ class FileUploadService {
 
   public boolean migrateAtMost(int n, String from, String to) {
 
+    if (n < 1) throw new IllegalArgumentException('Migration batch size must be positive')
+    storageSchemaValidator.validateCurrentTenant()
     List<FileUpload> list_to_migrate = null;
     Map meta_params = [:]
     if ( n > 0 ) {

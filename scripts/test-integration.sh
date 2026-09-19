@@ -8,11 +8,21 @@ pg="$run_id-pg"
 s3="$run_id-s3"
 created_pg=false
 created_s3=false
+require_unit=false
+for argument in "$@"; do [[ "$argument" != test ]] || require_unit=true; done
+mkdir -p build/reports
+rm -rf build/test-results/integrationTest
+if "$require_unit"; then rm -rf build/test-results/test; fi
+pg_image=unavailable
+s3_image=unavailable
+qualification_command=(scripts/test-integration.sh "$@")
 cleanup() {
   status=$?
   trap - EXIT
-  if "$created_s3"; then podman rm -f -v "$s3" >/dev/null || status=1; fi
-  if "$created_pg"; then podman rm -f -v "$pg" >/dev/null || status=1; fi
+  cleanup_status=passed
+  if "$created_s3"; then podman rm -f -v "$s3" >/dev/null || cleanup_status=failed; fi
+  if "$created_pg"; then podman rm -f -v "$pg" >/dev/null || cleanup_status=failed; fi
+  python3 scripts/summarize-tests.py "$status" "$cleanup_status" "$require_unit" "$pg_image" "$s3_image" "${qualification_command[@]}" || status=1
   exit "$status"
 }
 trap cleanup EXIT
@@ -20,12 +30,14 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 podman create --name "$pg" -p 127.0.0.1::5432 -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=test --tmpfs /var/lib/postgresql/data docker.io/library/postgres:17-alpine >/dev/null
 created_pg=true
+pg_image=$(podman inspect --format '{{.Image}}' "$pg")
 podman start "$pg" >/dev/null
 pg_port=$(podman port "$pg" 5432/tcp | sed -n 's/^127\.0\.0\.1://p')
 for n in {1..30}; do podman exec "$pg" pg_isready -U test -d test >/dev/null && break; sleep 1; done
 podman exec "$pg" psql -U test -d test -c "CREATE SCHEMA test" >/dev/null
 podman create --name "$s3" -p 127.0.0.1::9000 -e MINIO_ROOT_USER=DIKU_AGG_ACCESS_KEY -e MINIO_ROOT_PASSWORD=DIKU_AGG_SECRET_KEY --entrypoint minio --tmpfs /data docker.libsdev.k-int.com/knowledgeintegration/cicd-minio-folio:v2 server /data >/dev/null
 created_s3=true
+s3_image=$(podman inspect --format '{{.Image}}' "$s3")
 podman start "$s3" >/dev/null
 s3_port=$(podman port "$s3" 9000/tcp | sed -n 's/^127\.0\.0\.1://p')
 for n in {1..30}; do curl -fsS "http://127.0.0.1:$s3_port/minio/health/ready" >/dev/null 2>&1 && break; sleep 1; done
@@ -33,4 +45,4 @@ podman exec "$s3" mc alias set proof http://127.0.0.1:9000 DIKU_AGG_ACCESS_KEY D
 podman exec "$s3" mc mb proof/diku-shared >/dev/null
 env -i HOME="$HOME" USER="$(id -un)" LANG=C.UTF-8 PATH="$JAVA_HOME/bin:$PATH" JAVA_HOME="$JAVA_HOME" \
   TOOLKIT_TEST_JDBC_URL="jdbc:postgresql://127.0.0.1:$pg_port/test" \
-  TOOLKIT_TEST_S3_ENDPOINT="http://127.0.0.1:$s3_port" ./gradlew --no-daemon --no-parallel -Dgrails.env=test-livedb -I scripts/integration-test.init.gradle integrationTest --rerun-tasks "$@"
+  TOOLKIT_TEST_S3_ENDPOINT="http://127.0.0.1:$s3_port" ./gradlew --no-daemon --no-parallel -Dgrails.env=test-livedb -I scripts/integration-test.init.gradle integrationTest --rerun-tasks "$@" >build/reports/toolkit-qualification.log 2>&1

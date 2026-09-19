@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased migration prerequisite enforcement
+
+- Fail file mutations and owned-storage cleanup with an actionable
+  `StorageSchemaPrerequisiteException` when mandatory storage migrations or
+  physical safeguards are absent/changed. Include both storage migrations before
+  adopting this source; integrate synchronous validation before tenant admission.
+- Qualify shipped Liquibase migrations on fresh and populated storage baselines,
+  including omission, trigger-disable/removal and callback/cleanup regressions.
+  Existing local 11.2.0 tag remains unchanged and unpublished.
+
 ## 11.2.0 candidate — unpublished
 
 - Preserve submission context through promise execution and callbacks, including

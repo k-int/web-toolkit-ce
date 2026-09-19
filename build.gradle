@@ -141,6 +141,11 @@ dependencies {
 	implementation("org.apache.groovy:groovy-xml")
 	testImplementation("org.apache.groovy:groovy-xml")
   integrationTestImplementation("org.apache.groovy:groovy-xml")
+  integrationTestImplementation('org.grails.plugins:database-migration:6.0.0-M1') {
+    exclude group: 'org.liquibase', module: 'liquibase-core'
+    exclude group: 'org.grails', module: 'grails-shell'
+  }
+  integrationTestImplementation('org.liquibase:liquibase-core')
   groovyCompiler("org.apache.groovy:groovy-xml")
   compileOnly("junit:junit")
 

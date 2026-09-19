@@ -70,3 +70,65 @@ Real servlet multipart streams need not support reset. LOB JDBC binding may read
 them more than once, so the multipart adapter reopens the same source on rewind
 and closes it at transaction completion. It does not buffer the full file or
 change upload/download interfaces. The regression uses a non-resettable source.
+
+## Mandatory schema preflight
+
+`storageSchemaValidator` is the Toolkit-owned `StorageSchemaValidator` bean.
+The lifecycle owner must call `validateSchema(resolvedPhysicalSchema)` after
+Liquibase commits and before tenant activation, and validate already-ready
+tenants during startup. Alternatively `validate(connection, schema)` checks the
+actual migration connection, including its uncommitted schema changes. A tenant
+identifier is not necessarily its physical schema name. Toolkit does not discover
+ready tenants, validate unprovisioned tenants at startup, or create/repair schemas.
+
+Validation checks bounded PostgreSQL catalogs for storage column types/nullability,
+S3 primary/foreign keys and cleanup indexes, and all three enabled row triggers
+with the correct functions and definitions. S3 function bodies must match the
+shipped migration. The LOB trigger must call PostgreSQL's `public.lo_manage`.
+Success is never cached: later trigger removal, disabling or schema recreation
+cannot inherit earlier success. Concurrent administrator DDL is outside this
+preflight guarantee; callers must not alter safeguards during tenant work.
+
+A missing prerequisite throws `StorageSchemaPrerequisiteException`, identifying
+the schema, missing requirements and both include paths. Upload and cleanup
+handlers propagate it. Apply missing includes through the tenant's normal
+migration lifecycle, or explicitly repair changed objects, then retry activation.
+Do not clear the changeset history or automatically rerun an applied changeset.
+The migrations require CREATE on the tenant schema, function/trigger privileges,
+and permission to install `lo` in `public` (or an administrator-preinstalled
+extension there). The populated baseline retains legacy S3 reads without claiming
+ownership/backfill; managed reset still rejects legacy unowned keys.
+
+Covered use sites are `FileUploadService.save` and its bounded `migrateAtMost`,
+`FileObject` ORM insert/update/delete (including cascading deletion and clones),
+and every independent S3 ownership/cleanup transaction, including purge and
+transaction-completion cleanup. The ORM checks use the actual Hibernate
+connection's current schema; S3 cleanup uses its explicitly selected schema.
+Direct caller-written HQL/JDBC bulk mutations bypass ORM callbacks: consumers
+must invoke `validate(connection, schema)` before such work. Toolkit's supported
+bulk migration and purge paths already do so. Do not use TRUNCATE/DROP as ordinary
+file deletion; neither fires the LOB row cleanup trigger.
+
+The disposable runner executes the shipped Grails Liquibase files against an
+explicit pre-owned-storage fixture matching the Toolkit tables in ILL's 2.8
+migration. It covers fresh/populated upgrade, omitted includes, absent/disabled
+triggers and changed functions; storage tests then use those migrated file tables.
+Other unrelated test domains still use Hibernate schema creation. This is Toolkit
+migration proof, not qualification of a whole module changelog, tenant admission,
+legacy S3 backfill, versioned buckets, concurrent administrator DDL or rollback to
+an older library. Whole-module fresh/upgrade and lifecycle retry remain consumer
+gates before publication/adoption.
+
+Run `JAVA_HOME=/path/to/jdk-21 scripts/test-integration.sh test verifyReleaseDependencies`.
+The runner retains JUnit, raw Gradle output in
+`build/reports/toolkit-qualification.log`, and a compact JSON result in
+`build/reports/toolkit-qualification.json` with source/input hashes, fixture image
+IDs, counts and cleanup status. Missing required suites, skips, test failures or
+failed disposable-container cleanup fail the command. This repository currently
+has no configured CI workflow; local proof does not imply CI qualification.
+
+Retained source qualification: 125 unit + 41 integration cases, zero failures,
+errors or skips; final dependency gate and disposable cleanup passed. See
+[qualification summary](storage-prerequisite-qualification.json). CI wiring needs
+an owner-approved runner with JDK 21, Podman, Python 3, Gradle repository access
+and access to the existing private MinIO fixture image; none is configured here.

@@ -72,6 +72,10 @@ class WebToolkitGrailsPlugin extends Plugin {
 
     grailsLinkGenerator(cacheUrls ? ProxyAwareCachingLinkGenerator : ProxyAwareLinkGenerator, config.getProperty(Settings.SERVER_URL) ?: null)
 
+    storageSchemaValidator(com.k_int.web.toolkit.files.StorageSchemaValidator) {
+      dataSource = ref('dataSource')
+    }
+
     usageValidator(DefaultUsageValidator)
 		
     telemetry(Telemetry)

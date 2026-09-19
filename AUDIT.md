@@ -77,3 +77,20 @@ Evidence:
 - Okapi 9.1.0, Access Control 2.1.0 and all six upgraded module consumers pass
   their repository gates using final external coordinates without composite
   substitution.
+
+## WTK-STORAGE-PREREQUISITES: Fail closed on missing tenant storage safeguards
+
+Effort-Days: TBC
+Effort-Status: unresolved
+
+Dependencies: WTK-TENANT-STORAGE, WTK-RELEASE-CLOSURE.
+Corrects: None.
+
+Adds a Toolkit-owned physical-schema validator, mutation/cleanup preflight and
+propagated prerequisite diagnostics. Real-Liquibase fresh/populated fixtures
+exercise omitted migrations, removed/disabled triggers and changed functions;
+ORM and physical LOB/S3 cases cover use-site behavior. The disposable runner
+fails on missing/skipped required coverage and retains compact evidence. Full
+consumer changelogs and lifecycle admission remain separate qualification gates;
+this work does not publish the existing local release tag. Engineering and
+product-owner assessments remain unknown.

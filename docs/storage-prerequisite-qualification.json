@@ -1,0 +1,89 @@
+{
+  "source_base": "2b867695a83fef67f617a143d9b4e3620a65e8d6",
+  "tested_working_tree_dirty": true,
+  "input_sha256": "5bf928268bf8d9fd28260f39cf070a3a34d8502d57adf2e7db58be43359dedc1",
+  "command": [
+    "scripts/test-integration.sh",
+    "test",
+    "verifyReleaseDependencies"
+  ],
+  "fixture_images": [
+    "126edd17cd7e5566fd560e85e256fcb8e58a6db96805a96a33127c535d09f2d8",
+    "f75dc5a53402f12c34c911a04495217de00384adb2798afff23543fb71333e89"
+  ],
+  "suites": [
+    {
+      "task": "integrationTest",
+      "name": "com.k_int.web.toolkit.custprops.CustomPropertiesSpec",
+      "tests": 15,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "integrationTest",
+      "name": "com.k_int.web.toolkit.files.StorageMigrationSpec",
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "integrationTest",
+      "name": "com.k_int.web.toolkit.ToolkitLifecycleSpec",
+      "tests": 15,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "test",
+      "name": "com.k_int.web.toolkit.ErrorControllerSpec",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "test",
+      "name": "com.k_int.web.toolkit.async.QueueingThreadPoolPromiseFactorySpec",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "test",
+      "name": "com.k_int.web.toolkit.SimpleLookupServiceSpec",
+      "tests": 115,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "test",
+      "name": "com.k_int.web.toolkit.files.MultipartLobStreamSpec",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "test",
+      "name": "com.k_int.web.toolkit.files.LOBFileCloneSpec",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "cleanup": "passed",
+  "passed": true,
+  "dependency_gate": "verifyReleaseDependencies passed",
+  "scope": "Toolkit real-Liquibase storage baseline and mutation/cleanup use sites; not full consumer changelog or tenant admission",
+  "remaining": [
+    "Full ILL consumer fresh/populated changelog qualification",
+    "grails-okapi lifecycle integration and publication gates",
+    "Owner-approved CI runner with JDK 21, Podman, Python 3 and existing private MinIO fixture access"
+  ]
+}
