@@ -7,6 +7,11 @@ does not authorize a new Apache publication.
 Use `k-int.git-conventions` and Git-derived versions. Canonical FSL source tags
 are protected, annotated `fsl/vX.Y.Z`; never create, move or push one without
 explicit user authorization naming this repository and exact tag.
+Create releases only through `tagFinal --with-changelog` with the configured
+`fsl/v` prefix and lowercase `changelog.md`. Never create or rename release tags
+manually. Keep one changelog; review generated entries and tagged content before
+publication. Published tags/artifacts remain immutable; corrections use a new
+plugin-generated release.
 
 Release dependencies must be final releases. Timestamped Maven snapshots remain
 development artifacts. Run `verifyReleaseDependencies` and inspect generated

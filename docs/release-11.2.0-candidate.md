@@ -1,7 +1,16 @@
-# Web Toolkit 11.2.0 release candidate
+# Web Toolkit 11.2.0 preparation history
 
-Status: qualified source preparation; unpublished. Proposed source tag
-`fsl/v11.2.0` requires explicit authorization before creation or push.
+Historical preparation evidence below. Toolkit 11.2.0 was subsequently published
+on 19 September 2026 from protected annotated tag `fsl/v11.2.0`, source
+`b34b55943e1ecafa129781fa712258826cdd7179`, after migration safeguards were added.
+Final qualification passed 125 unit + 41 integration cases without skips. All six
+published artifacts matched staging; fresh-cache runtime/fixture resolution passed.
+
+That release contained duplicate, stale changelogs. Preserve its published tag
+and artifacts. The corrective patch adopts plugin-owned FSL tag creation and
+one generated `changelog.md`; the old manual-tag procedure is superseded by
+[the current release workflow](../README.md#releasing). This file is an historical
+record, not the current changelog or permission to repeat its release procedure.
 
 The previous final is `v11.1.0`. Four functional commits on main were consumed
 through a development snapshot without completing the next Toolkit release.

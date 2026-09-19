@@ -37,8 +37,8 @@ For downstream-module migration guidance (including `SimpleLookupService` query 
 
 Use JDK 21 and the maintained `k-int.git-conventions` plugin. Versions come
 from Git; do not assign a release version in `gradle.properties`. The plugin
-recognises `fsl/v` as well as historical `v` tags. Its automatic tag tasks still
-create `v` tags; do not use those tasks for an FSL release.
+creates and recognises `fsl/v` tags through `releaseTagPrefix`, while recognising
+historical `v` tags. The single changelog is lowercase `changelog.md`.
 
 Before publication, review the full source interval, update `AUDIT.md` and the
 changelog, and run the unit, database/storage and dependency checks below.
@@ -47,8 +47,12 @@ POM/Gradle metadata. It rejects moving and timestamped snapshots and is required
 by `check` and Maven repository publication. Its own development publication
 coordinate is excluded when validating test-fixture self-references.
 
-Create and publish a protected annotated `fsl/vX.Y.Z` tag only after explicit
-authorization for that exact repository/tag. Publish from that clean tagged
+After explicit authorization for the exact repository/tag, run
+`./gradlew tagFinal --with-changelog`. This generates and commits `changelog.md`,
+then creates the protected-namespace annotated `fsl/vX.Y.Z` tag on that commit.
+Review the generated history and run the required checks; push the generated
+commit before its tag. Never manually create or rename release tags.
+Publish from that clean tagged
 source through the existing `publishAllPublicationsToKIntRepository` task with
 the established Maven credentials. Verify the externally resolved JAR, fixtures,
 POM and Gradle metadata against the tagged source. Do not overwrite old versions.

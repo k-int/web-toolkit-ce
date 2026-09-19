@@ -48,6 +48,13 @@ zero skips; the actual grails-okapi 9.2.0 dependency graph is rejected for its
 timestamped Toolkit snapshot. This records source preparation, not publication.
 Engineering and product-owner assessments remain unknown.
 
+Corrective patch: adopts plugin-generated FSL tags and the established lowercase
+changelog, removes the contradictory duplicate and records 11.2.0 as published
+history. Release checks reject duplicate changelogs and final versions without a
+generated entry. Shared prefix implementation belongs to GC-RELEASE-TAGS in
+git-conventions; this item covers Toolkit adoption/qualification only. Published
+11.2.0 remains unchanged.
+
 ## Issue TBC: Grails 7.2 shared-toolkit alignment
 
 Headline: **18.0 developer-days plus product-owner and release-owner effort

@@ -1,0 +1,22 @@
+// Keep the consumer's established path and reject the duplicate that caused 11.2.0
+// to carry contradictory release documentation.
+tasks.register('verifyReleaseChangelog') {
+    group = 'verification'
+    doLast {
+        def logs = rootDir.listFiles().findAll { it.name.equalsIgnoreCase('changelog.md') }
+        if (logs.size() != 1 || logs[0].name != 'changelog.md') {
+            throw new GradleException('Keep exactly one changelog: lowercase changelog.md, maintained by tagFinal --with-changelog')
+        }
+        String release = project.version.toString()
+        if (release ==~ /\d+\.\d+\.\d+/) {
+            String heading = "## Version ${gitConventions.releaseTagPrefix.get()}${release}"
+            if (!file('changelog.md').readLines().contains(heading)) {
+                throw new GradleException("Final release ${release} is missing its generated changelog entry; use tagFinal --with-changelog")
+            }
+        }
+    }
+}
+tasks.named('check') { dependsOn 'verifyReleaseChangelog' }
+tasks.withType(org.gradle.api.publish.maven.tasks.PublishToMavenRepository).configureEach {
+    dependsOn 'verifyReleaseChangelog'
+}

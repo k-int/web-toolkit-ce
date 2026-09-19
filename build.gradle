@@ -32,7 +32,8 @@ repositories {
 }
 
 gitConventions {
-	additionalVersionTagPrefixes.add('fsl/v')
+	releaseTagPrefix.set('fsl/v')
+	changelog.location.set(file('changelog.md'))
 }
 
 version = gitConventions.version().get()
@@ -338,6 +339,8 @@ compileGsonViews {
 }
 
 apply from: 'gradle/verify-release-dependencies.gradle'
+apply from: 'gradle/verify-release-changelog.gradle'
+tasks.named('verifyReleaseDependencies') { dependsOn 'verifyReleaseChangelog' }
 
 // Writes plugin data
 /*
