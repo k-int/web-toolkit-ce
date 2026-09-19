@@ -5,6 +5,7 @@
 ### Fixes
 
 - \[Release\]
+  - retain build-only releases in generated history
   - use plugin-owned FSL tags and one changelog
 
 ## Version fsl/v11.2.0
@@ -27,6 +28,9 @@
   - close Grails 7.2 migration checklist
   - record final shared release evidence
 
+- \[Release\]
+  - qualify final Toolkit dependency inputs
+
 ## Version v11.1.0
 
 ### Fixes
@@ -39,12 +43,31 @@
 - \[General\]
   - align web toolkit with Grails 7.2
 
+## Version v11.0.0
+
+### General
+
+- \[General\]
+  - align Grails 7 security baseline
+
 ## Version v11.0.0-rc.4
 
 ### Fixes
 
 - \[Databinding\]
   - qualify tag lookup for Groovy 4
+
+### General
+
+- \[Test fixtures\]
+  - publish reusable HTTP integration fixture
+
+## Version v11.0.0-rc.3
+
+### General
+
+- \[General\]
+  - target JDK 21
 
 ## Version v11.0.0-rc.1
 
@@ -93,12 +116,34 @@
 - \[General\]
   - S3 secret environment variable (#16)
 
+## Version v10.0.1
+
+### General
+
+- \[General\]
+  - readme updated
+  - readme updated
+  - readme updated
+  - readme updated
+  - readme updated
+  - readme updated
+  - readme updated
+  - readme updated
+  - update README
+  - update README
+  - Bump postgres, spring-security-core, spring-security-web and awk-java-sdk-s3
+
 ## Version v10.0.0
 
 ### Breaking changes
 
 - \[General\]
   - Grails 6.2 upgrade - reposting using single quotes instead of escaping the bang
+
+### General
+
+- \[General\]
+  - formatting
 
 ## Version v9.0.3
 
@@ -107,11 +152,19 @@
 - \[General\]
   - contains for looking up contexts
 
+## Version v9.0.2
+
+### General
+
+- \[General\]
+  - update changelog, more updates to readme
+
 ## Version v9.0.1
 
 ### General
 
 - \[General\]
+  - update plugin class
   - Add validation bean to default context, also reference k-int repo for missing jar dependencies
 
 ## Version v9.0.0
@@ -173,5 +226,11 @@
 
 ### General
 
+- \[Build\]
+  - Update the Gradle plugin
+  - Use project name
+
 - \[General\]
+  - Tweaks
+  - Logback and sourceSets
   - Update the maven integration.
