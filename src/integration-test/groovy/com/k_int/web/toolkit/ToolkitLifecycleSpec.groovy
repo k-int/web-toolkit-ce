@@ -42,7 +42,7 @@ class ToolkitLifecycleSpec extends HttpSpec {
 		
     [
       [ 'fileStorage', 'storageEngine', 'String', 'FileStorageEngines', 'LOB' ],
-      [ 'fileStorage', 'S3Endpoint',    'String', null,                 'http://localhost:9009' ],
+      [ 'fileStorage', 'S3Endpoint',    'String', null,                 System.getenv('TOOLKIT_TEST_S3_ENDPOINT') ?: 'http://localhost:9009' ],
       [ 'fileStorage', 'S3AccessKey',   'String', null,                 'DIKU_AGG_ACCESS_KEY' ],
       [ 'fileStorage', 'S3SecretKey',   'String', null,                 'DIKU_AGG_SECRET_KEY' ],
       [ 'fileStorage', 'S3BucketName',  'String', null,                 'diku-shared' ],

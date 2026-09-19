@@ -1,0 +1,10 @@
+allprojects {
+  tasks.withType(Test).configureEach {
+    systemProperty 'grails.env', 'test-livedb'
+    systemProperty 'dataSource.dbCreate', 'create'
+    systemProperty 'dataSource.url', System.getenv('TOOLKIT_TEST_JDBC_URL')
+    systemProperty 'dataSources.test.dbCreate', 'create'
+    systemProperty 'dataSources.test.url', System.getenv('TOOLKIT_TEST_JDBC_URL') + '?currentSchema=test'
+    systemProperty 'grails.gorm.multiTenancy.tenantResolverClass', 'org.grails.datastore.mapping.multitenancy.resolvers.FixedTenantResolver'
+  }
+}

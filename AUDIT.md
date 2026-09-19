@@ -6,6 +6,48 @@ and implementation efficiency do not reduce it. Any monetary derivation is an
 indicative open-release acceleration value at K-Int's reference economic rate,
 not a retrospective charge or fixed invoice.
 
+## WTK-ASYNC-CONTEXT: Preserve submission context through promise execution
+
+Effort-Days: TBC
+Effort-Status: unresolved
+
+Dependencies: None.
+Corrects: None.
+
+Task decorators capture context at submission and wrap promise execution,
+callbacks and rejection cleanup. Unit regressions cover propagation, disposal
+and shutdown. Engineering and product-owner assessments remain unknown.
+
+## WTK-TENANT-STORAGE: Retain tenant file ownership through deletion and rollback
+
+Effort-Days: TBC
+Effort-Status: unresolved
+
+Dependencies: None.
+Corrects: None.
+
+Adds owned S3 records, bounded cleanup, synchronous purge participation and
+multipart LOB streaming/rebinding. Tenant migrations remain mandatory consumer
+prerequisites. Toolkit unit and local PostgreSQL/MinIO integration tests pass;
+consumer migration and lifecycle qualification remain distinct release gates.
+Engineering and product-owner assessments remain unknown.
+
+## WTK-RELEASE-CLOSURE: Qualify final dependency and publication inputs
+
+Effort-Days: TBC
+Effort-Status: unresolved
+
+Dependencies: WTK-ASYNC-CONTEXT, WTK-TENANT-STORAGE.
+Corrects: None.
+
+Uses maintained Git-derived versioning with FSL tag recognition, rejects
+development dependencies in declared/resolved graphs and publication metadata,
+and provides disposable database/storage qualification instead of silently
+skipped integration tests. Evidence: 125 unit and 20 integration cases pass with
+zero skips; the actual grails-okapi 9.2.0 dependency graph is rejected for its
+timestamped Toolkit snapshot. This records source preparation, not publication.
+Engineering and product-owner assessments remain unknown.
+
 ## Issue TBC: Grails 7.2 shared-toolkit alignment
 
 Headline: **18.0 developer-days plus product-owner and release-owner effort

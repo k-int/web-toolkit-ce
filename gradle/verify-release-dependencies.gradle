@@ -1,0 +1,59 @@
+// Development artifacts must not escape inside a final library publication.
+def developmentVersion = { String value ->
+  value != null && (value.toUpperCase().contains('SNAPSHOT') ||
+    value ==~ /.*-\d{8}\.\d{6}-\d+/ || value.contains('+') ||
+    value.startsWith('latest.') || value.startsWith('[') || value.startsWith('('))
+}
+
+tasks.register('verifyReleaseDependencies') {
+  group = 'verification'
+  description = 'Reject development dependency coordinates in declared and resolved publication inputs.'
+  dependsOn 'generatePomFileForMavenPublication', 'generateMetadataFileForMavenPublication'
+  doLast {
+    Set<String> invalid = new TreeSet<>()
+    def inspect = { String group, String name, String version ->
+      if (group == project.group.toString() && name == project.name && version == project.version.toString()) return
+      if (developmentVersion(version)) invalid.add("${group}:${name}:${version}")
+    }
+    configurations.findAll { it.canBeResolved && it.name in [
+      'compileClasspath', 'runtimeClasspath', 'testFixturesCompileClasspath',
+      'testFixturesRuntimeClasspath'
+    ] }.each { configuration ->
+      configuration.allDependencies.each { inspect(it.group, it.name, it.version) }
+      configuration.incoming.resolutionResult.allDependencies.each { dependency ->
+        if (dependency instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult) {
+          throw new GradleException("Unresolved release dependency: ${dependency.requested.displayName}")
+        }
+        if (dependency.requested instanceof org.gradle.api.artifacts.component.ModuleComponentSelector) {
+          inspect(dependency.requested.group, dependency.requested.module, dependency.requested.version)
+        }
+      }
+      configuration.incoming.resolutionResult.allComponents.each { component ->
+        if (component.id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier) {
+          inspect(component.id.group, component.id.module, component.id.version)
+        }
+      }
+    }
+    def pom = new XmlSlurper(false, false).parse(file('build/publications/maven/pom-default.xml'))
+    pom.depthFirst().findAll { it.name() == 'dependency' }.each {
+      inspect(it.groupId.text(), it.artifactId.text(), it.version.text())
+    }
+    def metadata = new groovy.json.JsonSlurper().parse(file('build/publications/maven/module.json'))
+    metadata.variants.each { variant ->
+      ((variant.dependencies ?: []) + (variant.dependencyConstraints ?: [])).each { dependency ->
+        // Test fixtures legitimately point back to this publication's own version.
+        if (!(dependency.group == project.group.toString() && dependency.module == project.name)) {
+          dependency.version?.each { key, value ->
+            if (value instanceof String) inspect(dependency.group, dependency.module, value)
+          }
+        }
+      }
+    }
+    if (!invalid.empty) throw new GradleException('Development dependencies cannot be released:\n' + invalid.join('\n'))
+  }
+}
+
+tasks.named('check') { dependsOn 'verifyReleaseDependencies' }
+tasks.withType(org.gradle.api.publish.maven.tasks.PublishToMavenRepository).configureEach {
+  dependsOn 'verifyReleaseDependencies'
+}

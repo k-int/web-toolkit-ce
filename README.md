@@ -1,10 +1,12 @@
-# Web Toolkit Community Edition
+# Web Toolkit
 
 Toolkit and value-add module for Grails 7. Requires JDK 21.
 
 Copyright (C) 2015-2024 Knowledge Integration
 
-This software is distributed under the terms of the Apache License, Version 2.0. See [License](#license) for more information. The license must be read in conjunction with [GUIDANCE.md](GUIDANCE.md)
+The canonical distribution uses the Functional Source License, Version 1.1,
+ALv2 Future License. See [LICENSE.md](LICENSE.md). Historical community
+provenance is retained below; a new Apache publication is a separate operation.
 
 
 # History
@@ -32,30 +34,38 @@ For downstream-module migration guidance (including `SimpleLookupService` query 
 - [grails7-upgrade.md](grails7-upgrade.md)
 
 ## Releasing
-```
-./gradlew cgTagFinal to tag a final "release"
-```
 
-or
+Use JDK 21 and the maintained `k-int.git-conventions` plugin. Versions come
+from Git; do not assign a release version in `gradle.properties`. The plugin
+recognises `fsl/v` as well as historical `v` tags. Its automatic tag tasks still
+create `v` tags; do not use those tasks for an FSL release.
 
-```
-./gradlew cgTagPre to try a pre-release...
-```
+Before publication, review the full source interval, update `AUDIT.md` and the
+changelog, and run the unit, database/storage and dependency checks below.
+`verifyReleaseDependencies` checks declared/resolved dependencies and generated
+POM/Gradle metadata. It rejects moving and timestamped snapshots and is required
+by `check` and Maven repository publication. Its own development publication
+coordinate is excluded when validating test-fixture self-references.
 
-Then to publish that:
-```
-    Add kintMavenUser and kintMavenPassword to ~/.gradle/gradle.properties
-
-    ./gradlew publishAllPublicationsToKIntRepository
-```
+Create and publish a protected annotated `fsl/vX.Y.Z` tag only after explicit
+authorization for that exact repository/tag. Publish from that clean tagged
+source through the existing `publishAllPublicationsToKIntRepository` task with
+the established Maven credentials. Verify the externally resolved JAR, fixtures,
+POM and Gradle metadata against the tagged source. Do not overwrite old versions.
 
 ## Testing
 
-A root level docker-compose file is provided that provisions the components needed for the integration tests to run. Test with
+The default `integrationTest` task skips the database tests. Run:
 
-    docker-compose down -v   # To clear any previous data
-    docker-compose up
-    ./gradlew clean build
+```sh
+JAVA_HOME=/path/to/jdk-21 scripts/test-integration.sh test verifyReleaseDependencies
+```
+
+This uses disposable loopback PostgreSQL 17 and the established K-Int MinIO
+fixture via Podman, enables `test-livedb`, and removes both containers and their
+volumes on exit. It uses the module tenant-schema layout needed by independent
+storage ownership transactions. The fixed credentials are local test fixtures.
+The older Compose file is retained as historical development configuration.
 
 ## MINIO/S3 File Storage
 

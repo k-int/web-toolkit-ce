@@ -3,7 +3,11 @@ buildscript {
 	    maven { url = "https://maven.k-int.com/content/repositories/public" }
 		mavenCentral()
 			maven { url = "https://plugins.gradle.org/m2/" }
-			maven { url = "https://repo.grails.org/grails/core" }
+			maven {
+				url = "https://repo.grails.org/grails/core"
+				mavenContent { releasesOnly() }
+				metadataSources { mavenPom(); artifact() }
+			}
 			maven { url = "https://maven.k-int.com/content/repositories/releases" }
 	}
 	dependencies {
@@ -16,6 +20,7 @@ buildscript {
 }
 
 plugins {
+	id 'k-int.git-conventions' version "$gitConventionsVersion"
 	id 'antlr'
 	id 'org.asciidoctor.jvm.convert' version '3.3.2'
 }
@@ -26,7 +31,11 @@ repositories {
   maven { url = "https://repo.grails.org/grails/core/" }
 }
 
-//version "0.1"
+gitConventions {
+	additionalVersionTagPrefixes.add('fsl/v')
+}
+
+version = gitConventions.version().get()
 group = 'com.k_int.grails'
 
 apply plugin: 'eclipse'
@@ -37,7 +46,6 @@ apply plugin: 'java-test-fixtures'
 
 apply plugin: 'org.apache.grails.gradle.grails-gson'
 apply plugin: 'com.k_int.gradle.plugin'
-apply plugin: 'com.k_int.gradle.conventional-git'
 
 configurations {
 	developmentOnly
@@ -302,6 +310,13 @@ publishing {
 			pom {
 				name = 'Web Toolkit'
 				description = 'Provides general tooling for web application frontend development'
+				licenses {
+					license {
+						name = 'Functional Source License, Version 1.1, Apache 2.0 Future License'
+						url = 'https://github.com/k-int/web-toolkit-ce/blob/main/LICENSE.md'
+						distribution = 'repo'
+					}
+				}
 				developers {
 					developer {
 						name = 'Steve Osguthorpe'
@@ -316,6 +331,8 @@ publishing {
 compileGsonViews {
 	packageName = "web-toolkit"
 }
+
+apply from: 'gradle/verify-release-dependencies.gradle'
 
 // Writes plugin data
 /*
