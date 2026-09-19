@@ -1,208 +1,177 @@
 # Changelog
 
-## Version 11.1.0
-
-### Additions
-* [General]
-	* align web toolkit with Grails 7.2
+## Version fsl/v11.2.1
 
 ### Fixes
-* [General]
-	* expose the toolkit query backend setting
 
-## Version 11.0.0
+- \[Release\]
+  - use plugin-owned FSL tags and one changelog
 
-### Changes
-* [Build]
-	* align Grails 7 security baseline
-* [Chore]
-	* Changelog - Generate the changelog
-
-## Version 11.0.0-rc.4
-
-### Changes
-* [Build]
-	* test-fixtures - publish reusable HTTP integration fixture
+## Version fsl/v11.2.0
 
 ### Fixes
-* [Databinding]
-	* qualify tag lookup for Groovy 4
 
-## Version 11.0.0-rc.3
+- \[General\]
+  - support multipart LOB rebinding without buffering
 
-### Changes
-* [Build]
-	* target JDK 21
+- \[Storage\]
+  - reject missing tenant migration safeguards
 
-## Version 11.0.0-rc.1
+### General
 
-### Additions
-* [General]
-	* upgrade to Grails 7
+- \[General\]
+  - run migration qualification without publishing credentials
+  - finish owned S3 cleanup before tenant purge
+  - retain tenant file ownership through deletion and rollback
+  - retain submission context through promise execution
+  - close Grails 7.2 migration checklist
+  - record final shared release evidence
 
-### Changes
-* [General]
-	* **BREAKING** -  Drops Grails 6 support and requires JDK 21.
-
-## Version 10.5.0
-
-### Additions
-* [General]
-	* Adding the telemetry data and publisher
-
-### Changes
-* [Chore]
-	* Changelog - Generate the changelog
-
-## Version 10.4.0
-
-### Changes
-* [Chore]
-	* Changelog - Generate the changelog
-
-## Version 10.3.0
-
-### Changes
-* [Chore]
-	* Changelog - Generate the changelog
-
-## Version 10.2.0
-
-### Changes
-* [Chore]
-	* Changelog - Generate the changelog
-
-## Version 10.1.0
-
-### Additions
-* [General]
-	* S3 secret environment variable (#16)
-
-### Changes
-* [Chore]
-	* Changelog - Generate the changelog
-
-## Version 10.0.1
-
-### Changes
-* [Chore]
-	* readme updated
-	* update README
-	* Bump postgres, spring-security-core, spring-security-web and awk-java-sdk-s3
-
-## Version 10.0.0
-
-### Additions
-* [General]
-	* **BREAKING** -  Grails 6.2 upgrade - reposting using single quotes instead of escaping the bang
-
-### Changes
-* [General]
-	* **BREAKING** -  Grails 6.2 upgrade
-* [Chore]
-	* formatting
-
-## Version 9.0.3
+## Version v11.1.0
 
 ### Fixes
-* [General]
-	* contains for looking up contexts
 
-## Version 9.0.2
+- \[General\]
+  - expose the toolkit query backend setting
 
-### Changes
-* [Chore]
-	* update changelog, more updates to readme
+### General
 
-## Version 9.0.1
+- \[General\]
+  - align web toolkit with Grails 7.2
 
-### Changes
-* [Chore]
-	* update plugin class
-* [Feature]
-	* Add validation bean to default context, also reference k-int repo for missing jar dependencies
-
-## Version 9.0.0
-
-### Additions
-* [General]
-	* **BREAKING** -  Grails 6
-
-### Changes
-* [Chore]
-	* Changelog - Generate the changelog
-
-## Version 8.1.4
-
-### Changes
-* [Chore]
-	* Changelog - Generate the changelog
+## Version v11.0.0-rc.4
 
 ### Fixes
-* [General]
-	* Move none greedy whitespace captures to parser from lexer
 
-## Version 8.1.3
+- \[Databinding\]
+  - qualify tag lookup for Groovy 4
 
-### Changes
-* [Chore]
-	* Changelog - Generate the changelog
+## Version v11.0.0-rc.1
 
-### Fixes
-* [General]
-	* Trim determined subject in ambiguous filter
+### Breaking changes
 
-## Version 8.1.2
+- \[General\]
+  - Drops Grails 6 support and requires JDK 21.
 
-### Changes
-* [Chore]
-	* Changelog - Generate the changelog
+### General
 
-### Fixes
-* [General]
-	* Allow whitespace around subjects/values
+- \[General\]
+  - upgrade to Grails 7
 
-## Version 8.1.1
+## Version v10.5.0
 
-### Changes
-* [Chore]
-	* Changelog - Generate the changelog
+### General
+
+- \[General\]
+  - Adding the telemetry data and publisher
+
+## Version v10.4.0
 
 ### Fixes
-* [General]
-	* Special case for isNotSet
-	* No session on results size.
 
-## Version 8.1.0
+- \[General\]
+  - Wrap error controller logic in try/catch to prevent infinite looping (#22)
+
+## Version v10.3.0
+
+### General
+
+- \[General\]
+  - Custprop Types are handled by internal exception logic for better response messaging (#19)
+
+## Version v10.2.0
+
+### General
+
+- \[General\]
+  - default 500 handling (#17)
+
+## Version v10.1.0
+
+### General
+
+- \[General\]
+  - S3 secret environment variable (#16)
+
+## Version v10.0.0
+
+### Breaking changes
+
+- \[General\]
+  - Grails 6.2 upgrade - reposting using single quotes instead of escaping the bang
+
+## Version v9.0.3
 
 ### Fixes
-* [General]
-	* Pass association stack as root entry to filter walker
 
-## Version 8.1.0-rc.4
+- \[General\]
+  - contains for looking up contexts
 
-### Changes
-* [Chore]
-	* Changelog - Generate the changelog
+## Version v9.0.1
 
-### Fixes
-* [General]
-	* Reinstate static subquery resolution
+### General
 
-## Version 8.1.0-rc.1
+- \[General\]
+  - Add validation bean to default context, also reference k-int repo for missing jar dependencies
 
-### Additions
-* [General]
-	* Update the maven integration.
+## Version v9.0.0
 
-### Changes
-* [Chore]
-	* Changelog - Generate the changelog
-	* Build - Update the Gradle plugin
-	* Tweaks
-	* Build - Use project name
-	* Logback and sourceSets
+### Breaking changes
+
+- \[General\]
+  - Grails 6
+
+## Version v8.1.4
 
 ### Fixes
-* [General]
-	* `@Before` annotation in super not run anymore
+
+- \[General\]
+  - Move none greedy whitespace captures to parser from lexer
+
+## Version v8.1.3
+
+### Fixes
+
+- \[General\]
+  - Trim determined subject in ambiguous filter
+
+## Version v8.1.2
+
+### Fixes
+
+- \[General\]
+  - Allow whitespace around subjects/values
+
+## Version v8.1.1
+
+### Fixes
+
+- \[General\]
+  - Special case for isNotSet
+  - No session on results size.
+
+## Version v8.1.0
+
+### Fixes
+
+- \[General\]
+  - Pass association stack as root entry to filter walker
+
+## Version v8.1.0-rc.4
+
+### Fixes
+
+- \[General\]
+  - Reinstate static subquery resolution
+
+## Version v8.1.0-rc.1
+
+### Fixes
+
+- \[General\]
+  - \`@Before\` annotation in super not run anymore
+
+### General
+
+- \[General\]
+  - Update the maven integration.
