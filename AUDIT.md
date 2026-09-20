@@ -105,3 +105,18 @@ product-owner assessments remain unknown.
 The same unattended command is wired into GitHub main/PR qualification with
 read-only permissions and anonymous fixture pulls. Remote success is a separate
 release gate; the workflow never tags or publishes artifacts to Maven.
+
+## WTK-STORAGE-VALIDATION-MODE: Deployment warnings and strict qualification
+
+Effort-Days: TBC
+Effort-Status: unresolved
+
+Dependencies: WTK-STORAGE-PREREQUISITES.
+Corrects: WTK-STORAGE-PREREQUISITES.
+
+Defaults the shared physical-schema preflight to an actionable warning; explicit
+strict mode retains exceptions for lifecycle and file-operation tests. Adds real
+migration coverage of both modes and opts the unattended runner into strict mode.
+Operational SQL/migration errors, tenant fencing and destructive ownership checks
+remain failures. Source correction only: published 11.2.1 remains unchanged;
+release and downstream dependency refresh precede the next final module cuts.

@@ -24,7 +24,7 @@ for task in ['integrationTest'] + (['test'] if require_unit else []):
             problems.append(f"{row['name']}: absent, failed or skipped cases")
 required = {
     'com.k_int.web.toolkit.ToolkitLifecycleSpec': 15,
-    'com.k_int.web.toolkit.files.StorageMigrationSpec': 11,
+    'com.k_int.web.toolkit.files.StorageMigrationSpec': 18,
     'com.k_int.web.toolkit.custprops.CustomPropertiesSpec': 15,
 }
 for name, minimum in required.items():

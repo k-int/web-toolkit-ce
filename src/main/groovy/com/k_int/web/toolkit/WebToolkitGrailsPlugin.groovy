@@ -74,6 +74,9 @@ class WebToolkitGrailsPlugin extends Plugin {
 
     storageSchemaValidator(com.k_int.web.toolkit.files.StorageSchemaValidator) {
       dataSource = ref('dataSource')
+      mode = System.getProperty('webtoolkit.storage.schemaValidation') ?:
+        System.getenv('WTK_STORAGE_SCHEMA_VALIDATION') ?:
+        config.getProperty('webtoolkit.storage.schemaValidation', String, 'warn')
     }
 
     usageValidator(DefaultUsageValidator)

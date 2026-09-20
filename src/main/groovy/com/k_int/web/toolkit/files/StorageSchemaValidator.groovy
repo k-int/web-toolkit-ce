@@ -1,14 +1,24 @@
 package com.k_int.web.toolkit.files
 
 import groovy.sql.Sql
+import groovy.util.logging.Slf4j
 import java.sql.Connection
 import javax.sql.DataSource
 import org.hibernate.jdbc.Work
 import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy
 
 /** Read-only, uncached validation. Lifecycle owners select ready schemas; this bean never discovers or repairs tenants. */
+@Slf4j
 class StorageSchemaValidator {
     DataSource dataSource
+    String mode = 'warn'
+
+    void setMode(String value) {
+        if (!(value in ['warn', 'strict'])) {
+            throw new IllegalArgumentException('webtoolkit.storage.schemaValidation must be warn or strict')
+        }
+        this.@mode = value
+    }
 
     void validateSchema(Serializable tenant) {
         String schema = tenant?.toString()
@@ -124,7 +134,11 @@ class StorageSchemaValidator {
             }
             if (!valid) missing.add('enabled trigger/function ' + name)
         }
-        if (missing) throw new StorageSchemaPrerequisiteException(schema, missing)
+        if (missing) {
+            def failure = new StorageSchemaPrerequisiteException(schema, missing)
+            if (mode == 'strict') throw failure
+            log.warn('{} Continuing because storage schema validation mode is warn; storage safeguards are not verified. Set WTK_STORAGE_SCHEMA_VALIDATION=strict to reject this condition.', failure.message)
+        }
     }
 
     private static String normalize(String sql) { sql.replaceAll(/\s+/, ' ').trim() }

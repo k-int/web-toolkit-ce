@@ -44,5 +44,6 @@ for n in {1..30}; do curl -fsS "http://127.0.0.1:$s3_port/minio/health/ready" >/
 podman exec "$s3" mc alias set proof http://127.0.0.1:9000 DIKU_AGG_ACCESS_KEY DIKU_AGG_SECRET_KEY >/dev/null
 podman exec "$s3" mc mb proof/diku-shared >/dev/null
 env -i HOME="$HOME" USER="$(id -un)" LANG=C.UTF-8 PATH="$JAVA_HOME/bin:$PATH" JAVA_HOME="$JAVA_HOME" \
+  WTK_STORAGE_SCHEMA_VALIDATION=strict \
   TOOLKIT_TEST_JDBC_URL="jdbc:postgresql://127.0.0.1:$pg_port/test" \
   TOOLKIT_TEST_S3_ENDPOINT="http://127.0.0.1:$s3_port" ./gradlew --no-daemon --no-parallel -Dgrails.env=test-livedb -I scripts/integration-test.init.gradle integrationTest --rerun-tasks "$@" >build/reports/toolkit-qualification.log 2>&1

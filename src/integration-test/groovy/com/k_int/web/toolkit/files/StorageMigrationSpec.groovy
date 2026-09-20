@@ -16,6 +16,50 @@ class StorageMigrationSpec extends Specification {
     Sql sql
     String schema
 
+    def 'qualification application explicitly enables strict validation'() {
+        expect:
+        storageSchemaValidator.mode == 'strict'
+    }
+
+    @Unroll
+    def '#selectedMode validation reports #changelog without silently accepting missing safeguards'() {
+        given:
+        StorageMigrationFixture.migrate(schema, changelog)
+        def validator = new StorageSchemaValidator(dataSource: storageSchemaValidator.dataSource)
+        if (selectedMode != 'default') validator.mode = selectedMode
+        def logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(StorageSchemaValidator)
+        def warnings = new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>()
+        warnings.start()
+        logger.addAppender(warnings)
+        StorageSchemaPrerequisiteException failure = null
+
+        when:
+        try { validator.validateSchema(schema) }
+        catch (StorageSchemaPrerequisiteException rejected) { failure = rejected }
+
+        then:
+        if (selectedMode == 'strict') {
+            assert failure != null
+            assert failure.schema == schema
+            assert warnings.list.empty
+        } else {
+            assert failure == null
+            assert warnings.list.size() == 1
+            assert warnings.list.first().level == ch.qos.logback.classic.Level.WARN
+            assert warnings.list.first().formattedMessage.contains(schema)
+            assert warnings.list.first().formattedMessage.contains('WTK_STORAGE_SCHEMA_VALIDATION=strict')
+            assert warnings.list.first().formattedMessage.contains('wtk/owned-file-lob.feat.groovy')
+        }
+
+        cleanup:
+        logger.detachAppender(warnings)
+        warnings.stop()
+
+        where:
+        [selectedMode, changelog] << [['default', 'warn', 'strict'],
+            ['storage/without-lob.groovy', 'storage/without-s3.groovy']].combinations()
+    }
+
     def setup() {
         schema = 'storage_' + UUID.randomUUID().toString().replace('-', '')
         sql = Sql.newInstance(System.getenv('TOOLKIT_TEST_JDBC_URL'), 'test', 'test', 'org.postgresql.Driver')

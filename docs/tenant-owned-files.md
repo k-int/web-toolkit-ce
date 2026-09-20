@@ -71,7 +71,7 @@ them more than once, so the multipart adapter reopens the same source on rewind
 and closes it at transaction completion. It does not buffer the full file or
 change upload/download interfaces. The regression uses a non-resettable source.
 
-## Mandatory schema preflight
+## Configurable schema preflight
 
 `storageSchemaValidator` is the Toolkit-owned `StorageSchemaValidator` bean.
 The lifecycle owner must call `validateSchema(resolvedPhysicalSchema)` after
@@ -89,9 +89,22 @@ Success is never cached: later trigger removal, disabling or schema recreation
 cannot inherit earlier success. Concurrent administrator DDL is outside this
 preflight guarantee; callers must not alter safeguards during tenant work.
 
-A missing prerequisite throws `StorageSchemaPrerequisiteException`, identifying
-the schema, missing requirements and both include paths. Upload and cleanup
-handlers propagate it. Apply missing includes through the tenant's normal
+Deployment defaults to `warn`: missing physical prerequisites emit a WARN with
+the schema, missing requirements and both include paths, then return normally.
+Set `WTK_STORAGE_SCHEMA_VALIDATION=strict` in smoke/test deployments to throw
+`StorageSchemaPrerequisiteException` instead. The same mode governs lifecycle,
+ORM, upload, migration and cleanup preflight through this shared bean.
+
+Configuration precedence is JVM `-Dwebtoolkit.storage.schemaValidation=warn|strict`,
+then `WTK_STORAGE_SCHEMA_VALIDATION=warn|strict`, then Grails configuration
+`webtoolkit.storage.schemaValidation`, then `warn`. Unknown values fail bean
+initialization, so a typo cannot silently weaken strict qualification. The
+integration runner explicitly selects strict; its real migration tests also
+assert default/explicit warning diagnostics and strict rejection of identical
+missing objects. Warning mode does not install migrations or provide their
+safeguards. Actual Liquibase/SQL errors, invalid tenant identifiers, ownership,
+transaction and tenant-fencing failures still propagate; this mode only changes
+the additional physical-schema preflight diagnostic. Apply missing includes through the tenant's normal
 migration lifecycle, or explicitly repair changed objects, then retry activation.
 Do not clear the changeset history or automatically rerun an applied changeset.
 The migrations require CREATE on the tenant schema, function/trigger privileges,
@@ -135,3 +148,10 @@ errors or skips; final dependency gate and disposable cleanup passed. See
 MinIO fixture permits anonymous pulls (verified using `skopeo --no-creds`);
 CI does not receive registry credentials. Workflow source alone is not a passing
 remote run; retain the actual run URL/result before release qualification.
+
+Validation-mode source qualification: 131 unit + 48 integration cases, zero
+failures/errors/skips; final dependency gate and fixture cleanup passed. See
+[mode qualification](storage-validation-mode-qualification.json). This source
+change is unreleased. Before final module cuts, publish a new final Toolkit,
+refresh downstream shared libraries and module pins, then qualify real consumer
+migrations/lifecycle in warning and strict modes. Do not overwrite 11.2.1.
