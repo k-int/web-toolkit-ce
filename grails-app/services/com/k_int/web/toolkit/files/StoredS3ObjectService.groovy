@@ -4,6 +4,7 @@ import groovy.sql.Sql
 import javax.sql.DataSource
 import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy
 import grails.gorm.multitenancy.Tenants
+import org.grails.orm.hibernate.HibernateDatastore
 import io.minio.*
 import io.minio.errors.ErrorResponseException
 import io.minio.messages.VersioningConfiguration
@@ -13,6 +14,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 /** Existing S3 storage, with durable ownership and post-commit deletion. */
 class StoredS3ObjectService {
     DataSource dataSource
+    // Resolve against the tenant manager, not the active per-tenant child datastore.
+    HibernateDatastore hibernateDatastore
     StorageSchemaValidator storageSchemaValidator
     S3FileObject upload(String key, InputStream stream, long size, long partSize) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -25,7 +28,7 @@ class StoredS3ObjectService {
                 "VALUES (?,?,?,?,?,'UPLOADING',current_timestamp,current_timestamp)",
                 [id, config.endpoint, config.bucket, config.region, key])
         }
-        Serializable tenant = Tenants.currentId()
+        Serializable tenant = Tenants.currentId(hibernateDatastore)
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override void afterCompletion(int status) {
                 if (status != TransactionSynchronization.STATUS_COMMITTED) {
@@ -64,7 +67,7 @@ class StoredS3ObjectService {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
             throw new IllegalStateException('S3 reference deletion requires a transaction')
         }
-        Serializable tenant = Tenants.currentId()
+        Serializable tenant = Tenants.currentId(hibernateDatastore)
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override void afterCommit() { cleanupInTenant(id, tenant) }
         })
@@ -72,7 +75,7 @@ class StoredS3ObjectService {
 
     /** Exact record retry. A failed delete remains owned and visible for retry. */
     boolean cleanup(String id) {
-        cleanupInTenant(id, Tenants.currentId())
+        cleanupInTenant(id, Tenants.currentId(hibernateDatastore))
     }
 
     private boolean cleanupInTenant(String id, Serializable tenant) {
@@ -194,7 +197,7 @@ class StoredS3ObjectService {
     }
 
     private <T> T independent(Closure<T> work) {
-        independent(Tenants.currentId(), work)
+        independent(Tenants.currentId(hibernateDatastore), work)
     }
 
     private <T> T independent(Serializable tenant, Closure<T> work) {

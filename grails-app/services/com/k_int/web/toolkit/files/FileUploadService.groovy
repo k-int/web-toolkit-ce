@@ -53,6 +53,7 @@ class FileUploadService {
     fileUpload.fileName = file.originalFilename
     fileUpload.fileSize = file.size
     fileUpload.fileObject = fobject
+    fobject.fileUpload = fileUpload
 
     fileUpload.save(flush:true)
     fileUpload
@@ -74,6 +75,7 @@ class FileUploadService {
         }
         FileUpload upload = new FileUpload(fileContentType: file.contentType,
           fileName: file.originalFilename, fileSize: file.size, fileObject: object)
+        object.fileUpload = upload
         upload.save(flush: true, failOnError: true)
         upload
       } catch (StorageSchemaPrerequisiteException prerequisite) {

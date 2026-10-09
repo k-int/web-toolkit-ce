@@ -2,7 +2,11 @@
 set -euo pipefail
 repo_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$repo_dir"
-: "${JAVA_HOME:?Set JAVA_HOME to JDK 21}"
+: "${JAVA_HOME:?Set JAVA_HOME to JDK 25}"
+if ! "$JAVA_HOME/bin/java" -version 2>&1 | head -1 | grep -Eq 'version "25\.'; then
+  echo 'The Grails 8 build and test workers require the selected JDK 25 baseline.' >&2
+  exit 1
+fi
 run_id="toolkit-proof-$$"
 pg="$run_id-pg"
 s3="$run_id-s3"

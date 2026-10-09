@@ -10,6 +10,7 @@ import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.RejectedExecutionHandler
 import org.springframework.core.task.TaskDecorator
 
 import jakarta.annotation.PreDestroy
@@ -34,13 +35,13 @@ class QueueingThreadPoolPromiseFactory extends AbstractPromiseFactory implements
 
   public QueueingThreadPoolPromiseFactory(int maxPoolSize = 1000, int maxQueueLength = 1000, long timeout = 3L, TimeUnit unit = TimeUnit.MINUTES) {
     final QueueingThreadPoolPromiseFactory pf = this
+    RejectedExecutionHandler rejectionHandler = { Runnable task, ThreadPoolExecutor executor ->
+      if (executor.isShutdown()) throw new RejectedExecutionException('Promise executor is shut down')
+      task.run()
+    } as RejectedExecutionHandler
     this.executorService = new ThreadPoolExecutor(5, maxPoolSize, timeout, unit,
           new LinkedBlockingQueue<Runnable>(maxQueueLength),
-          new NamedThreadFactory('Promises'),
-          { Runnable task, ThreadPoolExecutor executor ->
-            if (executor.isShutdown()) throw new RejectedExecutionException('Promise executor is shut down')
-            task.run()
-          } as java.util.concurrent.RejectedExecutionHandler) {
+          new NamedThreadFactory('Promises'), rejectionHandler) {
 
       @Override
       void execute(Runnable command) {

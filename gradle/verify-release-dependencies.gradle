@@ -1,3 +1,5 @@
+import groovy.xml.XmlSlurper
+
 // Development artifacts must not escape inside a final library publication.
 def developmentVersion = { String value ->
   value != null && (value.toUpperCase().contains('SNAPSHOT') ||

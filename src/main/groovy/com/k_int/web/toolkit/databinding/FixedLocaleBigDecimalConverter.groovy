@@ -4,7 +4,6 @@ import java.text.DecimalFormat
 import java.text.NumberFormat
 
 import groovy.transform.CompileStatic
-import io.micronaut.context.annotation.Primary
 
 @CompileStatic
 class FixedLocaleBigDecimalConverter extends FixedLocaleNumberConverter {

@@ -2,8 +2,6 @@ package com.k_int.web.toolkit.rest;
 
 import static org.springframework.http.HttpStatus.*
 
-import org.grails.datastore.gorm.query.NamedCriteriaProxy
-
 import com.k_int.web.toolkit.SimpleLookupService
 
 import grails.gorm.transactions.Transactional
@@ -24,8 +22,8 @@ public class RestfulController<T> extends grails.rest.RestfulController<T> {
     super(resource, readOnly)
   }
   
-  protected def doTheLookup (@SuppressWarnings("deprecation") NamedCriteriaProxy namedQuery = null, Class res = this.resource) {
-    doTheLookup ( res , namedQuery?.criteriaClosure as Closure)
+  protected def doTheLookup () {
+    doTheLookup(this.resource, null)
   }
   
   protected List getParamList(final String name) {

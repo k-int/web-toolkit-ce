@@ -2,6 +2,7 @@
 """Fail closed on absent/failed/skipped required suites; retain compact local evidence."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -30,8 +31,8 @@ required = {
 for name, minimum in required.items():
     if not any(s['name'] == name and s['tests'] >= minimum for s in suites):
         problems.append(f'{name}: fewer than {minimum} required cases')
-if require_unit and sum(s['tests'] for s in suites if s['task'] == 'test') < 125:
-    problems.append('test: fewer than 125 baseline unit cases')
+if require_unit and sum(s['tests'] for s in suites if s['task'] == 'test') < 131:
+    problems.append('test: fewer than 131 baseline unit cases')
 if status:
     problems.append(f'Gradle/fixture exit status {status}')
 if cleanup != 'passed':
@@ -46,7 +47,10 @@ for path in inputs:
     source_hash.update(str(path.relative_to(root)).encode() + b'\0' + path.read_bytes())
 artifacts = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
              for p in (root / 'build/libs').glob('*.jar')}
-report = {'source': git('rev-parse', 'HEAD'), 'dirty': bool(git('status', '--porcelain')),
+jdk = subprocess.run([os.environ['JAVA_HOME'] + '/bin/java', '-version'],
+                     capture_output=True, text=True, check=True,
+                     env={'LANG': 'C.UTF-8'}).stderr.strip()
+report = {'jdk': jdk, 'source': git('rev-parse', 'HEAD'), 'dirty': bool(git('status', '--porcelain')),
           'input_sha256': source_hash.hexdigest(), 'artifact_sha256': artifacts,
           'fixture_images': sys.argv[4:6], 'command': sys.argv[6:],
           'suites': suites, 'cleanup': cleanup, 'problems': problems,

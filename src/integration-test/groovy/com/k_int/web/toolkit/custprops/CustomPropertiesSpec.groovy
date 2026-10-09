@@ -197,6 +197,13 @@ class CustomPropertiesSpec extends Specification {
       ids.contains(refdataThree)
   }
 
+  def 'namespaced plugin messages resolve through the real application message source'() {
+    expect:
+    grailsApplication.mainContext.getBean(org.springframework.context.MessageSource)
+      .getMessage('cannot.be.primary.and.retired', null, Locale.ENGLISH) ==
+      'A custom property definition cannot be both primary and retired'
+  }
+
   // CustomPropertyContainer is already tested via the above, nesting is _not_ tested currently
 }
 

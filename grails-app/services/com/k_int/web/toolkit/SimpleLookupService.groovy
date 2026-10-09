@@ -1,6 +1,7 @@
 package com.k_int.web.toolkit
 
 import org.grails.datastore.gorm.GormStaticApi
+import org.grails.orm.hibernate.HibernateDatastore
 
 import com.k_int.web.toolkit.query.JpaCriteriaQueryBackend
 import com.k_int.web.toolkit.query.LegacyCriteriaQueryBackend
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value
 
 @Slf4j
 class SimpleLookupService {
+  HibernateDatastore hibernateDatastore
   
   @Value('${k_int.webToolkit.query.backend:legacy}')
   String queryBackend = 'legacy'
@@ -162,7 +164,7 @@ class SimpleLookupService {
 		
 		Serializable tid
 		try {
-			tid = Tenants.currentId()
+			tid = Tenants.currentId(hibernateDatastore)
 		} catch( Exception e ) {
 			tid = null;
 		}

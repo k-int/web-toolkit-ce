@@ -75,7 +75,7 @@ class TenantAwareRestfulController<T> extends RestfulController<T> {
     super.listAllResources(params)
   }
 
-  protected Integer countResources() {
+  protected Long countResources() {
     super.countResources()
   }
 

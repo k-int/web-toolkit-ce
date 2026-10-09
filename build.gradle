@@ -22,7 +22,7 @@ buildscript {
 plugins {
 	id 'k-int.git-conventions' version "$gitConventionsVersion"
 	id 'antlr'
-	id 'org.asciidoctor.jvm.convert' version '3.3.2'
+	id 'org.asciidoctor.jvm.convert' version '4.0.5'
 }
 
 repositories {
@@ -72,7 +72,6 @@ bootRun {
 		ignoreExitValue = true
 	jvmArgs(
 			'-Dspring.output.ansi.enabled=always',
-			'-noverify',
 			'-XX:TieredStopAtLevel=1',
 			'-Xmx1024m')
 	sourceResources sourceSets.main
@@ -88,21 +87,10 @@ sourceSets {
   }
 }
 
-ext['netty.version'] = nettyVersion
-
-// Grails 7 requires this enforced BOM to prevent Micronaut overriding its
-// binary-compatible graph. The strict published constraint is intentional.
-tasks.withType(org.gradle.api.publish.tasks.GenerateModuleMetadata).configureEach {
-  suppressedValidationErrors.add('enforced-platform')
-}
-
 dependencies {
   implementation platform("org.apache.grails:grails-bom:$grailsVersion")
-  implementation enforcedPlatform("org.apache.grails:grails-micronaut-bom:$grailsVersion")
   compileOnly platform("org.apache.grails:grails-bom:$grailsVersion")
-  compileOnly enforcedPlatform("org.apache.grails:grails-micronaut-bom:$grailsVersion")
   testImplementation platform("org.apache.grails:grails-bom:$grailsVersion")
-  testImplementation enforcedPlatform("org.apache.grails:grails-micronaut-bom:$grailsVersion")
 
   implementation "org.apache.grails:grails-core"
   implementation "org.apache.grails:grails-logging"
@@ -118,19 +106,18 @@ dependencies {
   // Do we need this?
   //implementation("org.hibernate:hibernate-core:5.6.15.Final")
 
-  implementation "org.springframework.boot:spring-boot-starter-undertow"
+  implementation "org.apache.grails:grails-undertow"
 
   implementation "org.springframework.boot:spring-boot-autoconfigure"
   implementation "org.springframework.boot:spring-boot-starter-logging"
   implementation "org.springframework.boot:spring-boot-starter-validation"
 
-  implementation "org.apache.grails:grails-micronaut"
 
   console("org.apache.grails:grails-console")
   runtimeOnly("com.h2database:h2")
   
 
-  // Grails 7 testing support
+  // Grails 8 testing support
 	testImplementation "org.apache.grails.testing:grails-testing-support-core:$grailsTestingVersion"
 	testImplementation "org.apache.grails:grails-testing-support-web:$grailsTestingVersion"
 	testImplementation "org.apache.grails:grails-data-hibernate5:$grailsVersion"
@@ -144,7 +131,7 @@ dependencies {
 	implementation("org.apache.groovy:groovy-xml")
 	testImplementation("org.apache.groovy:groovy-xml")
   integrationTestImplementation("org.apache.groovy:groovy-xml")
-  integrationTestImplementation('org.grails.plugins:database-migration:6.0.0-M1') {
+  integrationTestImplementation('org.apache.grails:grails-data-hibernate5-dbmigration') {
     exclude group: 'org.liquibase', module: 'liquibase-core'
     exclude group: 'org.grails', module: 'grails-shell'
   }
@@ -197,11 +184,15 @@ dependencies {
   mainClass.set("web.toolkit.ce.Application")
 } */
 
+if (JavaVersion.current() != JavaVersion.VERSION_25) {
+  throw new GradleException('Run the Grails 8 build with JAVA_HOME pointing to JDK 25')
+}
+
 java {
-  sourceCompatibility = JavaVersion.VERSION_21
-  targetCompatibility = JavaVersion.VERSION_21
+  sourceCompatibility = JavaVersion.VERSION_25
+  targetCompatibility = JavaVersion.VERSION_25
   toolchain {
-    languageVersion = JavaLanguageVersion.of(21)
+    languageVersion = JavaLanguageVersion.of(25)
   }
   withSourcesJar()
   withJavadocJar()
@@ -215,8 +206,17 @@ tasks.withType(GroovyCompile) {
 }
 
 tasks.withType(Test) {
+  doFirst {
+    def worker = javaLauncher.get().metadata
+    if (worker.languageVersion.asInt() != 25) {
+      throw new GradleException("Test worker must use JDK 25: ${worker.installationPath}")
+    }
+    logger.lifecycle("${name} JVM: ${worker.vendor} ${worker.javaRuntimeVersion}; ${worker.installationPath}")
+  }
   useJUnitPlatform()
-  classpath = sourceSets.main.output + classpath
+  // Self-consumed test fixtures also bring the main JAR. Use local output once;
+  // duplicate plugin descriptors are rejected by Grails 8's message loader.
+  classpath = sourceSets.main.output + (classpath - files(tasks.named('jar').flatMap { it.archiveFile }))
 }
 
 tasks.withType(Javadoc) {

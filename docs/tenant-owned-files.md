@@ -132,14 +132,14 @@ legacy S3 backfill, versioned buckets, concurrent administrator DDL or rollback 
 an older library. Whole-module fresh/upgrade and lifecycle retry remain consumer
 gates before publication/adoption.
 
-Run `JAVA_HOME=/path/to/jdk-21 scripts/test-integration.sh test verifyReleaseDependencies`.
+Run `JAVA_HOME=/path/to/jdk-25 scripts/test-integration.sh test verifyReleaseDependencies`.
 The runner retains JUnit, raw Gradle output in
 `build/reports/toolkit-qualification.log`, and a compact JSON result in
 `build/reports/toolkit-qualification.json` with source/input hashes, fixture image
 IDs, counts and cleanup status. Missing required suites, skips, test failures or
 failed disposable-container cleanup fail the command. GitHub's
 `Toolkit qualification` workflow runs the same command for main and pull requests
-on a disposable Ubuntu runner with JDK 21 and Podman. It has read-only repository
+on a disposable Ubuntu runner with JDK 25 and Podman. It has read-only repository
 permissions, uses pinned action commits and needs no publishing credentials.
 
 Retained source qualification: 125 unit + 41 integration cases, zero failures,
@@ -155,3 +155,11 @@ failures/errors/skips; final dependency gate and fixture cleanup passed. See
 change is unreleased. Before final module cuts, publish a new final Toolkit,
 refresh downstream shared libraries and module pins, then qualify real consumer
 migrations/lifecycle in warning and strict modes. Do not overwrite 11.2.1.
+
+Grails 8 compatibility candidate: 131 unit and 49 integration cases pass on
+Temurin 25.0.3, with final dependency/metadata and disposable cleanup checks.
+[Evidence](grails8-qualification.json). Tenant capture selects the Hibernate
+tenant manager explicitly; active child-datastore selection must not substitute
+a default tenant. LOB/S3 uploads explicitly link both sides of ownership before
+validation. The shared file base supplies the cloning trait; concrete clones
+retain their types. Consumer transition and publication gates remain open.

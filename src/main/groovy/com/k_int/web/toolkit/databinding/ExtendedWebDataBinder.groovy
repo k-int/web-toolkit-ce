@@ -31,9 +31,6 @@ import grails.web.databinding.GrailsWebDataBinder
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
 import groovy.util.logging.Slf4j
-import io.micronaut.context.annotation.Any
-import io.micronaut.core.annotation.Introspected
-import io.micronaut.core.util.ArrayUtils
 
 @Slf4j
 @CompileStatic
@@ -110,7 +107,7 @@ class ExtendedWebDataBinder extends GrailsWebDataBinder {
 	}
 
 	@Override
-	void setValueConverters(@Any ValueConverter[] converters) {
+	void setValueConverters(ValueConverter[] converters) {
 		converters.each { ValueConverter converter ->
 			registerConverter converter
 		}

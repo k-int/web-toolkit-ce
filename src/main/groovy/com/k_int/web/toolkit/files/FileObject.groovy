@@ -1,4 +1,5 @@
 package com.k_int.web.toolkit.files
+import com.k_int.web.toolkit.domain.traits.Clonable
 import java.sql.Blob
 
 import jakarta.persistence.Lob
@@ -13,7 +14,7 @@ import groovy.util.logging.Slf4j
 
 @GrailsCompileStatic
 @Entity
-abstract class FileObject implements MultiTenant<FileObject> {
+abstract class FileObject implements MultiTenant<FileObject>, Clonable<FileObject> {
 
   String id
   FileUpload fileUpload
@@ -38,7 +39,9 @@ abstract class FileObject implements MultiTenant<FileObject> {
     grails.util.Holders.applicationContext.getBean(StorageSchemaValidator).validateCurrentTenant()
   }
 
-  // See if this resolves the clone issue
-  public abstract FileObject clone();
+  @Override
+  public FileObject clone() {
+    Clonable.super.clone()
+  }
 
 }

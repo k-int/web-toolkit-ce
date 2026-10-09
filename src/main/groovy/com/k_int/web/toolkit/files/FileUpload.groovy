@@ -1,5 +1,6 @@
 package com.k_int.web.toolkit.files
 import com.k_int.web.toolkit.domain.traits.Clonable
+import org.grails.orm.hibernate.HibernateDatastore
 
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
@@ -42,7 +43,7 @@ class FileUpload implements MultiTenant<FileUpload>, Clonable<FileUpload> {
 
     if (this.owner == null) {
       final String toDelete = this.id
-      final Serializable currentTenantId = Tenants.currentId()
+      final Serializable currentTenantId = Tenants.currentId(HibernateDatastore)
       Tenants.withId(currentTenantId) {
         try {
           FileUpload.get(toDelete).delete()

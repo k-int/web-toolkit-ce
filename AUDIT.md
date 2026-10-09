@@ -120,3 +120,34 @@ migration coverage of both modes and opts the unattended runner into strict mode
 Operational SQL/migration errors, tenant fencing and destructive ownership checks
 remain failures. Source correction only: published 11.2.1 remains unchanged;
 release and downstream dependency refresh precede the next final module cuts.
+
+## WTK-GRAILS-8: Qualify the core-only Grails 8/JDK 25 toolkit
+
+Effort-Days: 3.25
+Effort-Status: partial
+
+Dependencies: None.
+Corrects: None.
+
+Migrates framework/build/CI to Grails 8.0.0, Gradle 9.8.0 and JDK 25; omits
+the unused Micronaut bridge. Keeps Hibernate 5, static checks, JPA/AST lookup
+and existing storage ownership/migrations. Corrects mapping-closure inference,
+cloning inheritance, executor coercion, tenant-manager selection and explicit
+file owner links; namespaces plugin messages and removes duplicate local-test
+descriptors. Deprecated named-query lookup is removed with the upstream type.
+
+Assessment: 3.25 conventional developer-days: 1.00 build/dependency/CI migration,
+0.75 compiler compatibility diagnosis/corrections, 1.00 ORM/tenant/storage
+adaptation and 0.50 regression/metadata qualification and reusable evidence.
+PO analysis/issue writing: TBC. Toolkit creation is counted here once; Okapi/OA
+adoption belongs to their own entries. This allocation is within 000129's
+15-day forecast; workspace planning/omission assessment is separate.
+
+[Qualification](docs/grails8-qualification.json): 131 unit plus 49 real
+PostgreSQL/MinIO integration cases pass, zero failures/errors/skips; final
+dependency/metadata checks and fixture cleanup pass, zero Micronaut artifacts.
+Includes real LOB/S3 cloning, migration, ownership/cleanup, binding/query
+regressions and application message resolution. Source is a qualified feature
+branch candidate; default landing, remote CI, real consumer upgrade, final
+publication and rollout remain pending under the
+[owning backlog](https://gitlab.com/knowledge-integration/platform/foundry/foundry-dev-workspace/-/blob/main/docs/backlog/current/000129-09-10-2026-grails-8-open-access-canary.md).

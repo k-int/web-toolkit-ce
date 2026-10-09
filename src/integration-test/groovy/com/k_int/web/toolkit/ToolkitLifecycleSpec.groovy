@@ -92,6 +92,8 @@ class ToolkitLifecycleSpec extends HttpSpec {
 
     then:"The FileUpload is properly returned"
       fu != null
+      fu.id != null
+      fu.fileObject.fileUpload.id == fu.id
   }
 
   void "test S3 file upload"() {
@@ -111,6 +113,8 @@ class ToolkitLifecycleSpec extends HttpSpec {
 
     then:"The FileUpload is properly returned"
       fu != null
+      fu.id != null
+      fu.fileObject.fileUpload.id == fu.id
 
   }
 

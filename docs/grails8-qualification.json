@@ -1,0 +1,97 @@
+{
+  "source": "872af678fd42bece2fef0d7c8fa71e1810e9b65a",
+  "dirty": true,
+  "input_sha256": "407c2b698e96ce45d05387fc846175257a01827154ae17cf22e7d74b79802261",
+  "jdk": "openjdk version \"25.0.3\" 2026-04-21 LTS\nOpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)",
+  "fixture_images": [
+    "126edd17cd7e5566fd560e85e256fcb8e58a6db96805a96a33127c535d09f2d8",
+    "f75dc5a53402f12c34c911a04495217de00384adb2798afff23543fb71333e89"
+  ],
+  "command": [
+    "scripts/test-integration.sh",
+    "test",
+    "verifyReleaseDependencies",
+    "-I",
+    "../docs/evidence/000129/omission.init.gradle",
+    "omissionGraph"
+  ],
+  "suites": [
+    {
+      "task": "integrationTest",
+      "name": "com.k_int.web.toolkit.custprops.CustomPropertiesSpec",
+      "tests": 16,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "integrationTest",
+      "name": "com.k_int.web.toolkit.files.StorageMigrationSpec",
+      "tests": 18,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "integrationTest",
+      "name": "com.k_int.web.toolkit.ToolkitLifecycleSpec",
+      "tests": 15,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "test",
+      "name": "com.k_int.web.toolkit.ErrorControllerSpec",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "test",
+      "name": "com.k_int.web.toolkit.files.StorageSchemaValidationModeSpec",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "test",
+      "name": "com.k_int.web.toolkit.async.QueueingThreadPoolPromiseFactorySpec",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "test",
+      "name": "com.k_int.web.toolkit.SimpleLookupServiceSpec",
+      "tests": 115,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "test",
+      "name": "com.k_int.web.toolkit.files.MultipartLobStreamSpec",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "task": "test",
+      "name": "com.k_int.web.toolkit.files.LOBFileCloneSpec",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "cleanup": "passed",
+  "passed": true,
+  "framework": "Grails 8.0.0 / Gradle 9.8.0 / Hibernate 5",
+  "runtime_micronaut_artifacts": 0,
+  "publication": "Unpublished compatibility candidate; exact final version and consumer qualification pending."
+}

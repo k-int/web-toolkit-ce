@@ -22,7 +22,7 @@ class ErrorController {
       int code = 500;
 
       // Individual error handling. If exception implements errorHandleable500 then we can get a String message from it
-      if (ex instanceof handledException) {
+      if (handledException.isInstance(ex)) {
         ErrorHandle err = ex.handleException()
         message = err.message;
         code = err.code;

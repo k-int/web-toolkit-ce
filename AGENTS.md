@@ -17,7 +17,7 @@ Release dependencies must be final releases. Timestamped Maven snapshots remain
 development artifacts. Run `verifyReleaseDependencies` and inspect generated
 POM/Gradle metadata, including fixtures, before publication.
 
-Run `JAVA_HOME=/path/to/jdk-21 scripts/test-integration.sh test verifyReleaseDependencies`
+Run `JAVA_HOME=/path/to/jdk-25 scripts/test-integration.sh test verifyReleaseDependencies`
 for local qualification. The default integration task skips the database suite;
 always report executed/skipped test counts. The script owns disposable local
 fixtures only. Hosted tests require their own authorization.

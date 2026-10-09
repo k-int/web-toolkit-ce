@@ -9,7 +9,6 @@ import groovy.transform.CompileDynamic
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
 
-import com.k_int.web.toolkit.domain.traits.Clonable
 
 import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
@@ -18,7 +17,7 @@ import grails.gorm.annotation.Entity
 
 @GrailsCompileStatic
 @Entity
-class LOBFileObject extends FileObject implements MultiTenant<LOBFileObject>, Clonable<LOBFileObject> {
+class LOBFileObject extends FileObject implements MultiTenant<LOBFileObject> {
 
   static cloneStaticValues = [
     fileContents: { Object target ->
@@ -70,6 +69,6 @@ class LOBFileObject extends FileObject implements MultiTenant<LOBFileObject>, Cl
   
   @Override
   public LOBFileObject clone () {
-    Clonable.super.clone()
+    super.clone() as LOBFileObject
   }
 }

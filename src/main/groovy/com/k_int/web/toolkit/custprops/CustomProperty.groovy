@@ -31,10 +31,11 @@ class CustomProperty<T> implements MultiTenant<CustomProperty> {
     publicNote nullable: true, blank: false
   }
   
+  // An explicit delegate keeps inherited mapping calls independent of the subtype.
   static mapping = {
-    tablePerHierarchy false
-    note type: "text"
-    publicNote type: 'text'
-    sort "definition"
+    delegate.tablePerHierarchy false
+    delegate.note type: "text"
+    delegate.publicNote type: 'text'
+    delegate.sort "definition"
   }
 }

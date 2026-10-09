@@ -1,6 +1,5 @@
 package com.k_int.web.toolkit.files
 
-import com.k_int.web.toolkit.domain.traits.Clonable
 import grails.compiler.GrailsCompileStatic
 import grails.gorm.MultiTenant
 import grails.gorm.annotation.Entity
@@ -8,7 +7,7 @@ import groovy.util.logging.Slf4j
 
 @GrailsCompileStatic
 @Entity
-class S3FileObject extends FileObject implements MultiTenant<S3FileObject>, Clonable<S3FileObject> {
+class S3FileObject extends FileObject implements MultiTenant<S3FileObject> {
 
   String s3ref
   StoredS3Object storedObject
@@ -38,6 +37,6 @@ class S3FileObject extends FileObject implements MultiTenant<S3FileObject>, Clon
   
   @Override
   public S3FileObject clone () {
-    Clonable.super.clone()
+    super.clone() as S3FileObject
   }
 }
