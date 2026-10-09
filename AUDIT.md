@@ -147,9 +147,9 @@ adoption belongs to their own entries. This allocation is within 000129's
 PostgreSQL/MinIO integration cases pass, zero failures/errors/skips; final
 dependency/metadata checks and fixture cleanup pass, zero Micronaut artifacts.
 Includes real LOB/S3 cloning, migration, ownership/cleanup, binding/query
-regressions and application message resolution. Source is a qualified feature
-branch candidate; default landing, remote CI, real consumer upgrade, final
-publication and rollout remain pending under the
+regressions and application message resolution. Source is on main; remote CI
+37984543738 passes on Temurin 25.0.4.1. Populated OA candidate transition and
+restore pass; final publication and hosted rollout remain pending under the
 [owning backlog](https://gitlab.com/knowledge-integration/platform/foundry/foundry-dev-workspace/-/blob/main/docs/backlog/current/000129-09-10-2026-grails-8-open-access-canary.md).
 
 Grails 8 completion qualification also corrects refdata bootstrap to select its
