@@ -1,5 +1,39 @@
 # Changelog
 
+## Version fsl/v12.0.0
+
+### Breaking changes
+
+- \[General\]
+  - requires Grails 8 and JDK 25; upstream removed named-query lookup is no longer supported.
+
+### Fixes
+
+- \[General\]
+  - install four-field JDK patch with supported setup-java
+
+- \[Storage\]
+  - warn by default and opt into strict schema validation
+
+- \[Tenant\]
+  - select refdata tenant manager during bootstrap
+
+- \[Test\]
+  - pin the qualified PostgreSQL fixture through its official mirror
+  - retain fixture startup diagnostics in qualification artifacts
+
+### General
+
+- \[General\]
+  - use JDK 25 in Toolkit qualification example
+  - align Toolkit release instructions with Grails 8
+  - synchronize Toolkit source and CI qualification
+  - retain JDK 25 patch qualification
+  - qualify current JDK 25 security patch
+  - retain completed Toolkit bootstrap qualification
+  - retain committed Grails 8 toolkit qualification
+  - migrate toolkit to core Grails 8 and JDK 25
+
 ## Version fsl/v11.2.1
 
 ### Fixes
