@@ -15,6 +15,8 @@ created_s3=false
 require_unit=false
 for argument in "$@"; do [[ "$argument" != test ]] || require_unit=true; done
 mkdir -p build/reports
+# Retain fixture startup failures as well as Gradle failures in CI artifacts.
+exec >build/reports/toolkit-qualification.log 2>&1
 rm -rf build/test-results/integrationTest
 if "$require_unit"; then rm -rf build/test-results/test; fi
 pg_image=unavailable
@@ -50,4 +52,4 @@ podman exec "$s3" mc mb proof/diku-shared >/dev/null
 env -i HOME="$HOME" USER="$(id -un)" LANG=C.UTF-8 PATH="$JAVA_HOME/bin:$PATH" JAVA_HOME="$JAVA_HOME" \
   WTK_STORAGE_SCHEMA_VALIDATION=strict \
   TOOLKIT_TEST_JDBC_URL="jdbc:postgresql://127.0.0.1:$pg_port/test" \
-  TOOLKIT_TEST_S3_ENDPOINT="http://127.0.0.1:$s3_port" ./gradlew --no-daemon --no-parallel -Dgrails.env=test-livedb -I scripts/integration-test.init.gradle integrationTest --rerun-tasks "$@" >build/reports/toolkit-qualification.log 2>&1
+  TOOLKIT_TEST_S3_ENDPOINT="http://127.0.0.1:$s3_port" ./gradlew --no-daemon --no-parallel -Dgrails.env=test-livedb -I scripts/integration-test.init.gradle integrationTest --rerun-tasks "$@"
