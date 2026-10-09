@@ -151,3 +151,7 @@ regressions and application message resolution. Source is a qualified feature
 branch candidate; default landing, remote CI, real consumer upgrade, final
 publication and rollout remain pending under the
 [owning backlog](https://gitlab.com/knowledge-integration/platform/foundry/foundry-dev-workspace/-/blob/main/docs/backlog/current/000129-09-10-2026-grails-8-open-access-canary.md).
+
+Grails 8 completion qualification also corrects refdata bootstrap to select its
+owning tenant manager; real OA tenant/reference/party/checklist coverage passes.
+This completion remains covered by the existing 3.25-day assessment.

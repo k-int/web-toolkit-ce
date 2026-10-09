@@ -14,6 +14,7 @@ import com.k_int.web.toolkit.utils.DomainUtils
 import grails.core.GrailsApplication
 import grails.core.GrailsClass
 import grails.gorm.multitenancy.Tenants
+import org.grails.orm.hibernate.HibernateDatastore
 import grails.util.GrailsClassUtils
 import grails.util.GrailsNameUtils
 import grails.util.Holders
@@ -72,7 +73,9 @@ class GrailsDomainRefdataHelpers {
   public static void setDefaultsForTenant (final Serializable tid) {
     final GrailsApplication grailsApplication = Holders.grailsApplication
     final GrailsClass[] domainObj = grailsApplication.getArtefacts("Domain")
-    Tenants.withId ( tid ) {
+    // Resolve the tenant manager, not the active system/tenant child datastore.
+    final HibernateDatastore datastore = grailsApplication.mainContext.getBean(HibernateDatastore)
+    Tenants.withId(datastore, tid) {
       domainObj.each { GrailsClass gc ->
         GrailsDomainRefdataHelpers.setDefaults(gc)
       }
