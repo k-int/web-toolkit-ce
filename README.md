@@ -1,6 +1,8 @@
 # Web Toolkit
 
-Toolkit and value-add module for Grails 7. Requires JDK 21.
+Current source targets Grails 8 and JDK 25. Published Toolkit 11.x remains
+on Grails 7/JDK 21; Toolkit 12 qualification/publication is tracked by
+[000129](https://gitlab.com/knowledge-integration/platform/foundry/foundry-dev-workspace/-/blob/main/docs/backlog/current/000129-09-10-2026-grails-8-open-access-canary.md).
 
 Copyright (C) 2015-2024 Knowledge Integration
 
@@ -35,7 +37,7 @@ For downstream-module migration guidance (including `SimpleLookupService` query 
 
 ## Releasing
 
-Use JDK 21 and the maintained `k-int.git-conventions` plugin. Versions come
+Use the selected JDK 25 baseline (Temurin 25.0.4.1) and the maintained `k-int.git-conventions` plugin. Versions come
 from Git; do not assign a release version in `gradle.properties`. The plugin
 creates and recognises `fsl/v` tags through `releaseTagPrefix`, while recognising
 historical `v` tags. The single changelog is lowercase `changelog.md`.
