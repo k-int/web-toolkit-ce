@@ -1,7 +1,7 @@
 # Web Toolkit
 
-Current source targets Grails 8 and JDK 25. Published Toolkit 11.x remains
-on Grails 7/JDK 21; Toolkit 12 qualification/publication is tracked by
+Published Toolkit 12.0.0 targets Grails 8 and JDK 25; Toolkit 11.x remains
+on Grails 7/JDK 21. Canary qualification/rollout is tracked by
 [000129](https://gitlab.com/knowledge-integration/platform/foundry/foundry-dev-workspace/-/blob/main/docs/backlog/current/000129-09-10-2026-grails-8-open-access-canary.md).
 
 Copyright (C) 2015-2024 Knowledge Integration
@@ -21,7 +21,7 @@ GUIDANCE.md however, particularly if you are building pay-for SAAS solutions on 
 # Installation
 
 ```
-  implementation "com.k_int.grails:web-toolkit-ce:11.x"
+  implementation "com.k_int.grails:web-toolkit-ce:12.0.0"
 ```
 _NOTE:_ You may need to substitute the version number with the latest release.
 

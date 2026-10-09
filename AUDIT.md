@@ -124,7 +124,7 @@ release and downstream dependency refresh precede the next final module cuts.
 ## WTK-GRAILS-8: Qualify the core-only Grails 8/JDK 25 toolkit
 
 Effort-Days: 3.25
-Effort-Status: partial
+Effort-Status: complete
 
 Dependencies: None.
 Corrects: None.
@@ -147,9 +147,12 @@ adoption belongs to their own entries. This allocation is within 000129's
 PostgreSQL/MinIO integration cases pass, zero failures/errors/skips; final
 dependency/metadata checks and fixture cleanup pass, zero Micronaut artifacts.
 Includes real LOB/S3 cloning, migration, ownership/cleanup, binding/query
-regressions and application message resolution. Source is on main; remote CI
-37984543738 passes on Temurin 25.0.4.1. Populated OA candidate transition and
-restore pass; final publication and hosted rollout remain pending under the
+regressions and application message resolution. Release `fsl/v12.0.0` resolves to `3255079`; exact-tag 180 cases and generated
+commit CI 37993082969 pass on Temurin 25.0.4.1. Six externally downloaded
+12.0.0 artifacts (JAR/fixtures/sources/Javadoc/POM/module metadata) match the
+tagged build after normal Maven publication. Historical changelog is unchanged.
+Populated OA candidate transition/restore pass; consumer publications and hosted
+rollout remain pending under the
 [owning backlog](https://gitlab.com/knowledge-integration/platform/foundry/foundry-dev-workspace/-/blob/main/docs/backlog/current/000129-09-10-2026-grails-8-open-access-canary.md).
 
 Grails 8 completion qualification also corrects refdata bootstrap to select its
