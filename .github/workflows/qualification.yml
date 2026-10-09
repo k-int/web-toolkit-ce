@@ -18,10 +18,14 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6: supports Java's fourth version field
         with:
           distribution: temurin
           java-version: '25.0.4.1'
+      - name: Verify selected JDK patch
+        run: |
+          java -version
+          test "$(java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java.version = //p')" = '25.0.4.1'
       - name: Install disposable fixture tools
         run: |
           sudo apt-get update
