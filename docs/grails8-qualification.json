@@ -1,6 +1,6 @@
 {
-  "jdk": "openjdk version \"25.0.3\" 2026-04-21 LTS\nOpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)",
-  "source": "587adda025e8ce375ec71726651e724fde02eb79",
+  "jdk": "openjdk version \"25.0.4.1\" 2026-08-18 LTS\nOpenJDK Runtime Environment Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS, mixed mode, sharing)",
+  "source": "4d7782468dc42b1677b5a3ffc112faa4e8618899",
   "dirty": false,
   "input_sha256": "ba87e5dfde2c01e7c2321f3ff628062d7a50b70aaf012339e9039046893286e0",
   "artifact_sha256": {
@@ -141,7 +141,7 @@
     "scripts/test-integration.sh",
     "test",
     "verifyReleaseDependencies",
-    "-I",
+    "--init-script",
     "../docs/evidence/000129/omission.init.gradle",
     "omissionGraph"
   ],
