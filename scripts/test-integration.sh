@@ -34,7 +34,9 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
-podman create --name "$pg" -p 127.0.0.1::5432 -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=test --tmpfs /var/lib/postgresql/data docker.io/library/postgres:17-alpine >/dev/null
+# Docker's official ECR mirror, identical PostgreSQL 17.10 Alpine content.
+# Pin the multi-platform index; anonymous Docker Hub CI pulls hit its quota.
+podman create --name "$pg" -p 127.0.0.1::5432 -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=test --tmpfs /var/lib/postgresql/data public.ecr.aws/docker/library/postgres@sha256:dc17045ccfd343b49600570ea734b9c4991cf1c3f3302e67df51e3b402dd55c4 >/dev/null
 created_pg=true
 pg_image=$(podman inspect --format '{{.Image}}' "$pg")
 podman start "$pg" >/dev/null
