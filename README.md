@@ -66,7 +66,7 @@ POM and Gradle metadata against the tagged source. Do not overwrite old versions
 The default `integrationTest` task skips the database tests. Run:
 
 ```sh
-JAVA_HOME=/path/to/jdk-21 scripts/test-integration.sh test verifyReleaseDependencies
+JAVA_HOME=/path/to/jdk-25 scripts/test-integration.sh test verifyReleaseDependencies
 ```
 
 This uses disposable loopback PostgreSQL 17 and the established K-Int MinIO
