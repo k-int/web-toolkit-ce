@@ -43,7 +43,7 @@ podman start "$pg" >/dev/null
 pg_port=$(podman port "$pg" 5432/tcp | sed -n 's/^127\.0\.0\.1://p')
 for n in {1..30}; do podman exec "$pg" pg_isready -U test -d test >/dev/null && break; sleep 1; done
 podman exec "$pg" psql -U test -d test -c "CREATE SCHEMA test" >/dev/null
-podman create --name "$s3" -p 127.0.0.1::9000 -e MINIO_ROOT_USER=DIKU_AGG_ACCESS_KEY -e MINIO_ROOT_PASSWORD=DIKU_AGG_SECRET_KEY --entrypoint minio --tmpfs /data docker.libsdev.k-int.com/knowledgeintegration/cicd-minio-folio:v2 server /data >/dev/null
+podman create --name "$s3" -p 127.0.0.1::9000 -e MINIO_ROOT_USER=DIKU_AGG_ACCESS_KEY -e MINIO_ROOT_PASSWORD=DIKU_AGG_SECRET_KEY --entrypoint minio --tmpfs /data harbor.k-int.com/knowledgeintegration/cicd-minio-folio@sha256:eca20f56d01a0535116532d20897795a3d939df4ecef9e05d41f6fda77e2ee9f server /data >/dev/null
 created_s3=true
 s3_image=$(podman inspect --format '{{.Image}}' "$s3")
 podman start "$s3" >/dev/null
