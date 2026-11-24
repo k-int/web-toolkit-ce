@@ -6,6 +6,15 @@ and implementation efficiency do not reduce it. Any monetary derivation is an
 indicative open-release acceleration value at K-Int's reference economic rate,
 not a retrospective charge or fixed invoice.
 
+## WTK-000167-GRADLE-PATCH: Adopt Gradle 9.8.2
+
+Effort-Days: TBC
+Effort-Status: unresolved
+Dependencies: None.
+Corrects: None.
+
+Update the project wrapper and pin the upstream distribution checksum. Qualify the existing storage and release-input suites on JDK 25.
+
 ## WTK-ASYNC-CONTEXT: Preserve submission context through promise execution
 
 Effort-Days: TBC
