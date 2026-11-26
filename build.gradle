@@ -144,7 +144,7 @@ dependencies {
 
   // --------------------------------- Custom Deps Below -----------------------------------//
   implementation "org.apache.grails:grails-views-gson"
-	implementation "org.postgresql:postgresql:42.7.12"
+	implementation "org.postgresql:postgresql:42.7.15"
 	implementation 'org.codehaus.janino:janino:3.1.9' // Needed for conditional logging
 
 

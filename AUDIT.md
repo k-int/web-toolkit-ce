@@ -6,6 +6,13 @@ and implementation efficiency do not reduce it. Any monetary derivation is an
 indicative open-release acceleration value at K-Int's reference economic rate,
 not a retrospective charge or fixed invoice.
 
+## WT-000167-PGJDBC: Qualify pgJDBC 42.7.15
+
+Effort-Days: TBC
+Effort-Status: unresolved
+
+Adopt the driver patch and exercise the PostgreSQL integration and storage migration suites.
+
 ## WTK-000167-GRADLE-PATCH: Adopt Gradle 9.8.2
 
 Effort-Days: TBC
