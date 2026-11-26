@@ -11,7 +11,7 @@ not a retrospective charge or fixed invoice.
 Effort-Days: TBC
 Effort-Status: unresolved
 
-Adopt the driver patch and exercise the PostgreSQL integration and storage migration suites.
+Adopt the driver patch and exercise the PostgreSQL integration and storage migration suites. A cold CI build hit HTTP 429 looking up K-Int tooling at repo.grails.org. Resolve dependencies from their publishers.
 
 ## WTK-000167-GRADLE-PATCH: Adopt Gradle 9.8.2
 

@@ -4,10 +4,7 @@ pluginManagement {
         maven { url = "https://nexus.k-int.com/repository/build-tooling/" }
         maven { url = "https://nexus.k-int.com/repository/releases/" }
         mavenLocal()
-        maven {
-            url = "https://repo.grails.org/grails/core/"
-            mavenContent { releasesOnly() }
-        }
+        mavenCentral()
         gradlePluginPortal()
     }
     plugins {
